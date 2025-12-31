@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   title: "Products",
 };
 
-// Mock data
+// Mock data - products with multiple images
 const products = [
   {
     id: "PRD-001",
@@ -59,7 +59,10 @@ const products = [
     originalPrice: 15000,
     stock: 3,
     status: "active",
-    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=100&h=100&fit=crop",
+    ],
     condition: "Excellent",
   },
   {
@@ -71,7 +74,9 @@ const products = [
     originalPrice: 9500,
     stock: 5,
     status: "active",
-    image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=100&h=100&fit=crop",
+    ],
     condition: "Very Good",
   },
   {
@@ -83,7 +88,11 @@ const products = [
     originalPrice: 2400,
     stock: 8,
     status: "active",
-    image: "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=100&h=100&fit=crop",
+    ],
     condition: "Good",
   },
   {
@@ -95,7 +104,9 @@ const products = [
     originalPrice: 3900,
     stock: 0,
     status: "out_of_stock",
-    image: "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=100&h=100&fit=crop",
+    ],
     condition: "Excellent",
   },
   {
@@ -107,7 +118,10 @@ const products = [
     originalPrice: 6500,
     stock: 2,
     status: "active",
-    image: "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=100&h=100&fit=crop",
+    ],
     condition: "Very Good",
   },
   {
@@ -119,7 +133,9 @@ const products = [
     originalPrice: 2200,
     stock: 12,
     status: "active",
-    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=100&h=100&fit=crop",
+    ],
     condition: "Like New",
   },
   {
@@ -131,7 +147,10 @@ const products = [
     originalPrice: 3800,
     stock: 4,
     status: "draft",
-    image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=100&h=100&fit=crop",
+    ],
     condition: "Excellent",
   },
   {
@@ -143,7 +162,9 @@ const products = [
     originalPrice: 3200,
     stock: 6,
     status: "active",
-    image: "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=100&h=100&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=100&h=100&fit=crop",
+    ],
     condition: "Very Good",
   },
 ];
@@ -253,7 +274,7 @@ export default function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Image</TableHead>
+                <TableHead className="w-[100px]">Images</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Brand</TableHead>
                 <TableHead>Condition</TableHead>
@@ -267,14 +288,26 @@ export default function ProductsPage() {
               {products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
-                    <div className="relative h-12 w-12 overflow-hidden rounded-md border">
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                      />
+                    <div className="flex -space-x-2">
+                      {product.images.slice(0, 3).map((image, index) => (
+                        <div
+                          key={index}
+                          className="relative h-10 w-10 overflow-hidden rounded-md border-2 border-background"
+                        >
+                          <Image
+                            src={image}
+                            alt={`${product.name} ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                          />
+                        </div>
+                      ))}
+                      {product.images.length > 3 && (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-background bg-muted text-xs font-medium">
+                          +{product.images.length - 3}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
