@@ -42,7 +42,7 @@ import {
   Filter,
   Download,
 } from "lucide-react";
-import Image from "next/image";
+import { StackedThumbnails } from "@/components/ui/thumbnail";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -288,27 +288,7 @@ export default function ProductsPage() {
               {products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
-                    <div className="flex -space-x-2">
-                      {product.images.slice(0, 3).map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative h-10 w-10 overflow-hidden rounded-md border-2 border-background"
-                        >
-                          <Image
-                            src={image}
-                            alt={`${product.name} ${index + 1}`}
-                            fill
-                            className="object-cover"
-                            sizes="40px"
-                          />
-                        </div>
-                      ))}
-                      {product.images.length > 3 && (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-background bg-muted text-xs font-medium">
-                          +{product.images.length - 3}
-                        </div>
-                      )}
-                    </div>
+                    <StackedThumbnails images={product.images} maxVisible={3} />
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
