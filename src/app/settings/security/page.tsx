@@ -82,13 +82,15 @@ import {
   MapPin,
   Wifi,
   WifiOff,
-  Map,
 } from "lucide-react";
-// SessionMap disabled - requires react-simple-maps which needs React 18
-// import { SessionMap } from "@/components/session-map";
-import { ApiError, type SecuritySession, type SecurityEvent, type SecurityConfig } from "@/lib/api";
-import { useWebSocket } from "@/hooks/use-websocket";
-import { useSecurityDashboard, useSessionsWebSocketUpdate } from "@/hooks/use-security-dashboard";
+import {
+  useSecurityStore,
+  useFilteredIpList,
+  type SecuritySession,
+  type SecurityEvent,
+  type SecurityConfig,
+} from "@vernont/admin-ui/stores";
+import { useWebSocketStore } from "@vernont/admin-ui/stores";
 
 // Helper to format relative time
 function formatRelativeTime(dateString: string | null | undefined): string {
@@ -166,72 +168,15 @@ function getEventTypeDisplay(type: string | null | undefined): string {
 
 // Error helper
 const getErrorMessage = (err: unknown): string => {
-  if (err instanceof ApiError) return err.message;
   if (err instanceof Error) return err.message;
   return "An unexpected error occurred";
 };
 
 export default function SecuritySettingsPage() {
-  const {
-    // Data
-    stats,
-    sessions,
-    ipList,
-    events,
-    config,
-
-    // Loading states
-    isLoadingStats,
-    isLoadingSessions,
-    isLoadingIpList,
-    isLoadingEvents,
-    isLoadingConfig,
-    isRevoking,
-    isAddingIp,
-    isSavingConfig,
-    isBulkResolving,
-
-    // Errors
-    revokeError,
-    addIpError,
-    bulkResolveError,
-
-    // Refetch
-    refetchSessions,
-    refetchEvents,
-
-    // Actions
-    revokeSession,
-    addIp,
-    removeIp,
-    resolveEvent,
-    bulkResolveEvents,
-    updateConfig,
-
-    // UI State
-    ipListTab,
-    setIpListTab,
-    eventFilter,
-    setEventFilter,
-    selectedEventIds,
-    toggleEventSelection,
-    selectAllEvents,
-    clearEventSelection,
-    isAddIpDialogOpen,
-    openAddIpDialog,
-    closeAddIpDialog,
-    isRevokeDialogOpen,
-    sessionToRevoke,
-    openRevokeDialog,
-    closeRevokeDialog,
-    isResolveDialogOpen,
-    eventToResolve,
-    openResolveDialog,
-    closeResolveDialog,
-    isBulkResolveDialogOpen,
-    openBulkResolveDialog,
-    closeBulkResolveDialog,
-  } = useSecurityDashboard();
+  // Use the security store from admin-ui package
+  const store = useSecurityStore();
+  const filteredIpList = useFilteredIpList();
+  const { isConnected } = useWebSocketStore();
 
   // Form state for add IP
   const [newIpAddress, setNewIpAddress] = useState("");
@@ -246,79 +191,91 @@ export default function SecuritySettingsPage() {
   // General error display
   const [displayError, setDisplayError] = useState<string | null>(null);
 
-  // WebSocket for real-time updates
-  const { isConnected, subscribe } = useWebSocket({ autoConnect: true, debug: false });
-  const wsUpdates = useSessionsWebSocketUpdate();
+  // Fetch initial data on mount
+  useEffect(() => {
+    store.fetchSessions();
+    store.fetchIpList();
+    store.fetchEvents({ limit: 50, resolved: store.eventFilter === "all" ? undefined : false });
+    store.fetchConfig();
+    store.fetchStats();
+  }, []);
+
+  // Refetch events when filter changes
+  useEffect(() => {
+    store.fetchEvents({ limit: 50, resolved: store.eventFilter === "all" ? undefined : false });
+  }, [store.eventFilter]);
 
   // WebSocket subscriptions
   useEffect(() => {
-    if (!isConnected) return;
-
-    const sessionsSub = subscribe("/topic/sessions", (message: unknown) => {
-      const data = message as { type: string; session?: SecuritySession; sessionId?: string };
-      if (data.type === "SESSION_CREATED" && data.session) {
-        wsUpdates.handleSessionCreated(data.session);
-      } else if (data.type === "SESSION_UPDATED" && data.session) {
-        wsUpdates.handleSessionUpdated(data.session);
-      } else if ((data.type === "SESSION_EXPIRED" || data.type === "SESSION_REVOKED") && data.sessionId) {
-        wsUpdates.handleSessionRemoved(data.sessionId);
-      }
-    });
-
-    const eventsSub = subscribe("/topic/security-events", (message: unknown) => {
-      const data = message as { type: string; event?: SecurityEvent };
-      if (data.event) {
-        wsUpdates.handleEventCreated(data.event);
-      }
-    });
-
-    return () => {
-      if (sessionsSub) sessionsSub.unsubscribe();
-      if (eventsSub) eventsSub.unsubscribe();
-    };
-  }, [isConnected, subscribe, wsUpdates]);
+    const unsubscribe = store.subscribeToSecurity();
+    return unsubscribe;
+  }, []);
 
   // Handlers
-  const handleRevokeSession = () => {
-    if (!sessionToRevoke) return;
-    revokeSession(sessionToRevoke.id, "Revoked by admin");
+  const handleRevokeSession = async () => {
+    if (!store.sessionToRevoke) return;
+    try {
+      await store.revokeSession(store.sessionToRevoke.id, "Revoked by admin");
+    } catch (e) {
+      setDisplayError(getErrorMessage(e));
+    }
   };
 
-  const handleAddIp = () => {
+  const handleAddIp = async () => {
     if (!newIpAddress.trim()) return;
-    addIp({
-      ipAddress: newIpAddress.trim(),
-      listType: ipListTab,
-      reason: newIpReason.trim() || undefined,
-    });
-    setNewIpAddress("");
-    setNewIpReason("");
+    try {
+      await store.addIpToList({
+        ipAddress: newIpAddress.trim(),
+        listType: store.ipListTab,
+        reason: newIpReason.trim() || undefined,
+      });
+      setNewIpAddress("");
+      setNewIpReason("");
+    } catch (e) {
+      setDisplayError(getErrorMessage(e));
+    }
   };
 
-  const handleResolveEvent = () => {
-    if (!eventToResolve) return;
-    resolveEvent(eventToResolve.id, resolveNotes.trim() || undefined);
-    setResolveNotes("");
+  const handleResolveEvent = async () => {
+    if (!store.eventToResolve) return;
+    try {
+      await store.resolveEvent(store.eventToResolve.id, resolveNotes.trim() || undefined);
+      setResolveNotes("");
+    } catch (e) {
+      setDisplayError(getErrorMessage(e));
+    }
   };
 
-  const handleBulkResolve = () => {
-    if (selectedEventIds.size === 0) return;
-    bulkResolveEvents(Array.from(selectedEventIds), bulkResolveNotes.trim() || undefined);
-    setBulkResolveNotes("");
+  const handleBulkResolve = async () => {
+    if (store.selectedEventIds.size === 0) return;
+    try {
+      await store.bulkResolveEvents(Array.from(store.selectedEventIds), bulkResolveNotes.trim() || undefined);
+      setBulkResolveNotes("");
+    } catch (e) {
+      setDisplayError(getErrorMessage(e));
+    }
   };
 
   // Get unresolved events for select all
-  const unresolvedEvents = events.filter((e) => !e.resolved);
+  const unresolvedEvents = store.events.filter((e) => !e.resolved);
   const allUnresolvedSelected =
-    unresolvedEvents.length > 0 && unresolvedEvents.every((e) => selectedEventIds.has(e.id));
-  const someSelected = selectedEventIds.size > 0;
+    unresolvedEvents.length > 0 && unresolvedEvents.every((e) => store.selectedEventIds.has(e.id));
+  const someSelected = store.selectedEventIds.size > 0;
 
-  const handleConfigToggle = (key: keyof SecurityConfig, value: boolean) => {
-    updateConfig({ [key]: value });
+  const handleConfigToggle = async (key: keyof SecurityConfig, value: boolean) => {
+    try {
+      await store.updateConfig({ [key]: value });
+    } catch (e) {
+      setDisplayError(getErrorMessage(e));
+    }
   };
 
-  const handleConfigNumber = (key: keyof SecurityConfig, value: number) => {
-    updateConfig({ [key]: value });
+  const handleConfigNumber = async (key: keyof SecurityConfig, value: number) => {
+    try {
+      await store.updateConfig({ [key]: value });
+    } catch (e) {
+      setDisplayError(getErrorMessage(e));
+    }
   };
 
   return (
@@ -356,7 +313,7 @@ export default function SecuritySettingsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.active_sessions ?? 0}
+              {store.isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : store.stats?.activeSessions ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">Currently logged in</p>
           </CardContent>
@@ -369,7 +326,7 @@ export default function SecuritySettingsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.blocked_attempts_24h ?? 0}
+              {store.isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : store.stats?.blockedAttempts24h ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">Access denied</p>
           </CardContent>
@@ -382,7 +339,7 @@ export default function SecuritySettingsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.unresolved_events ?? 0}
+              {store.isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : store.stats?.unresolvedEvents ?? 0}
             </div>
             <p className="text-xs text-muted-foreground">Needs review</p>
           </CardContent>
@@ -390,27 +347,27 @@ export default function SecuritySettingsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">VPN Flagged (24h)</CardTitle>
+            <CardTitle className="text-sm font-medium">Flagged Sessions</CardTitle>
             <WifiOff className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.vpn_flagged_24h ?? 0}
+              {store.isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : store.stats?.flaggedSessions ?? 0}
             </div>
-            <p className="text-xs text-muted-foreground">VPN detected</p>
+            <p className="text-xs text-muted-foreground">VPN/Proxy flagged</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Proxy Flagged (24h)</CardTitle>
-            <Globe className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
+            <Globe className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.proxy_flagged_24h ?? 0}
+              {store.isLoadingStats ? <Loader2 className="h-6 w-6 animate-spin" /> : store.stats?.uniqueUsers ?? 0}
             </div>
-            <p className="text-xs text-muted-foreground">Proxy detected</p>
+            <p className="text-xs text-muted-foreground">Active users</p>
           </CardContent>
         </Card>
       </div>
@@ -454,17 +411,17 @@ export default function SecuritySettingsPage() {
             </CardTitle>
             <CardDescription>Monitor and manage active admin sessions</CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetchSessions()}>
+          <Button variant="outline" size="sm" onClick={() => store.fetchSessions()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoadingSessions ? (
+          {store.isLoadingSessions ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : sessions.length === 0 ? (
+          ) : store.sessions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No active sessions</div>
           ) : (
             <Table>
@@ -480,16 +437,16 @@ export default function SecuritySettingsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sessions.map((session) => (
+                {store.sessions.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell className="font-medium">{session.userEmail || "Unknown"}</TableCell>
                     <TableCell className="font-mono text-sm">{session.ipAddress}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3 text-muted-foreground" />
-                        {session.city && session.countryCode
-                          ? `${session.city}, ${session.countryCode}`
-                          : session.countryCode || "Unknown"}
+                        {session.city && session.country
+                          ? `${session.city}, ${session.country}`
+                          : session.country || "Unknown"}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -514,12 +471,12 @@ export default function SecuritySettingsPage() {
                         {session.flaggedProxy && (
                           <Badge variant="destructive" className="text-xs">Proxy</Badge>
                         )}
-                        {session.fraudScore !== null && session.fraudScore >= 75 && (
+                        {session.fraudScore != null && session.fraudScore >= 75 && (
                           <Badge variant="destructive" className="text-xs">
                             Risk: {session.fraudScore}
                           </Badge>
                         )}
-                        {!session.flaggedVpn && !session.flaggedProxy && (session.fraudScore === null || session.fraudScore < 75) && (
+                        {!session.flaggedVpn && !session.flaggedProxy && (session.fraudScore == null || session.fraudScore < 75) && (
                           <Badge variant="outline" className="text-xs text-green-600">Clean</Badge>
                         )}
                       </div>
@@ -528,8 +485,8 @@ export default function SecuritySettingsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openRevokeDialog(session)}
-                        disabled={isRevoking}
+                        onClick={() => store.openRevokeDialog(session)}
+                        disabled={store.isRevoking}
                       >
                         <XCircle className="h-4 w-4 text-red-500" />
                       </Button>
@@ -552,13 +509,13 @@ export default function SecuritySettingsPage() {
             </CardTitle>
             <CardDescription>Manage IP allowlist and blocklist</CardDescription>
           </div>
-          <Button onClick={openAddIpDialog}>
+          <Button onClick={store.openAddIpDialog}>
             <Plus className="h-4 w-4 mr-2" />
             Add IP
           </Button>
         </CardHeader>
         <CardContent>
-          <Tabs value={ipListTab} onValueChange={(v) => setIpListTab(v as "ALLOWLIST" | "BLOCKLIST")}>
+          <Tabs value={store.ipListTab} onValueChange={(v) => store.setIpListTab(v as "ALLOWLIST" | "BLOCKLIST")}>
             <TabsList className="mb-4">
               <TabsTrigger value="ALLOWLIST" className="gap-2">
                 <ShieldCheck className="h-4 w-4 text-green-500" />
@@ -570,14 +527,14 @@ export default function SecuritySettingsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value={ipListTab}>
-              {isLoadingIpList ? (
+            <TabsContent value={store.ipListTab}>
+              {store.isLoadingIpList ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : ipList.length === 0 ? (
+              ) : filteredIpList.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No IPs in {ipListTab.toLowerCase()}
+                  No IPs in {store.ipListTab.toLowerCase()}
                 </div>
               ) : (
                 <Table>
@@ -591,7 +548,7 @@ export default function SecuritySettingsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {ipList.map((entry) => (
+                    {filteredIpList.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell className="font-mono">{entry.ipAddress}</TableCell>
                         <TableCell>{entry.reason || "-"}</TableCell>
@@ -605,7 +562,7 @@ export default function SecuritySettingsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeIp(entry.id)}
+                            onClick={() => store.removeIpFromList(entry.id)}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -634,18 +591,18 @@ export default function SecuritySettingsPage() {
             {someSelected && (
               <>
                 <span className="text-sm text-muted-foreground">
-                  {selectedEventIds.size} selected
+                  {store.selectedEventIds.size} selected
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={clearEventSelection}
+                  onClick={store.clearEventSelection}
                 >
                   Clear
                 </Button>
                 <Button
                   size="sm"
-                  onClick={openBulkResolveDialog}
+                  onClick={store.openBulkResolveDialog}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
@@ -653,7 +610,7 @@ export default function SecuritySettingsPage() {
                 </Button>
               </>
             )}
-            <Select value={eventFilter} onValueChange={(v) => setEventFilter(v as "all" | "unresolved")}>
+            <Select value={store.eventFilter} onValueChange={(v) => store.setEventFilter(v as "all" | "unresolved")}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
@@ -662,17 +619,17 @@ export default function SecuritySettingsPage() {
                 <SelectItem value="all">All Events</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" onClick={() => refetchEvents()}>
+            <Button variant="outline" size="sm" onClick={() => store.fetchEvents({ limit: 50, resolved: store.eventFilter === "all" ? undefined : false })}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {isLoadingEvents ? (
+          {store.isLoadingEvents ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : events.length === 0 ? (
+          ) : store.events.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               No security events
             </div>
@@ -685,9 +642,9 @@ export default function SecuritySettingsPage() {
                       checked={allUnresolvedSelected && unresolvedEvents.length > 0}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          selectAllEvents(unresolvedEvents.map((e) => e.id));
+                          store.selectAllEvents(unresolvedEvents.map((e) => e.id));
                         } else {
-                          clearEventSelection();
+                          store.clearEventSelection();
                         }
                       }}
                       aria-label="Select all unresolved events"
@@ -704,14 +661,14 @@ export default function SecuritySettingsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {events.map((event) => (
+                {store.events.map((event) => (
                   <TableRow key={event.id}>
                     <TableCell>
                       {!event.resolved && (
                         <Checkbox
-                          checked={selectedEventIds.has(event.id)}
-                          onCheckedChange={() => toggleEventSelection(event.id)}
-                          aria-label={`Select event ${event.title}`}
+                          checked={store.selectedEventIds.has(event.id)}
+                          onCheckedChange={() => store.toggleEventSelection(event.id)}
+                          aria-label={`Select event ${event.description}`}
                         />
                       )}
                     </TableCell>
@@ -727,7 +684,7 @@ export default function SecuritySettingsPage() {
                     <TableCell className="font-mono text-sm">{event.ipAddress || "-"}</TableCell>
                     <TableCell className="text-sm">{event.userEmail || "-"}</TableCell>
                     <TableCell className="max-w-[300px] truncate" title={event.description || ""}>
-                      {event.title}
+                      {event.description}
                     </TableCell>
                     <TableCell>
                       {event.resolved ? (
@@ -747,7 +704,7 @@ export default function SecuritySettingsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => openResolveDialog(event)}
+                          onClick={() => store.openResolveDialog(event)}
                         >
                           <CheckCircle className="h-4 w-4 text-green-500" />
                         </Button>
@@ -771,11 +728,11 @@ export default function SecuritySettingsPage() {
           <CardDescription>Configure IP intelligence and session security settings</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoadingConfig ? (
+          {store.isLoadingConfig ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : config ? (
+          ) : store.config ? (
             <div className="grid gap-6 md:grid-cols-2">
               {/* Blocking Settings */}
               <div className="space-y-4">
@@ -783,73 +740,73 @@ export default function SecuritySettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Block VPN</Label>
-                    <p className="text-sm text-muted-foreground">Block users connecting via VPN</p>
+                    <Label>Enable VPN Detection</Label>
+                    <p className="text-sm text-muted-foreground">Detect and flag VPN connections</p>
                   </div>
                   <Switch
-                    checked={config.block_vpn}
-                    onCheckedChange={(v) => handleConfigToggle("block_vpn", v)}
-                    disabled={isSavingConfig}
+                    checked={store.config.enableVpnDetection}
+                    onCheckedChange={(v) => handleConfigToggle("enableVpnDetection", v)}
+                    disabled={store.isSavingConfig}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Block Proxy</Label>
-                    <p className="text-sm text-muted-foreground">Block proxy connections</p>
+                    <Label>Enable Proxy Detection</Label>
+                    <p className="text-sm text-muted-foreground">Detect and flag proxy connections</p>
                   </div>
                   <Switch
-                    checked={config.block_proxy}
-                    onCheckedChange={(v) => handleConfigToggle("block_proxy", v)}
-                    disabled={isSavingConfig}
+                    checked={store.config.enableProxyDetection}
+                    onCheckedChange={(v) => handleConfigToggle("enableProxyDetection", v)}
+                    disabled={store.isSavingConfig}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Block Datacenter IPs</Label>
-                    <p className="text-sm text-muted-foreground">Block datacenter/cloud IPs</p>
+                    <Label>Enable IP Blocking</Label>
+                    <p className="text-sm text-muted-foreground">Enforce blocklist rules</p>
                   </div>
                   <Switch
-                    checked={config.block_datacenter}
-                    onCheckedChange={(v) => handleConfigToggle("block_datacenter", v)}
-                    disabled={isSavingConfig}
+                    checked={store.config.enableIpBlocking}
+                    onCheckedChange={(v) => handleConfigToggle("enableIpBlocking", v)}
+                    disabled={store.isSavingConfig}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Block Tor</Label>
-                    <p className="text-sm text-muted-foreground">Block Tor exit nodes</p>
+                    <Label>Enable Rate Limiting</Label>
+                    <p className="text-sm text-muted-foreground">Limit request rates</p>
                   </div>
                   <Switch
-                    checked={config.block_tor}
-                    onCheckedChange={(v) => handleConfigToggle("block_tor", v)}
-                    disabled={isSavingConfig}
+                    checked={store.config.enableRateLimiting}
+                    onCheckedChange={(v) => handleConfigToggle("enableRateLimiting", v)}
+                    disabled={store.isSavingConfig}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Block Bots</Label>
-                    <p className="text-sm text-muted-foreground">Block known bot IPs</p>
+                    <Label>Enable Geo Blocking</Label>
+                    <p className="text-sm text-muted-foreground">Block by country</p>
                   </div>
                   <Switch
-                    checked={config.block_bots}
-                    onCheckedChange={(v) => handleConfigToggle("block_bots", v)}
-                    disabled={isSavingConfig}
+                    checked={store.config.enableGeoBlocking}
+                    onCheckedChange={(v) => handleConfigToggle("enableGeoBlocking", v)}
+                    disabled={store.isSavingConfig}
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Require Allowlist</Label>
-                    <p className="text-sm text-muted-foreground">Only allow IPs in allowlist</p>
+                    <Label>Enable Audit Log</Label>
+                    <p className="text-sm text-muted-foreground">Log all security events</p>
                   </div>
                   <Switch
-                    checked={config.require_allowlist}
-                    onCheckedChange={(v) => handleConfigToggle("require_allowlist", v)}
-                    disabled={isSavingConfig}
+                    checked={store.config.enableAuditLog}
+                    onCheckedChange={(v) => handleConfigToggle("enableAuditLog", v)}
+                    disabled={store.isSavingConfig}
                   />
                 </div>
               </div>
@@ -865,9 +822,9 @@ export default function SecuritySettingsPage() {
                     type="number"
                     min="0"
                     max="100"
-                    value={config.fraud_score_threshold}
-                    onChange={(e) => handleConfigNumber("fraud_score_threshold", parseInt(e.target.value) || 75)}
-                    disabled={isSavingConfig}
+                    value={store.config.fraudScoreThreshold}
+                    onChange={(e) => handleConfigNumber("fraudScoreThreshold", parseInt(e.target.value) || 75)}
+                    disabled={store.isSavingConfig}
                     className="w-24"
                   />
                 </div>
@@ -879,9 +836,9 @@ export default function SecuritySettingsPage() {
                     type="number"
                     min="5"
                     max="1440"
-                    value={config.session_timeout_minutes}
-                    onChange={(e) => handleConfigNumber("session_timeout_minutes", parseInt(e.target.value) || 30)}
-                    disabled={isSavingConfig}
+                    value={store.config.sessionTimeout}
+                    onChange={(e) => handleConfigNumber("sessionTimeout", parseInt(e.target.value) || 30)}
+                    disabled={store.isSavingConfig}
                     className="w-24"
                   />
                 </div>
@@ -893,22 +850,24 @@ export default function SecuritySettingsPage() {
                     type="number"
                     min="1"
                     max="10"
-                    value={config.max_sessions_per_user}
-                    onChange={(e) => handleConfigNumber("max_sessions_per_user", parseInt(e.target.value) || 5)}
-                    disabled={isSavingConfig}
+                    value={store.config.maxSessionsPerUser}
+                    onChange={(e) => handleConfigNumber("maxSessionsPerUser", parseInt(e.target.value) || 5)}
+                    disabled={store.isSavingConfig}
                     className="w-24"
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-4">
-                  <div>
-                    <Label>IPQualityScore Enabled</Label>
-                    <p className="text-sm text-muted-foreground">Enable IP intelligence API</p>
-                  </div>
-                  <Switch
-                    checked={config.ipqs_enabled}
-                    onCheckedChange={(v) => handleConfigToggle("ipqs_enabled", v)}
-                    disabled={isSavingConfig}
+                <div className="space-y-2">
+                  <Label>Rate Limit (requests)</Label>
+                  <p className="text-sm text-muted-foreground">Maximum requests per window</p>
+                  <Input
+                    type="number"
+                    min="10"
+                    max="1000"
+                    value={store.config.rateLimitRequests}
+                    onChange={(e) => handleConfigNumber("rateLimitRequests", parseInt(e.target.value) || 100)}
+                    disabled={store.isSavingConfig}
+                    className="w-24"
                   />
                 </div>
               </div>
@@ -918,30 +877,24 @@ export default function SecuritySettingsPage() {
       </Card>
 
       {/* Revoke Session Confirmation */}
-      <AlertDialog open={isRevokeDialogOpen} onOpenChange={(open) => !open && closeRevokeDialog()}>
+      <AlertDialog open={store.isRevokeDialogOpen} onOpenChange={(open) => !open && store.closeRevokeDialog()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke Session</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to revoke the session for{" "}
-              <strong>{sessionToRevoke?.userEmail}</strong>?
+              <strong>{store.sessionToRevoke?.userEmail}</strong>?
               This will force them to log in again.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {revokeError && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
-              <AlertCircle className="h-4 w-4" />
-              {getErrorMessage(revokeError)}
-            </div>
-          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRevokeSession}
               className="bg-red-600 hover:bg-red-700"
-              disabled={isRevoking}
+              disabled={store.isRevoking}
             >
-              {isRevoking ? (
+              {store.isRevoking ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Revoking...
@@ -955,25 +908,19 @@ export default function SecuritySettingsPage() {
       </AlertDialog>
 
       {/* Add IP Dialog */}
-      <Dialog open={isAddIpDialogOpen} onOpenChange={(open) => !open && closeAddIpDialog()}>
+      <Dialog open={store.isAddIpDialogOpen} onOpenChange={(open) => !open && store.closeAddIpDialog()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Add IP to {ipListTab === "ALLOWLIST" ? "Allowlist" : "Blocklist"}
+              Add IP to {store.ipListTab === "ALLOWLIST" ? "Allowlist" : "Blocklist"}
             </DialogTitle>
             <DialogDescription>
-              {ipListTab === "ALLOWLIST"
+              {store.ipListTab === "ALLOWLIST"
                 ? "IPs in the allowlist will always be allowed access."
                 : "IPs in the blocklist will always be denied access."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {addIpError && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
-                <AlertCircle className="h-4 w-4" />
-                {getErrorMessage(addIpError)}
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="ip-address">IP Address</Label>
               <Input
@@ -994,11 +941,11 @@ export default function SecuritySettingsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeAddIpDialog}>
+            <Button variant="outline" onClick={store.closeAddIpDialog}>
               Cancel
             </Button>
-            <Button onClick={handleAddIp} disabled={isAddingIp || !newIpAddress.trim()}>
-              {isAddingIp ? (
+            <Button onClick={handleAddIp} disabled={store.isAddingIp || !newIpAddress.trim()}>
+              {store.isAddingIp ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Adding...
@@ -1012,7 +959,7 @@ export default function SecuritySettingsPage() {
       </Dialog>
 
       {/* Resolve Event Dialog */}
-      <Dialog open={isResolveDialogOpen} onOpenChange={(open) => !open && closeResolveDialog()}>
+      <Dialog open={store.isResolveDialogOpen} onOpenChange={(open) => !open && store.closeResolveDialog()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Resolve Security Event</DialogTitle>
@@ -1021,10 +968,10 @@ export default function SecuritySettingsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {eventToResolve && (
+            {store.eventToResolve && (
               <div className="p-3 bg-muted rounded-lg">
-                <p className="font-medium">{eventToResolve.title}</p>
-                <p className="text-sm text-muted-foreground">{eventToResolve.description}</p>
+                <p className="font-medium">{store.eventToResolve.eventType}</p>
+                <p className="text-sm text-muted-foreground">{store.eventToResolve.description}</p>
               </div>
             )}
             <div className="space-y-2">
@@ -1038,7 +985,7 @@ export default function SecuritySettingsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeResolveDialog}>
+            <Button variant="outline" onClick={store.closeResolveDialog}>
               Cancel
             </Button>
             <Button onClick={handleResolveEvent} className="bg-green-600 hover:bg-green-700">
@@ -1050,21 +997,15 @@ export default function SecuritySettingsPage() {
       </Dialog>
 
       {/* Bulk Resolve Dialog */}
-      <Dialog open={isBulkResolveDialogOpen} onOpenChange={(open) => !open && closeBulkResolveDialog()}>
+      <Dialog open={store.isBulkResolveDialogOpen} onOpenChange={(open) => !open && store.closeBulkResolveDialog()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Bulk Resolve Security Events</DialogTitle>
             <DialogDescription>
-              Mark {selectedEventIds.size} selected event{selectedEventIds.size !== 1 ? "s" : ""} as resolved.
+              Mark {store.selectedEventIds.size} selected event{store.selectedEventIds.size !== 1 ? "s" : ""} as resolved.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {bulkResolveError && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
-                <AlertCircle className="h-4 w-4" />
-                {getErrorMessage(bulkResolveError)}
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="bulk-resolve-notes">Resolution Notes (optional)</Label>
               <Textarea
@@ -1076,15 +1017,15 @@ export default function SecuritySettingsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeBulkResolveDialog}>
+            <Button variant="outline" onClick={store.closeBulkResolveDialog}>
               Cancel
             </Button>
             <Button
               onClick={handleBulkResolve}
-              disabled={isBulkResolving || selectedEventIds.size === 0}
+              disabled={store.isBulkResolving || store.selectedEventIds.size === 0}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isBulkResolving ? (
+              {store.isBulkResolving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Resolving...
@@ -1092,7 +1033,7 @@ export default function SecuritySettingsPage() {
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Resolve {selectedEventIds.size} Event{selectedEventIds.size !== 1 ? "s" : ""}
+                  Resolve {store.selectedEventIds.size} Event{store.selectedEventIds.size !== 1 ? "s" : ""}
                 </>
               )}
             </Button>

@@ -3835,14 +3835,14 @@ export async function getActiveSessions(): Promise<ActiveSessionsResponse> {
 }
 
 export async function revokeSession(id: string, reason?: string): Promise<{ id: string; revoked: boolean; message: string }> {
-  return apiFetch<{ id: string; revoked: boolean; message: string }>(\`/admin/security/sessions/\${id}\`, {
+  return apiFetch<{ id: string; revoked: boolean; message: string }>(`/admin/security/sessions/${id}`, {
     method: "DELETE",
     body: JSON.stringify({ reason }),
   });
 }
 
 export async function revokeAllUserSessions(userId: string, reason?: string): Promise<{ userId: string; revokedCount: number; message: string }> {
-  return apiFetch<{ userId: string; revokedCount: number; message: string }>(\`/admin/security/sessions/user/\${userId}\`, {
+  return apiFetch<{ userId: string; revokedCount: number; message: string }>(`/admin/security/sessions/user/${userId}`, {
     method: "DELETE",
     body: JSON.stringify({ reason }),
   });
@@ -3850,8 +3850,8 @@ export async function revokeAllUserSessions(userId: string, reason?: string): Pr
 
 // IP List
 export async function getIpList(listType?: "ALLOWLIST" | "BLOCKLIST"): Promise<IpListResponse> {
-  const query = listType ? \`?list_type=\${listType}\` : "";
-  return apiFetch<IpListResponse>(\`/admin/security/ip-list\${query}\`);
+  const query = listType ? `?list_type=${listType}` : "";
+  return apiFetch<IpListResponse>(`/admin/security/ip-list${query}`);
 }
 
 export async function addIpToList(data: AddIpToListInput): Promise<{ entry: IpListEntry }> {
@@ -3862,7 +3862,7 @@ export async function addIpToList(data: AddIpToListInput): Promise<{ entry: IpLi
 }
 
 export async function removeIpFromList(id: string): Promise<{ id: string; deleted: boolean }> {
-  return apiFetch<{ id: string; deleted: boolean }>(\`/admin/security/ip-list/\${id}\`, {
+  return apiFetch<{ id: string; deleted: boolean }>(`/admin/security/ip-list/${id}`, {
     method: "DELETE",
   });
 }
@@ -3881,11 +3881,11 @@ export async function getSecurityEvents(params?: {
   if (params?.event_type) query.set("event_type", params.event_type);
   if (params?.severity) query.set("severity", params.severity);
   if (params?.resolved !== undefined) query.set("resolved", params.resolved.toString());
-  return apiFetch<SecurityEventsResponse>(\`/admin/security/events\${query.toString() ? \`?\${query}\` : ""}\`);
+  return apiFetch<SecurityEventsResponse>(`/admin/security/events${query.toString() ? `?${query}` : ""}`);
 }
 
 export async function resolveSecurityEvent(id: string, notes?: string): Promise<{ event: SecurityEvent }> {
-  return apiFetch<{ event: SecurityEvent }>(\`/admin/security/events/\${id}/resolve\`, {
+  return apiFetch<{ event: SecurityEvent }>(`/admin/security/events/${id}/resolve`, {
     method: "POST",
     body: JSON.stringify({ notes }),
   });
