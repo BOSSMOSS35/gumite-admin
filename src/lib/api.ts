@@ -3708,3 +3708,212 @@ export async function resetNotificationPreferences(): Promise<PreferencesRespons
     method: "POST",
   });
 }
+
+// ============================================================================
+// Security Dashboard API
+// ============================================================================
+
+// Types
+export interface SecuritySession {
+  id: string;
+  userId: string;
+  userEmail: string | null;
+  ipAddress: string;
+  userAgent: string | null;
+  deviceType: string | null;
+  browser: string | null;
+  os: string | null;
+  countryCode: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  status: "ACTIVE" | "EXPIRED" | "REVOKED";
+  flaggedVpn: boolean;
+  flaggedProxy: boolean;
+  fraudScore: number | null;
+  lastActivityAt: string;
+  createdAt: string;
+}
+
+export interface ActiveSessionsResponse {
+  sessions: SecuritySession[];
+  count: number;
+}
+
+export interface IpListEntry {
+  id: string;
+  ipAddress: string;
+  listType: "ALLOWLIST" | "BLOCKLIST";
+  reason: string | null;
+  expiresAt: string | null;
+  addedByUserId: string | null;
+  createdAt: string;
+}
+
+export interface IpListResponse {
+  entries: IpListEntry[];
+  count: number;
+}
+
+export interface SecurityEvent {
+  id: string;
+  eventType: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  ipAddress: string | null;
+  userId: string | null;
+  userEmail: string | null;
+  title: string;
+  description: string | null;
+  countryCode: string | null;
+  city: string | null;
+  fraudScore: number | null;
+  isVpn: boolean | null;
+  isProxy: boolean | null;
+  details: Record<string, unknown> | null;
+  resolved: boolean;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  resolutionNotes: string | null;
+  createdAt: string;
+}
+
+export interface SecurityEventsResponse {
+  events: SecurityEvent[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export interface SecurityConfig {
+  block_vpn: boolean;
+  block_proxy: boolean;
+  block_datacenter: boolean;
+  block_tor: boolean;
+  block_bots: boolean;
+  fraud_score_threshold: number;
+  session_timeout_minutes: number;
+  max_sessions_per_user: number;
+  ipqs_enabled: boolean;
+  require_allowlist: boolean;
+}
+
+export interface SecurityConfigResponse {
+  config: SecurityConfig;
+}
+
+export interface SecurityStats {
+  active_sessions: number;
+  blocked_attempts_24h: number;
+  unresolved_events: number;
+  vpn_flagged_24h: number;
+  proxy_flagged_24h: number;
+}
+
+export interface AddIpToListInput {
+  ipAddress: string;
+  listType: "ALLOWLIST" | "BLOCKLIST";
+  reason?: string;
+  expiresAt?: string;
+}
+
+export interface UpdateSecurityConfigInput {
+  block_vpn?: boolean;
+  block_proxy?: boolean;
+  block_datacenter?: boolean;
+  block_tor?: boolean;
+  block_bots?: boolean;
+  fraud_score_threshold?: number;
+  session_timeout_minutes?: number;
+  max_sessions_per_user?: number;
+  ipqs_enabled?: boolean;
+  require_allowlist?: boolean;
+}
+
+// Sessions
+export async function getActiveSessions(): Promise<ActiveSessionsResponse> {
+  return apiFetch<ActiveSessionsResponse>("/admin/security/sessions");
+}
+
+export async function revokeSession(id: string, reason?: string): Promise<{ id: string; revoked: boolean; message: string }> {
+  return apiFetch<{ id: string; revoked: boolean; message: string }>(\`/admin/security/sessions/\${id}\`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function revokeAllUserSessions(userId: string, reason?: string): Promise<{ userId: string; revokedCount: number; message: string }> {
+  return apiFetch<{ userId: string; revokedCount: number; message: string }>(\`/admin/security/sessions/user/\${userId}\`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// IP List
+export async function getIpList(listType?: "ALLOWLIST" | "BLOCKLIST"): Promise<IpListResponse> {
+  const query = listType ? \`?list_type=\${listType}\` : "";
+  return apiFetch<IpListResponse>(\`/admin/security/ip-list\${query}\`);
+}
+
+export async function addIpToList(data: AddIpToListInput): Promise<{ entry: IpListEntry }> {
+  return apiFetch<{ entry: IpListEntry }>("/admin/security/ip-list", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function removeIpFromList(id: string): Promise<{ id: string; deleted: boolean }> {
+  return apiFetch<{ id: string; deleted: boolean }>(\`/admin/security/ip-list/\${id}\`, {
+    method: "DELETE",
+  });
+}
+
+// Security Events
+export async function getSecurityEvents(params?: {
+  limit?: number;
+  offset?: number;
+  event_type?: string;
+  severity?: string;
+  resolved?: boolean;
+}): Promise<SecurityEventsResponse> {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", params.limit.toString());
+  if (params?.offset) query.set("offset", params.offset.toString());
+  if (params?.event_type) query.set("event_type", params.event_type);
+  if (params?.severity) query.set("severity", params.severity);
+  if (params?.resolved !== undefined) query.set("resolved", params.resolved.toString());
+  return apiFetch<SecurityEventsResponse>(\`/admin/security/events\${query.toString() ? \`?\${query}\` : ""}\`);
+}
+
+export async function resolveSecurityEvent(id: string, notes?: string): Promise<{ event: SecurityEvent }> {
+  return apiFetch<{ event: SecurityEvent }>(\`/admin/security/events/\${id}/resolve\`, {
+    method: "POST",
+    body: JSON.stringify({ notes }),
+  });
+}
+
+export async function bulkResolveSecurityEvents(
+  ids: string[],
+  notes?: string
+): Promise<{ resolvedCount: number; failedIds: string[] }> {
+  return apiFetch<{ resolvedCount: number; failedIds: string[] }>("/admin/security/events/bulk-resolve", {
+    method: "POST",
+    body: JSON.stringify({ eventIds: ids, notes }),
+  });
+}
+
+// Security Config
+export async function getSecurityConfig(): Promise<SecurityConfigResponse> {
+  return apiFetch<SecurityConfigResponse>("/admin/security/config");
+}
+
+export async function updateSecurityConfig(data: UpdateSecurityConfigInput): Promise<SecurityConfigResponse> {
+  return apiFetch<SecurityConfigResponse>("/admin/security/config", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+// Security Stats
+export async function getSecurityStats(): Promise<SecurityStats> {
+  return apiFetch<SecurityStats>("/admin/security/stats");
+}
