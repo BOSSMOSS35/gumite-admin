@@ -1,0 +1,42 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/auth-context";
+import { AppShell } from "@/components/app-shell";
+import { KeyboardShortcutsProvider } from "@/contexts/keyboard-shortcuts-context";
+import { Providers } from "@/components/providers";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: "Gumite Admin",
+    template: "%s | Gumite Admin",
+  },
+  description: "Admin dashboard for Gumite luxury fashion resale platform",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <Providers>
+          <AuthProvider>
+            <KeyboardShortcutsProvider>
+              <AppShell>{children}</AppShell>
+            </KeyboardShortcutsProvider>
+          </AuthProvider>
+        </Providers>
+        <Toaster />
+      </body>
+    </html>
+  );
+}
