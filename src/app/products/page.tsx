@@ -68,17 +68,18 @@ import {
   type ProductStatus,
   type ProductCategory,
 } from "@/lib/api";
+import { toast } from "sonner";
 
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
     case "published":
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Published</Badge>;
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300 hover:bg-green-100">Published</Badge>;
     case "draft":
-      return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Draft</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300 hover:bg-gray-100">Draft</Badge>;
     case "proposed":
-      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Proposed</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300 hover:bg-yellow-100">Proposed</Badge>;
     case "rejected":
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
+      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300 hover:bg-red-100">Rejected</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -146,6 +147,7 @@ export default function ProductsPage() {
       setCategories(response.categories || []);
     } catch (err) {
       console.error("Failed to load categories:", err);
+      toast.error("Failed to load categories");
     }
   };
 
@@ -276,7 +278,7 @@ export default function ProductsPage() {
         <CardContent>
           {/* Error State */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
               <Button variant="ghost" size="sm" onClick={fetchProducts} className="ml-auto">

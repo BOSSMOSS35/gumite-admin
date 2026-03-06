@@ -84,6 +84,7 @@ import { SendEmailDialog } from "@/components/customers/SendEmailDialog";
 import { SendGiftCardDialog } from "@/components/customers/SendGiftCardDialog";
 import { SuspendCustomerDialog } from "@/components/customers/SuspendCustomerDialog";
 import { ChangeTierDialog } from "@/components/customers/ChangeTierDialog";
+import { toast } from "sonner";
 
 function getTierBadge(tier: string) {
   const display = getTierDisplay(tier as "BRONZE" | "SILVER" | "GOLD" | "PLATINUM");
@@ -104,15 +105,15 @@ function getStatusBadge(status: string) {
 
 function getFulfillmentStatusBadge(status: FulfillmentStatus) {
   const styles: Record<string, string> = {
-    NOT_FULFILLED: "bg-gray-100 text-gray-800",
-    PARTIALLY_FULFILLED: "bg-yellow-100 text-yellow-800",
-    FULFILLED: "bg-blue-100 text-blue-800",
-    PARTIALLY_SHIPPED: "bg-purple-100 text-purple-800",
-    SHIPPED: "bg-purple-100 text-purple-800",
-    PARTIALLY_RETURNED: "bg-orange-100 text-orange-800",
-    RETURNED: "bg-orange-100 text-orange-800",
-    CANCELED: "bg-red-100 text-red-800",
-    REQUIRES_ACTION: "bg-yellow-100 text-yellow-800",
+    NOT_FULFILLED: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300",
+    PARTIALLY_FULFILLED: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
+    FULFILLED: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300",
+    PARTIALLY_SHIPPED: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
+    SHIPPED: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
+    PARTIALLY_RETURNED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
+    RETURNED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
+    CANCELED: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300",
+    REQUIRES_ACTION: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
   };
   const labels: Record<string, string> = {
     NOT_FULFILLED: "Not Fulfilled",
@@ -125,20 +126,20 @@ function getFulfillmentStatusBadge(status: FulfillmentStatus) {
     CANCELED: "Canceled",
     REQUIRES_ACTION: "Action Required",
   };
-  return <Badge className={styles[status] || "bg-gray-100 text-gray-800"}>{labels[status] || status}</Badge>;
+  return <Badge className={styles[status] || "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300"}>{labels[status] || status}</Badge>;
 }
 
 function getPaymentStatusBadge(status: PaymentStatus) {
   const styles: Record<string, string> = {
-    NOT_PAID: "bg-gray-100 text-gray-800",
-    AWAITING: "bg-yellow-100 text-yellow-800",
-    CAPTURED: "bg-green-100 text-green-800",
-    PAID: "bg-green-100 text-green-800",
-    PARTIALLY_REFUNDED: "bg-orange-100 text-orange-800",
-    REFUNDED: "bg-orange-100 text-orange-800",
-    CANCELED: "bg-red-100 text-red-800",
-    REQUIRES_ACTION: "bg-yellow-100 text-yellow-800",
-    PARTIALLY_PAID: "bg-blue-100 text-blue-800",
+    NOT_PAID: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300",
+    AWAITING: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
+    CAPTURED: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300",
+    PAID: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300",
+    PARTIALLY_REFUNDED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
+    REFUNDED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
+    CANCELED: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300",
+    REQUIRES_ACTION: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
+    PARTIALLY_PAID: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300",
   };
   const labels: Record<string, string> = {
     NOT_PAID: "Not Paid",
@@ -151,7 +152,7 @@ function getPaymentStatusBadge(status: PaymentStatus) {
     REQUIRES_ACTION: "Action Required",
     PARTIALLY_PAID: "Partial",
   };
-  return <Badge className={styles[status] || "bg-gray-100 text-gray-800"}>{labels[status] || status}</Badge>;
+  return <Badge className={styles[status] || "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300"}>{labels[status] || status}</Badge>;
 }
 
 function getActivityIcon(type: CustomerActivityType) {
@@ -261,8 +262,9 @@ export default function CustomerDetailPage() {
       await activateCustomer(customer.id);
       fetchCustomer();
       fetchActivity();
+      toast.success(customer.status === "ACTIVE" ? "Customer deactivated" : "Customer activated");
     } catch (err) {
-      console.error("Failed to activate customer:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to activate customer");
     }
   };
 
@@ -280,8 +282,9 @@ export default function CustomerDetailPage() {
       setNewNote("");
       fetchCustomer();
       fetchActivity();
+      toast.success("Note saved");
     } catch (err) {
-      console.error("Failed to save note:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to save note");
     } finally {
       setSavingNote(false);
     }
@@ -590,7 +593,7 @@ export default function CustomerDetailPage() {
                         >
                           <div className="flex items-center gap-2 mb-3">
                             {address.isDefault && (
-                              <Badge className="bg-green-100 text-green-800">Default</Badge>
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Default</Badge>
                             )}
                           </div>
                           <div className="text-sm space-y-1">

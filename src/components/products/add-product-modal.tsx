@@ -1088,7 +1088,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
           {/* Footer */}
           <div className="flex flex-col border-t">
             {error && (
-              <div className="flex items-center gap-2 px-6 py-2 bg-red-50 text-red-700 text-sm">
+              <div className="flex items-center gap-2 px-6 py-2 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 text-sm">
                 <span>{error}</span>
                 <button
                   onClick={() => setError(null)}

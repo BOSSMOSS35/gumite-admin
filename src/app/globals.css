@@ -128,6 +128,29 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Force light theme variables on specific pages (e.g. login) regardless of system theme */
+.force-light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  color-scheme: light;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -212,7 +235,7 @@
 
   /* Keyboard shortcut key styling */
   .kbd {
-    @apply inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-mono font-medium rounded border bg-muted shadow-sm min-w-[1.5rem];
+    @apply inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-mono font-medium rounded border border-border bg-muted text-foreground shadow-sm min-w-[1.5rem];
   }
 }
 

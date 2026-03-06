@@ -72,6 +72,7 @@ import {
   type InventoryMovement,
   type MovementType,
 } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 type AdjustmentType = "add" | "remove" | "adjust";
@@ -104,11 +105,11 @@ function getStockStatus(available: number, stocked: number) {
 function getStatusBadge(status: string) {
   switch (status) {
     case "in_stock":
-      return <Badge className="bg-green-100 text-green-800">In Stock</Badge>;
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">In Stock</Badge>;
     case "low_stock":
-      return <Badge className="bg-yellow-100 text-yellow-800">Low Stock</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300">Low Stock</Badge>;
     case "out_of_stock":
-      return <Badge className="bg-red-100 text-red-800">Out of Stock</Badge>;
+      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300">Out of Stock</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -272,8 +273,47 @@ export default function InventoryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="flex items-center gap-4 p-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <Skeleton className="h-10 w-64" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -300,7 +340,7 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={fetchData}>
+          <Button variant="outline" className="gap-2" onClick={() => { fetchData(); toast.success("Inventory refreshed"); }}>
             <RefreshCcw className="h-4 w-4" />
             Refresh
           </Button>

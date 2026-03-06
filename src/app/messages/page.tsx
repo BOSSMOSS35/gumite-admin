@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,10 @@ import {
   MessageSquare,
   Inbox,
   Users,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // Mock data
 const conversations = [
@@ -168,11 +170,11 @@ const messageStats = [
 function getStatusBadge(status: string) {
   switch (status) {
     case "open":
-      return <Badge className="bg-blue-100 text-blue-800">Open</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">Open</Badge>;
     case "pending":
-      return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300">Pending</Badge>;
     case "resolved":
-      return <Badge className="bg-green-100 text-green-800">Resolved</Badge>;
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Resolved</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -224,6 +226,23 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]);
   const [replyText, setReplyText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSendReply = useCallback(async () => {
+    if (!replyText.trim() || sending) return;
+
+    setSending(true);
+    try {
+      // TODO: Replace with actual API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      toast.success("Reply sent");
+      setReplyText("");
+    } catch (error) {
+      toast.error("Failed to send reply. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }, [replyText, sending]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-0">
@@ -342,12 +361,12 @@ export default function MessagesPage() {
                   </Link>
                 </Button>
               )}
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" aria-label="Star conversation">
                 <Star className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" aria-label="More options">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -432,7 +451,7 @@ export default function MessagesPage() {
           <div className="p-4 border-t">
             <div className="max-w-3xl mx-auto">
               <div className="flex gap-2">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Attach file">
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Textarea
@@ -451,9 +470,16 @@ export default function MessagesPage() {
                     Use Template
                   </Button>
                 </div>
-                <Button disabled={!replyText.trim()}>
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Reply
+                <Button
+                  disabled={!replyText.trim() || sending}
+                  onClick={handleSendReply}
+                >
+                  {sending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  {sending ? "Sending..." : "Send Reply"}
                 </Button>
               </div>
             </div>

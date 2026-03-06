@@ -24,6 +24,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   OrderSummary,
   PaymentStatus,
@@ -77,7 +78,9 @@ export default function DraftOrdersPage() {
       setOrders(response.orders);
       setPagination((prev) => ({ ...prev, count: response.count }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load draft orders");
+      const message = err instanceof Error ? err.message : "Failed to load draft orders";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -114,7 +117,7 @@ export default function DraftOrdersPage() {
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Draft Orders</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={fetchOrders} disabled={loading}>
+            <Button variant="outline" size="icon" aria-label="Refresh" onClick={fetchOrders} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
@@ -140,7 +143,7 @@ export default function DraftOrdersPage() {
 
           {/* Error State */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
               <Button variant="ghost" size="sm" onClick={fetchOrders} className="ml-auto">

@@ -71,6 +71,7 @@ import { SendEmailDialog } from "@/components/customers/SendEmailDialog";
 import { SendGiftCardDialog } from "@/components/customers/SendGiftCardDialog";
 import { SuspendCustomerDialog } from "@/components/customers/SuspendCustomerDialog";
 import { ChangeTierDialog } from "@/components/customers/ChangeTierDialog";
+import { toast } from "sonner";
 
 function getTierBadge(tier: CustomerTier) {
   const display = getTierDisplay(tier);
@@ -137,6 +138,7 @@ export default function CustomersPage() {
       setStats(statsData);
     } catch (err) {
       console.error("Failed to load stats:", err);
+      toast.error("Failed to load customer stats");
     }
   }, []);
 
@@ -162,22 +164,22 @@ export default function CustomersPage() {
   const customerStats = [
     {
       label: "Total Customers",
-      value: stats?.totalCustomers?.toLocaleString() ?? "...",
+      value: stats?.totalCustomers?.toLocaleString() ?? "\u2014",
       icon: Users,
     },
     {
       label: "VIP Members",
-      value: stats ? (stats.customersByTier?.GOLD ?? 0) + (stats.customersByTier?.PLATINUM ?? 0) : "...",
+      value: stats ? (stats.customersByTier?.GOLD ?? 0) + (stats.customersByTier?.PLATINUM ?? 0) : "\u2014",
       icon: Crown,
     },
     {
       label: "Active",
-      value: stats?.activeCustomers?.toLocaleString() ?? "...",
+      value: stats?.activeCustomers?.toLocaleString() ?? "\u2014",
       icon: CheckCircle,
     },
     {
       label: "Total Revenue",
-      value: stats ? formatPrice(stats.totalRevenue, "GBP") : "...",
+      value: stats ? formatPrice(stats.totalRevenue, "GBP") : "\u2014",
       icon: TrendingUp,
     },
   ];

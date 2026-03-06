@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,15 +25,11 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
 
-    console.log("[Login] Starting login...");
     const result = await login({ email, password, rememberMe });
-    console.log("[Login] Result:", result);
 
     if (result.success) {
-      console.log("[Login] Success! Redirecting to /");
       router.push("/");
     } else {
-      console.log("[Login] Failed:", result.error);
       setError(result.error || "Login failed");
     }
 
@@ -43,11 +39,11 @@ export default function LoginPage() {
   const isLoading = isSubmitting || authLoading;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="force-light relative flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-zinc-950 via-zinc-900 to-neutral-900 relative overflow-hidden">
         {/* Background pattern */}
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-full h-full" style={{
             backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
                              radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`
@@ -68,11 +64,25 @@ export default function LoginPage() {
           <div className="space-y-6">
             <h1 className="text-4xl font-bold text-white leading-tight">
               Welcome to your<br />
-              <span className="text-zinc-400">admin dashboard</span>
+              <span className="text-zinc-300">admin dashboard</span>
             </h1>
-            <p className="text-zinc-400 text-lg max-w-md">
+            <p className="text-zinc-300/90 text-lg max-w-md">
               Manage your products, orders, customers, and more from one central place.
             </p>
+            <div className="grid grid-cols-2 gap-3 max-w-md pt-2">
+              <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                Inventory sync
+              </div>
+              <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                Order ops
+              </div>
+              <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                Customer support
+              </div>
+              <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300">
+                Workflow tooling
+              </div>
+            </div>
           </div>
 
           {/* Footer */}
@@ -83,11 +93,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login form */}
-      <div className="flex flex-1 items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-[400px] space-y-8">
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12">
+        <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 justify-center mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900">
               <Store className="h-6 w-6 text-primary-foreground" />
             </div>
             <span className="text-xl font-semibold">Gumite</span>
@@ -117,25 +127,20 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@vernont.com"
+                  placeholder="admin@gumite.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   required
                   autoComplete="email"
                   autoFocus
+                  className="h-11 bg-white dark:bg-white"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
                 </div>
                 <Input
                   id="password"
@@ -146,6 +151,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                   required
                   autoComplete="current-password"
+                  className="h-11 bg-white dark:bg-white"
                 />
               </div>
 
@@ -167,7 +173,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11"
+              className="w-full h-11 font-medium"
               disabled={isLoading || !email || !password}
             >
               {isLoading ? (
@@ -185,7 +191,7 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted-foreground">
             Need help?{" "}
             <a
-              href="mailto:support@vernont.com"
+              href="mailto:support@gumite.com"
               className="text-foreground hover:underline"
             >
               Contact support

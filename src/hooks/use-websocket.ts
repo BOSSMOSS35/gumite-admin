@@ -27,13 +27,50 @@ interface PendingSubscription {
   resolve: (sub: StompSubscription | null) => void;
 }
 
+type ConnectionListener = (connected: boolean) => void;
+
+let sharedClient: Client | null = null;
+let sharedConnected = false;
+let sharedConnectPromise: Promise<void> | null = null;
+let activeHookCount = 0;
+const connectionListeners = new Set<ConnectionListener>();
+
+function notifyConnectionState(connected: boolean) {
+  sharedConnected = connected;
+  connectionListeners.forEach((listener) => listener(connected));
+}
+
+async function fetchWsToken(): Promise<string | null> {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/internal/auth/ws-token`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.token || null;
+  } catch {
+    return null;
+  }
+}
+
+function teardownSharedClient() {
+  if (!sharedClient) {
+    notifyConnectionState(false);
+    return;
+  }
+
+  const client = sharedClient;
+  sharedClient = null;
+  notifyConnectionState(false);
+  void client.deactivate();
+}
+
 export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
   const { autoConnect = true, reconnectDelay = 5000, debug = false } = options;
 
-  const [isConnected, setIsConnected] = useState(false);
-  const clientRef = useRef<Client | null>(null);
+  const [isConnected, setIsConnected] = useState(sharedConnected);
   const subscriptionsRef = useRef<Map<string, StompSubscription>>(new Map());
-  const wsTokenRef = useRef<string | null>(null);
   const pendingSubscriptionsRef = useRef<PendingSubscription[]>([]);
 
   const log = useCallback(
@@ -47,7 +84,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
   // Process any pending subscriptions once connected
   const processPendingSubscriptions = useCallback(() => {
-    const client = clientRef.current;
+    const client = sharedClient;
     if (!client?.connected) return;
 
     const pending = [...pendingSubscriptionsRef.current];
@@ -74,98 +111,85 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     });
   }, [log]);
 
-  // Fetch a WebSocket token from the backend (authenticated via HTTP-only cookie)
-  const fetchWsToken = useCallback(async (): Promise<string | null> => {
-    try {
-      const response = await fetch(`${API_URL}/api/v1/internal/auth/ws-token`, {
-        method: "POST",
-        credentials: "include", // Send HTTP-only cookies
-      });
-      if (response.ok) {
-        const data = await response.json();
-        return data.token || null;
-      }
-      log("Failed to fetch WS token:", response.status);
-      return null;
-    } catch (error) {
-      log("Error fetching WS token:", error);
-      return null;
-    }
-  }, [log]);
-
   const connect = useCallback(async () => {
-    if (clientRef.current?.active) {
+    if (sharedClient?.active || sharedClient?.connected) {
       log("Already connected or connecting");
       return;
     }
 
-    // Get WS token for authentication
-    const token = await fetchWsToken();
-    if (!token) {
-      log("No WS token available, cannot connect");
+    if (sharedConnectPromise) {
+      await sharedConnectPromise;
       return;
     }
-    wsTokenRef.current = token;
 
-    const wsUrl = `${WS_ENDPOINT}?token=${token}`;
+    sharedConnectPromise = (async () => {
+      const token = await fetchWsToken();
+      if (!token) {
+        log("No WS token available, cannot connect");
+        return;
+      }
 
-    const client = new Client({
-      webSocketFactory: () => {
-        return new SockJS(wsUrl, null, {
-          timeout: 5000,
-        }) as unknown as WebSocket;
-      },
-      reconnectDelay,
-      debug: debug ? (msg) => console.log(`[STOMP] ${msg}`) : () => {},
-      onConnect: () => {
-        log("Connected to WebSocket");
-        setIsConnected(true);
-        // Process any subscriptions that were requested before connection was ready
-        processPendingSubscriptions();
-      },
-      onDisconnect: () => {
-        log("Disconnected from WebSocket");
-        setIsConnected(false);
-      },
-      onStompError: (frame) => {
-        console.error("[WebSocket] STOMP error:", frame.headers.message);
-        setIsConnected(false);
-      },
-      onWebSocketError: (event) => {
-        console.error("[WebSocket] WebSocket error:", event);
-      },
+      const wsUrl = `${WS_ENDPOINT}?token=${token}`;
+
+      const client = new Client({
+        webSocketFactory: () => {
+          return new SockJS(wsUrl, null, {
+            timeout: 5000,
+          }) as unknown as WebSocket;
+        },
+        reconnectDelay,
+        debug: debug ? (msg) => console.log(`[STOMP] ${msg}`) : () => {},
+        onConnect: () => {
+          log("Connected to WebSocket");
+          notifyConnectionState(true);
+        },
+        onDisconnect: () => {
+          log("Disconnected from WebSocket");
+          notifyConnectionState(false);
+        },
+        onStompError: (frame) => {
+          console.error("[WebSocket] STOMP error:", frame.headers.message);
+          notifyConnectionState(false);
+        },
+        onWebSocketError: (event) => {
+          console.error("[WebSocket] WebSocket error:", event);
+        },
+      });
+
+      sharedClient = client;
+      client.activate();
+    })().finally(() => {
+      sharedConnectPromise = null;
     });
 
-    clientRef.current = client;
-    client.activate();
-  }, [reconnectDelay, debug, log, fetchWsToken, processPendingSubscriptions]);
+    await sharedConnectPromise;
+  }, [reconnectDelay, debug, log]);
+
+  const cleanupLocalSubscriptions = useCallback(() => {
+    pendingSubscriptionsRef.current.forEach(({ resolve }) => resolve(null));
+    pendingSubscriptionsRef.current = [];
+
+    subscriptionsRef.current.forEach((sub) => {
+      try {
+        sub.unsubscribe();
+      } catch {
+        // Ignore errors during cleanup
+      }
+    });
+    subscriptionsRef.current.clear();
+  }, []);
 
   const disconnect = useCallback(() => {
-    if (clientRef.current) {
-      // Clear pending subscriptions
-      pendingSubscriptionsRef.current.forEach(({ resolve }) => resolve(null));
-      pendingSubscriptionsRef.current = [];
-
-      // Unsubscribe from all topics
-      subscriptionsRef.current.forEach((sub) => {
-        try {
-          sub.unsubscribe();
-        } catch (e) {
-          // Ignore errors during cleanup
-        }
-      });
-      subscriptionsRef.current.clear();
-
-      clientRef.current.deactivate();
-      clientRef.current = null;
-      setIsConnected(false);
+    cleanupLocalSubscriptions();
+    if (activeHookCount <= 1) {
+      teardownSharedClient();
       log("Disconnected");
     }
-  }, [log]);
+  }, [cleanupLocalSubscriptions, log]);
 
   const subscribe = useCallback(
     (topic: string, callback: (message: unknown) => void): StompSubscription | null => {
-      const client = clientRef.current;
+      const client = sharedClient;
 
       // Check if client is actually connected (not just active)
       if (!client?.connected) {
@@ -183,14 +207,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
           },
         };
         pendingSubscriptionsRef.current.push(pendingSub);
-
-        // If we're already connected but the state hasn't updated yet, process immediately
-        if (client?.connected) {
-          processPendingSubscriptions();
-          return resolvedSub;
-        }
-
-        return null;
+        return resolvedSub;
       }
 
       log(`Subscribing to ${topic}`);
@@ -236,14 +253,32 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
   // Auto-connect on mount
   useEffect(() => {
+    activeHookCount += 1;
+    const listener: ConnectionListener = (connected) => {
+      setIsConnected(connected);
+    };
+    connectionListeners.add(listener);
+    setIsConnected(sharedConnected);
+
     if (autoConnect) {
-      connect();
+      void connect();
     }
 
     return () => {
-      disconnect();
+      cleanupLocalSubscriptions();
+      connectionListeners.delete(listener);
+      activeHookCount = Math.max(0, activeHookCount - 1);
+      if (activeHookCount === 0) {
+        teardownSharedClient();
+      }
     };
-  }, [autoConnect, connect, disconnect]);
+  }, [autoConnect, connect, cleanupLocalSubscriptions]);
+
+  useEffect(() => {
+    if (isConnected) {
+      processPendingSubscriptions();
+    }
+  }, [isConnected, processPendingSubscriptions]);
 
   return {
     isConnected,

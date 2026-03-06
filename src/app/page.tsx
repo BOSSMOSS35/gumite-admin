@@ -29,16 +29,16 @@ import { Wifi, WifiOff, Radio } from "lucide-react";
 function getStatusBadge(status: string) {
   switch (status) {
     case "completed":
-      return <Badge className="bg-green-50 text-green-700 border-green-200 font-normal">Completed</Badge>;
+      return <Badge className="bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 border-green-200 font-normal">Completed</Badge>;
     case "processing":
-      return <Badge className="bg-blue-50 text-blue-700 border-blue-200 font-normal">Processing</Badge>;
+      return <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 border-blue-200 font-normal">Processing</Badge>;
     case "pending":
-      return <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 font-normal">Pending</Badge>;
+      return <Badge className="bg-yellow-50 text-yellow-700 dark:bg-amber-500/10 dark:text-amber-300 border-yellow-200 font-normal">Pending</Badge>;
     case "shipped":
-      return <Badge className="bg-purple-50 text-purple-700 border-purple-200 font-normal">Shipped</Badge>;
+      return <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300 border-purple-200 font-normal">Shipped</Badge>;
     case "canceled":
     case "cancelled":
-      return <Badge className="bg-red-50 text-red-700 border-red-200 font-normal">Canceled</Badge>;
+      return <Badge className="bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 border-red-200 font-normal">Canceled</Badge>;
     default:
       return <Badge variant="outline" className="font-normal">{status}</Badge>;
   }
@@ -338,17 +338,17 @@ export default function DashboardPage() {
               {/* Connection Status Badge */}
               <div className="flex items-center gap-1.5">
                 {connectionStatus === "live" ? (
-                  <Badge className="bg-green-50 text-green-700 border-green-200 font-normal flex items-center gap-1">
+                  <Badge className="bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 border-green-200 font-normal flex items-center gap-1">
                     <Radio className="h-3 w-3 animate-pulse" />
                     Live
                   </Badge>
                 ) : connectionStatus === "polling" ? (
-                  <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 font-normal flex items-center gap-1">
+                  <Badge className="bg-yellow-50 text-yellow-700 dark:bg-amber-500/10 dark:text-amber-300 border-yellow-200 font-normal flex items-center gap-1">
                     <RefreshCw className="h-3 w-3" />
                     Polling
                   </Badge>
                 ) : (
-                  <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-normal flex items-center gap-1">
+                  <Badge className="bg-gray-50 text-gray-700 dark:bg-zinc-500/10 dark:text-zinc-300 border-gray-200 font-normal flex items-center gap-1">
                     <WifiOff className="h-3 w-3" />
                     Offline
                   </Badge>
@@ -390,7 +390,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link
-          href="/products/new"
+          href="/products?action=add"
           className="flex items-center gap-4 rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors group"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">

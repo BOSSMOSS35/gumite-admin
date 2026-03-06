@@ -86,6 +86,7 @@ import {
   formatDiscountValue,
 } from "@/lib/api";
 import { DiscountDialog } from "@/components/discounts/DiscountDialog";
+import { toast } from "sonner";
 
 export default function DiscountsPage() {
   // State
@@ -109,6 +110,8 @@ export default function DiscountsPage() {
   const [editingDiscount, setEditingDiscount] = useState<Promotion | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingDiscount, setDeletingDiscount] = useState<Promotion | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // Fetch data
   const fetchDiscounts = useCallback(async () => {
@@ -187,8 +190,10 @@ export default function DiscountsPage() {
       }
       await fetchDiscounts();
       await fetchStats();
+      toast.success(discount.isActive ? "Discount deactivated" : "Discount activated");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update status");
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
     }
   };
 
@@ -197,8 +202,10 @@ export default function DiscountsPage() {
       await duplicateDiscount(discount.id);
       await fetchDiscounts();
       await fetchStats();
+      toast.success("Discount duplicated");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to duplicate");
+      toast.error(err instanceof Error ? err.message : "Failed to duplicate");
     }
   };
 
@@ -210,14 +217,21 @@ export default function DiscountsPage() {
       setDeletingDiscount(null);
       await fetchDiscounts();
       await fetchStats();
+      toast.success("Discount deleted");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
   };
 
   const handleBulkAction = async (action: "ACTIVATE" | "DEACTIVATE" | "DELETE") => {
     if (selectedIds.size === 0) return;
+    if (action === "DELETE") {
+      setBulkDeleteOpen(true);
+      return;
+    }
     try {
+      setBulkActionLoading(true);
       await bulkDiscountAction({
         ids: Array.from(selectedIds),
         action,
@@ -225,8 +239,32 @@ export default function DiscountsPage() {
       setSelectedIds(new Set());
       await fetchDiscounts();
       await fetchStats();
+      toast.success(`Bulk ${action.toLowerCase()} completed for ${selectedIds.size} discounts`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bulk action failed");
+      toast.error(err instanceof Error ? err.message : "Bulk action failed");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      setBulkActionLoading(true);
+      await bulkDiscountAction({
+        ids: Array.from(selectedIds),
+        action: "DELETE",
+      });
+      setSelectedIds(new Set());
+      setBulkDeleteOpen(false);
+      await fetchDiscounts();
+      await fetchStats();
+      toast.success(`${selectedIds.size} discounts deleted`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bulk delete failed");
+      toast.error(err instanceof Error ? err.message : "Bulk delete failed");
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
@@ -440,6 +478,7 @@ export default function DiscountsPage() {
                     size="sm"
                     onClick={() => handleBulkAction("DELETE")}
                     className="text-destructive"
+                    disabled={bulkActionLoading}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
@@ -787,6 +826,29 @@ export default function DiscountsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Discounts</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size} selected discounts?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkActionLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground"
+              disabled={bulkActionLoading}
+            >
+              {bulkActionLoading ? "Deleting..." : `Delete ${selectedIds.size} Discounts`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

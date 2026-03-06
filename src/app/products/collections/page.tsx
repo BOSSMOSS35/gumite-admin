@@ -335,13 +335,13 @@ export default function CollectionsPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-auto">

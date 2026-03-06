@@ -81,10 +81,31 @@ import {
   getOrderStatusDisplay,
 } from "@/lib/api";
 
+const STATUS_BADGE_TONE_BY_DOT_COLOR: Record<string, string> = {
+  "bg-green-500": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+  "bg-green-600": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+  "bg-blue-400": "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+  "bg-blue-500": "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+  "bg-orange-500": "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+  "bg-yellow-500": "border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
+  "bg-purple-400": "border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
+  "bg-purple-500": "border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
+  "bg-red-500": "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
+  "bg-gray-400": "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
+  "bg-gray-500": "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
+};
+
+function getStatusBadgeTone(colorClass: string): string {
+  return (
+    STATUS_BADGE_TONE_BY_DOT_COLOR[colorClass] ||
+    "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300"
+  );
+}
+
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   const { label, color } = getPaymentStatusDisplay(status);
   return (
-    <Badge variant="outline" className="gap-1 border-0 bg-opacity-20" style={{ backgroundColor: `var(--${color.replace('bg-', '')}-100, #f3f4f6)` }}>
+    <Badge variant="outline" className={`gap-1 ${getStatusBadgeTone(color)}`}>
       <div className={`h-2 w-2 rounded-full ${color}`} />
       {label}
     </Badge>
@@ -94,7 +115,7 @@ function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
 function FulfillmentStatusBadge({ status }: { status: FulfillmentStatus }) {
   const { label, color } = getFulfillmentStatusDisplay(status);
   return (
-    <Badge variant="outline" className="gap-1 border-0" style={{ backgroundColor: `var(--${color.replace('bg-', '')}-100, #f3f4f6)` }}>
+    <Badge variant="outline" className={`gap-1 ${getStatusBadgeTone(color)}`}>
       <div className={`h-2 w-2 rounded-full ${color}`} />
       {label}
     </Badge>
@@ -349,6 +370,8 @@ export default function OrderDetailsPage() {
   const canShip = (order.fulfillmentStatus === "FULFILLED" || order.fulfillmentStatus === "NOT_FULFILLED") && order.status !== "CANCELED";
   const canComplete = order.status === "PENDING" && order.fulfillmentStatus !== "NOT_FULFILLED";
   const canCancel = order.status === "PENDING";
+  const hasLifecycleActions = canFulfill || canShip || canComplete || canCancel;
+  const orderStatusDisplay = getOrderStatusDisplay(order.status);
 
   // Build activity timeline from order data
   const activity = [
@@ -431,12 +454,13 @@ export default function OrderDetailsPage() {
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
+                      aria-label="Copy to clipboard"
                       onClick={() => copyToClipboard(order.id, "orderId")}
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
                     {copiedField === "orderId" && (
-                      <span className="text-xs text-green-600">Copied!</span>
+                      <span className="text-xs text-green-700 dark:text-green-300">Copied!</span>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -444,19 +468,38 @@ export default function OrderDetailsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="gap-1">
-                    <div className={`h-2 w-2 rounded-full ${getOrderStatusDisplay(order.status).color}`} />
-                    {getOrderStatusDisplay(order.status).label}
+                  <Badge variant="outline" className={`gap-1 ${getStatusBadgeTone(orderStatusDisplay.color)}`}>
+                    <div className={`h-2 w-2 rounded-full ${orderStatusDisplay.color}`} />
+                    {orderStatusDisplay.label}
                   </Badge>
                   <PaymentStatusBadge status={order.paymentStatus} />
                   <FulfillmentStatusBadge status={order.fulfillmentStatus} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" aria-label="More options">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem onClick={() => copyToClipboard(order.id, "orderIdMenu")}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy order ID
+                      </DropdownMenuItem>
+                      {order.email && (
+                        <DropdownMenuItem onClick={() => copyToClipboard(order.email, "customerEmailMenu")}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy customer email
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={fetchOrder}>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Refresh order
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print order
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       {canFulfill && (
                         <DropdownMenuItem onClick={() => setFulfillDialogOpen(true)}>
                           Mark as Fulfilled
@@ -476,9 +519,14 @@ export default function OrderDetailsPage() {
                       {canCancel && (
                         <DropdownMenuItem
                           onClick={() => setCancelDialogOpen(true)}
-                          className="text-red-600"
+                          className="text-red-600 dark:text-red-400"
                         >
                           Cancel Order
+                        </DropdownMenuItem>
+                      )}
+                      {!hasLifecycleActions && (
+                        <DropdownMenuItem disabled>
+                          No lifecycle actions available
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -617,6 +665,7 @@ export default function OrderDetailsPage() {
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6"
+                    aria-label="Copy to clipboard"
                     onClick={() => copyToClipboard(order.email, "email")}
                   >
                     <Copy className="h-3 w-3" />

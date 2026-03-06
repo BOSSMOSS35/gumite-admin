@@ -26,6 +26,7 @@ import {
   ArrowDownRight,
   RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { TopCategoriesChart } from "@/components/dashboard/top-categories-chart";
@@ -97,6 +98,7 @@ export default function AnalyticsPage() {
   const handleRefresh = () => {
     refetchKpis();
     refetchAnalytics();
+    toast.success("Data refreshed");
   };
 
   const periodLabel = {

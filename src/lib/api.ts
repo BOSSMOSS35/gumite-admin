@@ -477,7 +477,7 @@ export async function getReturnStats(): Promise<ReturnStats> {
 // Mark return as received
 export async function receiveReturn(
   id: string,
-  data?: { receivedBy?: string; notes?: string }
+  data?: { receivedBy?: string; notes?: string; restock?: boolean }
 ): Promise<{ return_request: Return; message: string }> {
   return apiFetch<{ return_request: Return; message: string }>(`/admin/returns/${id}/receive`, {
     method: "POST",
@@ -1977,21 +1977,21 @@ export async function removeCustomerFromGroup(
 // Customer display helpers
 export function getTierDisplay(tier: CustomerTier): { label: string; color: string } {
   const config: Record<CustomerTier, { label: string; color: string }> = {
-    BRONZE: { label: "Bronze", color: "bg-orange-100 text-orange-800" },
-    SILVER: { label: "Silver", color: "bg-gray-100 text-gray-800" },
-    GOLD: { label: "Gold", color: "bg-yellow-100 text-yellow-800" },
-    PLATINUM: { label: "Platinum", color: "bg-purple-100 text-purple-800" },
+    BRONZE: { label: "Bronze", color: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300" },
+    SILVER: { label: "Silver", color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" },
+    GOLD: { label: "Gold", color: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300" },
+    PLATINUM: { label: "Platinum", color: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300" },
   };
-  return config[tier] || { label: tier, color: "bg-gray-100 text-gray-800" };
+  return config[tier] || { label: tier, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
 
 export function getCustomerStatusDisplay(status: CustomerStatus): { label: string; color: string } {
   const config: Record<CustomerStatus, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800" },
-    SUSPENDED: { label: "Suspended", color: "bg-yellow-100 text-yellow-800" },
-    BANNED: { label: "Banned", color: "bg-red-100 text-red-800" },
+    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300" },
+    SUSPENDED: { label: "Suspended", color: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300" },
+    BANNED: { label: "Banned", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
   };
-  return config[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+  return config[status] || { label: status, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
 
 export function getActivityTypeDisplay(type: CustomerActivityType): { label: string; icon: string } {
@@ -2363,35 +2363,71 @@ export async function getPricingActivity(params?: {
 // Pricing display helpers
 export function getPricingRuleTypeDisplay(type: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    PERCENTAGE_DISCOUNT: { label: "Percentage Discount", color: "bg-green-100 text-green-800" },
-    FIXED_DISCOUNT: { label: "Fixed Discount", color: "bg-blue-100 text-blue-800" },
-    MARKUP: { label: "Markup", color: "bg-orange-100 text-orange-800" },
-    TIME_BASED: { label: "Time-Based", color: "bg-purple-100 text-purple-800" },
-    QUANTITY_BASED: { label: "Quantity-Based", color: "bg-yellow-100 text-yellow-800" },
-    TIERED: { label: "Tiered", color: "bg-indigo-100 text-indigo-800" },
+    PERCENTAGE_DISCOUNT: {
+      label: "Percentage Discount",
+      color: "border border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+    },
+    FIXED_DISCOUNT: {
+      label: "Fixed Discount",
+      color: "border border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+    },
+    MARKUP: {
+      label: "Markup",
+      color: "border border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+    },
+    TIME_BASED: {
+      label: "Time-Based",
+      color: "border border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
+    },
+    QUANTITY_BASED: {
+      label: "Quantity-Based",
+      color: "border border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
+    },
+    TIERED: {
+      label: "Tiered",
+      color: "border border-indigo-300/70 bg-indigo-100/80 text-indigo-800 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-300",
+    },
   };
-  return config[type] || { label: type, color: "bg-gray-100 text-gray-800" };
+  return config[type] || {
+    label: type,
+    color: "border border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
+  };
 }
 
 export function getPricingRuleStatusDisplay(status: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800" },
-    INACTIVE: { label: "Inactive", color: "bg-gray-100 text-gray-800" },
-    SCHEDULED: { label: "Scheduled", color: "bg-blue-100 text-blue-800" },
-    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800" },
+    ACTIVE: {
+      label: "Active",
+      color: "border border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+    },
+    INACTIVE: {
+      label: "Inactive",
+      color: "border border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
+    },
+    SCHEDULED: {
+      label: "Scheduled",
+      color: "border border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+    },
+    EXPIRED: {
+      label: "Expired",
+      color: "border border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
+    },
   };
-  return config[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+  return config[status] || {
+    label: status,
+    color: "border border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
+  };
 }
 
 export function getPriceChangeTypeDisplay(type: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    MANUAL: { label: "Manual", color: "text-gray-600" },
-    BULK_UPDATE: { label: "Bulk Update", color: "text-blue-600" },
-    RULE_APPLIED: { label: "Rule Applied", color: "text-purple-600" },
-    SYNC_FROM_SHOPIFY: { label: "Shopify Sync", color: "text-green-600" },
-    SYNC_FROM_WOOCOMMERCE: { label: "WooCommerce Sync", color: "text-orange-600" },
+    MANUAL: { label: "Manual", color: "text-zinc-700 dark:text-zinc-300" },
+    BULK_UPDATE: { label: "Bulk Update", color: "text-blue-700 dark:text-blue-300" },
+    RULE_APPLIED: { label: "Rule Applied", color: "text-purple-700 dark:text-purple-300" },
+    SYNC_FROM_SHOPIFY: { label: "Shopify Sync", color: "text-green-700 dark:text-green-300" },
+    SYNC_FROM_WOOCOMMERCE: { label: "WooCommerce Sync", color: "text-orange-700 dark:text-orange-300" },
   };
-  return config[type] || { label: type, color: "text-gray-600" };
+  return config[type] || { label: type, color: "text-zinc-700 dark:text-zinc-300" };
 }
 
 // =============================================================================
@@ -2685,25 +2721,25 @@ export async function generateDiscountCode(): Promise<{ code: string }> {
 // Discount display helpers
 export function getPromotionTypeDisplay(type: string): { label: string; color: string; icon: string } {
   const config: Record<string, { label: string; color: string; icon: string }> = {
-    PERCENTAGE: { label: "Percentage Off", color: "bg-green-100 text-green-800", icon: "%" },
-    FIXED: { label: "Fixed Amount", color: "bg-blue-100 text-blue-800", icon: "£" },
-    FREE_SHIPPING: { label: "Free Shipping", color: "bg-purple-100 text-purple-800", icon: "🚚" },
-    BUY_X_GET_Y: { label: "Buy X Get Y", color: "bg-orange-100 text-orange-800", icon: "🎁" },
+    PERCENTAGE: { label: "Percentage Off", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300", icon: "%" },
+    FIXED: { label: "Fixed Amount", color: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300", icon: "£" },
+    FREE_SHIPPING: { label: "Free Shipping", color: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300", icon: "🚚" },
+    BUY_X_GET_Y: { label: "Buy X Get Y", color: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300", icon: "🎁" },
   };
-  return config[type] || { label: type, color: "bg-gray-100 text-gray-800", icon: "?" };
+  return config[type] || { label: type, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300", icon: "?" };
 }
 
 export function getPromotionStatusDisplay(status: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800" },
-    INACTIVE: { label: "Inactive", color: "bg-gray-100 text-gray-800" },
-    SCHEDULED: { label: "Scheduled", color: "bg-blue-100 text-blue-800" },
-    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800" },
-    DISABLED: { label: "Disabled", color: "bg-yellow-100 text-yellow-800" },
-    LIMIT_REACHED: { label: "Limit Reached", color: "bg-orange-100 text-orange-800" },
-    DELETED: { label: "Deleted", color: "bg-red-100 text-red-800" },
+    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300" },
+    INACTIVE: { label: "Inactive", color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" },
+    SCHEDULED: { label: "Scheduled", color: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300" },
+    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
+    DISABLED: { label: "Disabled", color: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300" },
+    LIMIT_REACHED: { label: "Limit Reached", color: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300" },
+    DELETED: { label: "Deleted", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
   };
-  return config[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+  return config[status] || { label: status, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
 
 export function getPromotionRuleTypeDisplay(type: string): string {
@@ -2920,12 +2956,12 @@ export async function getGiftCardStats(): Promise<GiftCardStatsResponse> {
 // Gift card display helpers
 export function getGiftCardStatusDisplay(status: GiftCardStatus): { label: string; color: string } {
   const config: Record<GiftCardStatus, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800" },
-    FULLY_REDEEMED: { label: "Fully Redeemed", color: "bg-blue-100 text-blue-800" },
-    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800" },
-    DISABLED: { label: "Disabled", color: "bg-gray-100 text-gray-800" },
+    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300" },
+    FULLY_REDEEMED: { label: "Fully Redeemed", color: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300" },
+    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
+    DISABLED: { label: "Disabled", color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" },
   };
-  return config[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+  return config[status] || { label: status, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
 
 // ============================================================================
@@ -3316,6 +3352,260 @@ export async function deleteStore(storeId: string): Promise<void> {
   await apiFetch<void>(`/admin/stores/${storeId}`, {
     method: "DELETE",
   });
+}
+
+// ============================================================================
+// Regions & Tax Regions
+// ============================================================================
+
+export interface StoreRegionCountry {
+  iso_2: string;
+  name: string;
+  display_name: string;
+}
+
+export interface StoreRegion {
+  id: string;
+  name: string;
+  currency_code: string;
+  tax_rate: number;
+  tax_code: string | null;
+  countries: StoreRegionCountry[];
+}
+
+export interface StoreRegionsResponse {
+  regions: StoreRegion[];
+}
+
+export async function getStoreRegions(): Promise<StoreRegionsResponse> {
+  return apiFetch<StoreRegionsResponse>("/store/regions");
+}
+
+export interface AdminRegionCountry {
+  iso_2: string;
+  name: string;
+  display_name: string;
+}
+
+export interface AdminRegion {
+  id: string;
+  name: string;
+  currency_code: string;
+  automatic_taxes: boolean;
+  tax_code: string | null;
+  gift_cards_taxable: boolean;
+  tax_rate: number;
+  tax_inclusive: boolean;
+  countries: AdminRegionCountry[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AdminRegionsResponse {
+  regions: AdminRegion[];
+  count: number;
+  limit: number;
+  offset: number;
+}
+
+export async function getAdminRegions(params?: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+}): Promise<AdminRegionsResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.offset) searchParams.set("offset", params.offset.toString());
+  if (params?.q) searchParams.set("q", params.q);
+
+  const query = searchParams.toString();
+  return apiFetch<AdminRegionsResponse>(`/admin/regions${query ? `?${query}` : ""}`);
+}
+
+export interface AdminCreateRegionRequest {
+  name: string;
+  currencyCode: string;
+  automaticTaxes?: boolean;
+  taxCode?: string | null;
+  giftCardsTaxable?: boolean;
+  taxRate?: number;
+  taxInclusive?: boolean;
+  countryCodes?: string[];
+  paymentProviderIds?: string[];
+  fulfillmentProviderIds?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface AdminCreatedRegion {
+  id: string;
+  name: string;
+  currencyCode: string;
+  automaticTaxes: boolean;
+  taxCode: string | null;
+  giftCardsTaxable: boolean;
+  taxRate: number;
+  taxInclusive: boolean;
+  countryCodes: string[];
+  paymentProviderIds: string[];
+  fulfillmentProviderIds: string[];
+  createdAt: string | null;
+  updatedAt: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateRegionsResponse {
+  regions: AdminCreatedRegion[];
+  count: number;
+  correlation_id: string;
+}
+
+export async function createAdminRegion(data: AdminCreateRegionRequest): Promise<CreateRegionsResponse> {
+  return apiFetch<CreateRegionsResponse>("/admin/regions", {
+    method: "POST",
+    body: JSON.stringify({ regions: [data] }),
+  });
+}
+
+export interface AdminTaxRate {
+  id: string;
+  name: string;
+  code: string | null;
+  rate: number;
+  region_id: string;
+  region_name: string | null;
+  product_types: string | null;
+  product_categories: string | null;
+  shipping_option_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TaxRegion {
+  region_id: string;
+  region_name: string;
+  currency_code: string;
+  default_tax_rate: number;
+  tax_rates: AdminTaxRate[];
+  tax_rate_count: number;
+}
+
+export interface TaxRegionsResponse {
+  tax_regions: TaxRegion[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export interface TaxRatesResponse {
+  tax_rates: AdminTaxRate[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export interface TaxRateResponse {
+  tax_rate: AdminTaxRate;
+}
+
+export interface CreateTaxRateRequest {
+  name: string;
+  code?: string | null;
+  rate: number;
+  regionId: string;
+  productTypes?: string | null;
+  productCategories?: string | null;
+  shippingOptionId?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export async function getTaxRegions(params?: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+}): Promise<TaxRegionsResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.offset) searchParams.set("offset", params.offset.toString());
+  if (params?.q) searchParams.set("q", params.q);
+
+  const query = searchParams.toString();
+  return apiFetch<TaxRegionsResponse>(`/admin/tax-regions${query ? `?${query}` : ""}`);
+}
+
+export async function getTaxRates(params?: {
+  limit?: number;
+  offset?: number;
+  regionId?: string;
+  q?: string;
+}): Promise<TaxRatesResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.offset) searchParams.set("offset", params.offset.toString());
+  if (params?.regionId) searchParams.set("regionId", params.regionId);
+  if (params?.q) searchParams.set("q", params.q);
+
+  const query = searchParams.toString();
+  return apiFetch<TaxRatesResponse>(`/admin/tax-regions/rates${query ? `?${query}` : ""}`);
+}
+
+export async function createTaxRate(data: CreateTaxRateRequest): Promise<TaxRateResponse> {
+  return apiFetch<TaxRateResponse>("/admin/tax-regions/rates", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export interface UpdateTaxRateRequest {
+  name?: string;
+  code?: string | null;
+  rate?: number;
+  productTypes?: string | null;
+  productCategories?: string | null;
+  shippingOptionId?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export async function updateTaxRate(id: string, data: UpdateTaxRateRequest): Promise<TaxRateResponse> {
+  return apiFetch<TaxRateResponse>(`/admin/tax-regions/rates/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteTaxRate(id: string): Promise<{ id: string; deleted: boolean }> {
+  return apiFetch<{ id: string; deleted: boolean }>(`/admin/tax-regions/rates/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export interface TaxSetupStatus {
+  hasStores: boolean;
+  hasRegions: boolean;
+  hasDefaultRegion: boolean;
+  storeCount: number;
+  regionCount: number;
+  isReady: boolean;
+}
+
+export async function getTaxSetupStatus(): Promise<TaxSetupStatus> {
+  const [storesResponse, regionsResponse] = await Promise.all([
+    getStores({ limit: 100 }),
+    getStoreRegions(),
+  ]);
+
+  const hasStores = storesResponse.stores.length > 0;
+  const hasRegions = regionsResponse.regions.length > 0;
+  const hasDefaultRegion = storesResponse.stores.some((store) => Boolean(store.default_region_id));
+
+  return {
+    hasStores,
+    hasRegions,
+    hasDefaultRegion,
+    storeCount: storesResponse.stores.length,
+    regionCount: regionsResponse.regions.length,
+    isReady: hasStores && hasRegions && hasDefaultRegion,
+  };
 }
 
 // =============================================================================
@@ -3916,4 +4206,180 @@ export async function updateSecurityConfig(data: UpdateSecurityConfigInput): Pro
 // Security Stats
 export async function getSecurityStats(): Promise<SecurityStats> {
   return apiFetch<SecurityStats>("/admin/security/stats");
+}
+
+// =============================================================================
+// Reviews (Admin)
+// =============================================================================
+
+export type ReviewStatus = "pending" | "approved" | "rejected" | "flagged";
+
+export interface AdminReview {
+  id: string;
+  product_id: string;
+  customer_id: string;
+  customer_name: string;
+  customer_avatar: string | null;
+  rating: number;
+  title: string;
+  content: string;
+  pros: string[] | null;
+  cons: string[] | null;
+  images: { url: string; thumbnail_url: string | null; caption: string | null; sort_order: number }[] | null;
+  verified_purchase: boolean;
+  variant_title: string | null;
+  helpful_count: number;
+  not_helpful_count: number;
+  status: ReviewStatus;
+  is_featured: boolean;
+  is_edited: boolean;
+  admin_response: string | null;
+  admin_response_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminReviewsResponse {
+  reviews: AdminReview[];
+  page: number;
+  size: number;
+  total: number;
+}
+
+export function getReviewStatusDisplay(status: ReviewStatus): { label: string; color: string } {
+  const config: Record<ReviewStatus, { label: string; color: string }> = {
+    pending: { label: "Pending", color: "bg-yellow-500" },
+    approved: { label: "Approved", color: "bg-green-500" },
+    rejected: { label: "Rejected", color: "bg-red-500" },
+    flagged: { label: "Flagged", color: "bg-orange-500" },
+  };
+  return config[status] || { label: status, color: "bg-gray-500" };
+}
+
+export async function getPendingReviews(params?: {
+  page?: number;
+  size?: number;
+}): Promise<AdminReviewsResponse> {
+  const query = new URLSearchParams();
+  if (params?.page !== undefined) query.set("page", params.page.toString());
+  if (params?.size) query.set("size", params.size.toString());
+  return apiFetch<AdminReviewsResponse>(`/admin/reviews/pending${query.toString() ? `?${query}` : ""}`);
+}
+
+export async function getFlaggedReviews(params?: {
+  page?: number;
+  size?: number;
+}): Promise<AdminReviewsResponse> {
+  const query = new URLSearchParams();
+  if (params?.page !== undefined) query.set("page", params.page.toString());
+  if (params?.size) query.set("size", params.size.toString());
+  return apiFetch<AdminReviewsResponse>(`/admin/reviews/flagged${query.toString() ? `?${query}` : ""}`);
+}
+
+export async function getAdminReview(id: string): Promise<{ review: AdminReview }> {
+  return apiFetch<{ review: AdminReview }>(`/admin/reviews/${id}`);
+}
+
+export async function moderateReview(
+  id: string,
+  data: { approved: boolean; note?: string }
+): Promise<{ review: AdminReview }> {
+  return apiFetch<{ review: AdminReview }>(`/admin/reviews/${id}/moderate`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function addAdminResponse(
+  id: string,
+  response: string
+): Promise<{ review: AdminReview }> {
+  return apiFetch<{ review: AdminReview }>(`/admin/reviews/${id}/response`, {
+    method: "POST",
+    body: JSON.stringify({ response }),
+  });
+}
+
+export async function setReviewFeatured(
+  id: string,
+  featured: boolean
+): Promise<{ review: AdminReview }> {
+  return apiFetch<{ review: AdminReview }>(`/admin/reviews/${id}/featured`, {
+    method: "POST",
+    body: JSON.stringify({ featured }),
+  });
+}
+
+export async function deleteAdminReview(
+  id: string,
+  reason?: string
+): Promise<{ success: boolean; message: string }> {
+  return apiFetch<{ success: boolean; message: string }>(`/admin/reviews/${id}`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// =============================================================================
+// Marketing Campaigns (Admin)
+// =============================================================================
+
+export interface Campaign {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  status: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  budget: number | null;
+  currency_code: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignsResponse {
+  campaigns: Campaign[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export function getCampaignStatusDisplay(status: string): { label: string; color: string } {
+  const config: Record<string, { label: string; color: string }> = {
+    draft: { label: "Draft", color: "bg-gray-500" },
+    active: { label: "Active", color: "bg-green-500" },
+    paused: { label: "Paused", color: "bg-yellow-500" },
+    completed: { label: "Completed", color: "bg-blue-500" },
+    canceled: { label: "Canceled", color: "bg-red-500" },
+  };
+  return config[status] || { label: status, color: "bg-gray-500" };
+}
+
+export async function getCampaigns(params?: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  q?: string;
+}): Promise<CampaignsResponse> {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", params.limit.toString());
+  if (params?.offset) query.set("offset", params.offset.toString());
+  if (params?.status) query.set("status", params.status);
+  if (params?.q) query.set("q", params.q);
+  return apiFetch<CampaignsResponse>(`/admin/campaigns${query.toString() ? `?${query}` : ""}`);
+}
+
+// =============================================================================
+// Admin Profile API
+// =============================================================================
+
+export async function updateAdminProfile(data: {
+  firstName: string;
+  lastName: string;
+}): Promise<void> {
+  await apiFetch<void>("/admin/users/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 }

@@ -45,10 +45,10 @@ const tierOptions: { value: CustomerTier; label: string; description: string }[]
 
 function getTierBadgeColor(tier: CustomerTier): string {
   const colors: Record<CustomerTier, string> = {
-    BRONZE: "bg-orange-100 text-orange-800",
-    SILVER: "bg-gray-100 text-gray-800",
-    GOLD: "bg-yellow-100 text-yellow-800",
-    PLATINUM: "bg-purple-100 text-purple-800",
+    BRONZE: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
+    SILVER: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300",
+    GOLD: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
+    PLATINUM: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
   };
   return colors[tier];
 }

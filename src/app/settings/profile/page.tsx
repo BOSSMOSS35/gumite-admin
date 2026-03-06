@@ -1,4 +1,6 @@
-import { Metadata } from "next";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -20,21 +22,61 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreHorizontal } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "Profile - Settings",
-};
-
-// Mock data
-const user = {
-  firstName: "Admin",
-  lastName: "User",
-  email: "admin@vernont.com",
-  avatar: null,
-};
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import { updateAdminProfile } from "@/lib/api";
 
 export default function ProfileSettingsPage() {
+  const { user, refreshUser } = useAuth();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || "");
+      setLastName(user.lastName || "");
+    }
+  }, [user]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    if (user) {
+      setFirstName(user.firstName || "");
+      setLastName(user.lastName || "");
+    }
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("First name and last name are required");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateAdminProfile({ firstName: firstName.trim(), lastName: lastName.trim() });
+      toast.success("Profile updated");
+      setIsEditing(false);
+      refreshUser?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const displayFirstName = user?.firstName || "Admin";
+  const displayLastName = user?.lastName || "User";
+  const displayEmail = user?.email || "admin@vernont.com";
+
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Breadcrumb */}
@@ -57,9 +99,6 @@ export default function ProfileSettingsPage() {
             <CardTitle>Personal Information</CardTitle>
             <CardDescription>Manage your Gumite profile</CardDescription>
           </div>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           <Separator />
@@ -68,35 +107,63 @@ export default function ProfileSettingsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Edit information</h4>
-              <Button variant="outline" size="sm">
-                Edit
-              </Button>
+              {!isEditing ? (
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleCancel} disabled={saving}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={saving}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={user.avatar || undefined} />
+                <AvatarImage src={undefined} />
                 <AvatarFallback className="text-lg">
-                  {user.firstName[0]}
-                  {user.lastName[0]}
+                  {displayFirstName[0]}
+                  {displayLastName[0]}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <p className="font-medium">
-                  {user.firstName} {user.lastName}
+                  {displayFirstName} {displayLastName}
                 </p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
+                <p className="text-sm text-muted-foreground">{displayEmail}</p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
-                <Input id="firstName" defaultValue={user.firstName} disabled />
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={!isEditing || saving}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last name</Label>
-                <Input id="lastName" defaultValue={user.lastName} disabled />
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={!isEditing || saving}
+                />
               </div>
             </div>
           </div>

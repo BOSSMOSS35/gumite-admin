@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -107,10 +108,16 @@ export default function CollectionDetailPage() {
   const [addProductsModalOpen, setAddProductsModalOpen] = useState(false);
   const [productSearch, setProductSearch] = useState("");
   const [searchResults, setSearchResults] = useState<ProductSummary[]>([]);
+  const [showOnlyNewProducts, setShowOnlyNewProducts] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchingProducts, setSearchingProducts] = useState(false);
   const [addingProducts, setAddingProducts] = useState(false);
   const [removingProduct, setRemovingProduct] = useState<string | null>(null);
+  const [confirmRemoveProduct, setConfirmRemoveProduct] = useState<CollectionProduct | null>(null);
+
+  const NEW_PRODUCT_DAYS = 7;
+  const NEW_PRODUCT_MS = NEW_PRODUCT_DAYS * 24 * 60 * 60 * 1000;
+  const PRODUCT_FETCH_BATCH_SIZE = 100;
 
   const fetchCollection = async () => {
     try {
@@ -133,10 +140,13 @@ export default function CollectionDetailPage() {
     fetchCollection();
   }, [collectionId]);
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setSuccess("Copied to clipboard");
-    setTimeout(() => setSuccess(null), 2000);
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Handle copied");
+    } catch {
+      toast.error("Failed to copy");
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -200,25 +210,91 @@ export default function CollectionDetailPage() {
     }
   };
 
-  // Search for products to add
+  const isNewArrivalsCollection = Boolean(
+    collection &&
+      (
+        collection.handle.toLowerCase() === "new-arrivals" ||
+        collection.title.toLowerCase() === "new arrivals"
+      )
+  );
+
+  const isNewProduct = (product: ProductSummary): boolean => {
+    const createdAt = new Date(product.createdAt).getTime();
+    if (Number.isNaN(createdAt)) return false;
+    return Date.now() - createdAt <= NEW_PRODUCT_MS;
+  };
+
+  const displayedProducts = showOnlyNewProducts
+    ? searchResults.filter((product) => isNewProduct(product))
+    : searchResults;
+
+  const fetchProductsForSelection = async (query: string): Promise<ProductSummary[]> => {
+    const products: ProductSummary[] = [];
+    let start = 0;
+    let totalElements = 0;
+
+    do {
+      const end = start + PRODUCT_FETCH_BATCH_SIZE;
+      const response = await getProducts({
+        q: query || undefined,
+        start,
+        end,
+      });
+
+      products.push(...response.content);
+      totalElements = response.totalElements;
+      start = end;
+
+      if (response.content.length === 0) break;
+    } while (start < totalElements);
+
+    return products;
+  };
+
+  // Search for products to add (or list all when query is empty)
   const handleSearchProducts = async (query: string) => {
     setProductSearch(query);
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
 
     setSearchingProducts(true);
     try {
-      const response = await getProducts({ q: query, end: 10 });
+      const trimmedQuery = query.trim();
+      const products = await fetchProductsForSelection(trimmedQuery);
       // Filter out products already in collection
       const existingIds = new Set(collection?.products.map((p) => p.id) || []);
-      setSearchResults(response.content.filter((p) => !existingIds.has(p.id)));
+      const availableProducts = products
+        .filter((p) => !existingIds.has(p.id))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setSearchResults(availableProducts);
     } catch (err) {
-      console.error("Search failed:", err);
+      toast.error("Product search failed");
     } finally {
       setSearchingProducts(false);
     }
+  };
+
+  const handleToggleShowOnlyNewProducts = (checked: boolean) => {
+    setShowOnlyNewProducts(checked);
+    if (!checked) return;
+
+    const newProductIds = new Set(searchResults.filter((product) => isNewProduct(product)).map((p) => p.id));
+    setSelectedProducts((previous) => previous.filter((id) => newProductIds.has(id)));
+  };
+
+  const handleAddProductsModalOpenChange = async (open: boolean) => {
+    setAddProductsModalOpen(open);
+
+    if (open) {
+      const shouldDefaultToNewProducts = isNewArrivalsCollection;
+      setShowOnlyNewProducts(shouldDefaultToNewProducts);
+      setSelectedProducts([]);
+      await handleSearchProducts("");
+      return;
+    }
+
+    setProductSearch("");
+    setSearchResults([]);
+    setSelectedProducts([]);
+    setShowOnlyNewProducts(false);
   };
 
   const handleAddProducts = async () => {
@@ -229,7 +305,7 @@ export default function CollectionDetailPage() {
 
     try {
       await addProductsToCollection(collection.id, selectedProducts);
-      setSuccess(`Added ${selectedProducts.length} product(s) to collection`);
+      toast.success(`Added ${selectedProducts.length} product(s) to collection`);
       setAddProductsModalOpen(false);
       setSelectedProducts([]);
       setProductSearch("");
@@ -243,17 +319,22 @@ export default function CollectionDetailPage() {
     }
   };
 
-  const handleRemoveProduct = async (productId: string) => {
-    if (!collection) return;
+  const handleRemoveProduct = (product: CollectionProduct) => {
+    setConfirmRemoveProduct(product);
+  };
 
+  const confirmAndRemoveProduct = async () => {
+    if (!collection || !confirmRemoveProduct) return;
+
+    const productId = confirmRemoveProduct.id;
+    setConfirmRemoveProduct(null);
     setRemovingProduct(productId);
     setError(null);
 
     try {
       await removeProductsFromCollection(collection.id, [productId]);
-      setSuccess("Product removed from collection");
+      toast.success("Product removed from collection");
       await fetchCollection();
-      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove product");
     } finally {
@@ -331,7 +412,7 @@ export default function CollectionDetailPage() {
   if (error && !collection) {
     return (
       <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
         </div>
@@ -374,6 +455,26 @@ export default function CollectionDetailPage() {
               ) : (
                 "Delete"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Product Confirmation Dialog */}
+      <Dialog open={!!confirmRemoveProduct} onOpenChange={(open) => { if (!open) setConfirmRemoveProduct(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove &quot;{confirmRemoveProduct?.title}&quot; from this collection?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRemoveProduct(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmAndRemoveProduct}>
+              Remove
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -433,19 +534,12 @@ export default function CollectionDetailPage() {
       </Dialog>
 
       {/* Add Products Modal */}
-      <Dialog open={addProductsModalOpen} onOpenChange={(open) => {
-        setAddProductsModalOpen(open);
-        if (!open) {
-          setProductSearch("");
-          setSearchResults([]);
-          setSelectedProducts([]);
-        }
-      }}>
+      <Dialog open={addProductsModalOpen} onOpenChange={handleAddProductsModalOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add Products to Collection</DialogTitle>
             <DialogDescription>
-              Search and select products to add to this collection
+              Browse or search products to add to this collection
             </DialogDescription>
           </DialogHeader>
 
@@ -460,13 +554,31 @@ export default function CollectionDetailPage() {
               />
             </div>
 
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label htmlFor="new-week-products" className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Checkbox
+                  id="new-week-products"
+                  checked={showOnlyNewProducts}
+                  onCheckedChange={(checked) => handleToggleShowOnlyNewProducts(checked === true)}
+                />
+                New this week (created in last {NEW_PRODUCT_DAYS} days)
+              </label>
+              {!productSearch.trim() ? (
+                <span className="text-xs text-muted-foreground">Showing latest products</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  Results for &quot;{productSearch.trim()}&quot;
+                </span>
+              )}
+            </div>
+
             {searchingProducts && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             )}
 
-            {!searchingProducts && searchResults.length > 0 && (
+            {!searchingProducts && displayedProducts.length > 0 && (
               <div className="border rounded-lg max-h-[300px] overflow-y-auto">
                 <Table>
                   <TableHeader>
@@ -478,7 +590,7 @@ export default function CollectionDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {searchResults.map((product) => (
+                    {displayedProducts.map((product) => (
                       <TableRow
                         key={product.id}
                         className="cursor-pointer"
@@ -504,7 +616,14 @@ export default function CollectionDetailPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{product.title}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {product.title}
+                            {isNewProduct(product) && (
+                              <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                                New
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground">{product.handle}</div>
                         </TableCell>
                         <TableCell>
@@ -519,15 +638,21 @@ export default function CollectionDetailPage() {
               </div>
             )}
 
-            {!searchingProducts && productSearch.length >= 2 && searchResults.length === 0 && (
+            {!searchingProducts && productSearch.trim().length > 0 && searchResults.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No products found matching &quot;{productSearch}&quot;
               </div>
             )}
 
-            {!searchingProducts && productSearch.length < 2 && (
+            {!searchingProducts && searchResults.length === 0 && productSearch.trim().length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                Type at least 2 characters to search
+                No products available to add
+              </div>
+            )}
+
+            {!searchingProducts && showOnlyNewProducts && searchResults.length > 0 && displayedProducts.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No products created in the last {NEW_PRODUCT_DAYS} days
               </div>
             )}
 
@@ -542,7 +667,7 @@ export default function CollectionDetailPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setAddProductsModalOpen(false)}
+              onClick={() => void handleAddProductsModalOpenChange(false)}
               disabled={addingProducts}
             >
               Cancel
@@ -569,13 +694,13 @@ export default function CollectionDetailPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-auto">
@@ -780,7 +905,7 @@ export default function CollectionDetailPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                            onClick={() => handleRemoveProduct(product.id)}
+                            onClick={() => handleRemoveProduct(product)}
                             disabled={removingProduct === product.id}
                           >
                             {removingProduct === product.id ? (

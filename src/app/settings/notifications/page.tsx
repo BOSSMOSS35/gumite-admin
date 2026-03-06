@@ -28,6 +28,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Bell,
   BellOff,
   BellRing,
@@ -45,6 +56,7 @@ import {
   getBrowserPermission,
   requestBrowserPermission,
 } from "@/hooks/use-notifications";
+import { toast } from "sonner";
 import { ApiError, type NotificationPreference } from "@/lib/api";
 
 // Helper to get error message
@@ -181,6 +193,10 @@ export default function NotificationSettingsPage() {
         onSuccess: () => {
           setPendingChanges(new Map());
           setHasChanges(false);
+          toast.success("Preferences saved");
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err));
         },
       }
     );
@@ -198,6 +214,10 @@ export default function NotificationSettingsPage() {
       onSuccess: () => {
         setPendingChanges(new Map());
         setHasChanges(false);
+        toast.success("Preferences reset to defaults");
+      },
+      onError: (err) => {
+        toast.error(getErrorMessage(err));
       },
     });
   };
@@ -470,15 +490,32 @@ export default function NotificationSettingsPage() {
 
               {/* Reset Button */}
               <div className="mt-4 flex justify-end border-t pt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  disabled={isResettingPreferences}
-                >
-                  {isResettingPreferences && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Reset to Defaults
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isResettingPreferences}
+                    >
+                      {isResettingPreferences && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Reset to Defaults
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset notification preferences?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will reset all notification preferences to their default values. Any custom settings you have configured will be lost.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleReset}>
+                        Reset to Defaults
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </>
           )}

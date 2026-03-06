@@ -1,6 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { NotificationHandlerProvider } from "@/hooks/use-notification-handler";
 import { useAuth } from "@/lib/auth-context";
+import { getTaxSetupStatus } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import {
   Breadcrumb,
@@ -22,9 +25,60 @@ const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
+  const [isSetupChecking, setIsSetupChecking] = useState(true);
+  const [isSetupRequired, setIsSetupRequired] = useState(false);
 
   const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname?.startsWith(route));
+  const isSetupRoute =
+    pathname?.startsWith("/settings/regions") ||
+    pathname?.startsWith("/settings/tax-regions") ||
+    pathname?.startsWith("/settings/store") ||
+    pathname?.startsWith("/settings");
+
+  useEffect(() => {
+    if (isPublicRoute || !isAuthenticated) {
+      setIsSetupChecking(false);
+      setIsSetupRequired(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkSetup = async () => {
+      try {
+        setIsSetupChecking(true);
+        const status = await getTaxSetupStatus();
+        if (cancelled) return;
+        setIsSetupRequired(!status.isReady);
+      } catch {
+        // Avoid blocking navigation when setup check fails unexpectedly.
+        if (!cancelled) {
+          setIsSetupRequired(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSetupChecking(false);
+        }
+      }
+    };
+
+    checkSetup();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, isPublicRoute, pathname]);
+
+  useEffect(() => {
+    if (isPublicRoute || !isAuthenticated) return;
+    if (isSetupChecking) return;
+    if (!isSetupRequired) return;
+    if (isSetupRoute) return;
+
+    router.replace("/settings/regions?setup=required");
+  }, [isPublicRoute, isAuthenticated, isSetupChecking, isSetupRequired, isSetupRoute, router]);
 
   // Show loading spinner while checking auth
   if (isLoading && !isPublicRoute) {
@@ -33,6 +87,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isPublicRoute && isAuthenticated && isSetupChecking && !isSetupRoute) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Checking tax and region setup...</p>
         </div>
       </div>
     );
@@ -80,6 +145,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
+            {isSetupRequired && isSetupRoute && (
+              <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+                Region setup is required before using the rest of admin.
+                <Link href="/settings/store" className="ml-2 underline underline-offset-2">
+                  Configure store
+                </Link>
+                <Link href="/settings/regions" className="ml-2 underline underline-offset-2">
+                  Configure regions
+                </Link>
+                <Link href="/settings/tax-regions" className="ml-3 underline underline-offset-2">
+                  Configure tax rates
+                </Link>
+              </div>
+            )}
             {children}
           </main>
         </SidebarInset>

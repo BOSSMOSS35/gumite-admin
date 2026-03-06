@@ -39,6 +39,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   getOrders,
   OrderSummary,
@@ -140,24 +141,29 @@ export default function OrdersPage() {
   };
 
   const handleExport = () => {
-    const headers = ["Order", "Date", "Customer", "Payment", "Fulfillment", "Order Total"];
-    const rows = filteredOrders.map((order) => [
-      `#${order.displayId}`,
-      formatDate(order.createdAt),
-      order.email,
-      order.paymentStatus,
-      order.fulfillmentStatus,
-      formatPrice(order.total, order.currencyCode),
-    ]);
+    try {
+      const headers = ["Order", "Date", "Customer", "Payment", "Fulfillment", "Order Total"];
+      const rows = filteredOrders.map((order) => [
+        `#${order.displayId}`,
+        formatDate(order.createdAt),
+        order.email,
+        order.paymentStatus,
+        order.fulfillmentStatus,
+        formatPrice(order.total, order.currencyCode),
+      ]);
 
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `orders-export-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `orders-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export complete");
+    } catch (err) {
+      toast.error("Failed to export orders");
+    }
   };
 
   // Filter orders based on active filters (API already handles search)
@@ -189,7 +195,7 @@ export default function OrdersPage() {
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Orders</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={fetchOrders} disabled={loading}>
+            <Button variant="outline" size="icon" aria-label="Refresh" onClick={fetchOrders} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
             <Button variant="outline" onClick={handleExport} disabled={orders.length === 0}>
@@ -298,7 +304,16 @@ export default function OrdersPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Reset filters and search"
+                disabled={activeFilters.length === 0 && searchQuery.trim().length === 0}
+                onClick={() => {
+                  clearFilters();
+                  setSearchQuery("");
+                }}
+              >
                 <SlidersHorizontal className="h-4 w-4" />
               </Button>
             </div>
@@ -306,7 +321,7 @@ export default function OrdersPage() {
 
           {/* Error State */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
               <Button variant="ghost" size="sm" onClick={fetchOrders} className="ml-auto">

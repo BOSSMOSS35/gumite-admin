@@ -61,6 +61,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -100,13 +101,13 @@ import { useRef } from "react";
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
     case "published":
-      return <Badge className="bg-green-100 text-green-800">Published</Badge>;
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Published</Badge>;
     case "draft":
-      return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300">Draft</Badge>;
     case "proposed":
-      return <Badge className="bg-yellow-100 text-yellow-800">Proposed</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300">Proposed</Badge>;
     case "rejected":
-      return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300">Rejected</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -183,9 +184,13 @@ export default function ProductDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (productId === "new") {
+      router.replace("/products?action=add");
+      return;
+    }
     fetchProduct();
     fetchCategories();
-  }, [productId]);
+  }, [productId, router]);
 
   const fetchProduct = async () => {
     setLoading(true);
@@ -218,7 +223,7 @@ export default function ProductDetailPage() {
       const response = await getCategories({ limit: 100 });
       setCategories(response.categories || []);
     } catch (err) {
-      console.error("Failed to load categories:", err);
+      toast.error("Failed to load categories");
     }
   };
 
@@ -726,7 +731,11 @@ export default function ProductDetailPage() {
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toast.info("Duplicate feature coming soon")}
+          >
             <Copy className="mr-2 h-4 w-4" />
             Duplicate
           </Button>
@@ -737,7 +746,13 @@ export default function ProductDetailPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (!confirm("Are you sure you want to archive this product?")) return;
+                  updateField("status", "draft" as ProductStatus);
+                  toast.info("Product marked as draft. Save to apply.");
+                }}
+              >
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Product
               </DropdownMenuItem>
@@ -756,7 +771,7 @@ export default function ProductDetailPage() {
 
       {/* Success message */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
@@ -764,7 +779,7 @@ export default function ProductDetailPage() {
 
       {/* Error message */}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-auto">
@@ -904,6 +919,7 @@ export default function ProductDetailPage() {
                   onChange={handleImageUpload}
                   accept="image/*"
                   className="hidden"
+                  aria-label="Upload product image"
                 />
                 {/* Thumbnails - Drag to reorder */}
                 <div className="flex gap-2 overflow-x-auto pb-2">
@@ -987,6 +1003,7 @@ export default function ProductDetailPage() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingImage || reordering}
+                    aria-label="Upload product image"
                     className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-md border-2 border-dashed hover:border-primary hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {uploadingImage || reordering ? (

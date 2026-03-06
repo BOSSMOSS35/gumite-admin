@@ -73,6 +73,7 @@ import {
   Copy,
   Check,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   getGiftCards,
   getGiftCardStats,
@@ -109,6 +110,7 @@ export default function GiftCardsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState<GiftCardListItem | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -156,7 +158,7 @@ export default function GiftCardsPage() {
       const response = await getGiftCardStats();
       setStats(response);
     } catch (err) {
-      console.error("Failed to load stats:", err);
+      toast.error("Failed to load gift card stats");
     }
   };
 
@@ -197,8 +199,9 @@ export default function GiftCardsPage() {
       });
       await fetchGiftCards();
       await fetchStats();
+      toast.success("Gift card created");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create gift card");
+      toast.error(err instanceof Error ? err.message : "Failed to create gift card");
     } finally {
       setCreateLoading(false);
     }
@@ -213,8 +216,9 @@ export default function GiftCardsPage() {
       }
       await fetchGiftCards();
       await fetchStats();
+      toast.success(card.status === "ACTIVE" ? "Gift card disabled" : "Gift card enabled");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update status");
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
     }
   };
 
@@ -226,8 +230,9 @@ export default function GiftCardsPage() {
       setSelectedCard(null);
       await fetchGiftCards();
       await fetchStats();
+      toast.success("Gift card deleted");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
   };
 
@@ -244,23 +249,34 @@ export default function GiftCardsPage() {
       setSelectedCard(null);
       await fetchGiftCards();
       await fetchStats();
+      toast.success("Balance updated");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to adjust balance");
+      toast.error(err instanceof Error ? err.message : "Failed to adjust balance");
     }
   };
 
   const handleBulkAction = async (action: "DISABLE" | "ENABLE" | "DELETE") => {
     if (selectedIds.size === 0) return;
+    if (action === "DELETE") {
+      setBulkDeleteDialogOpen(true);
+      return;
+    }
+    await executeBulkAction(action);
+  };
+
+  const executeBulkAction = async (action: "DISABLE" | "ENABLE" | "DELETE") => {
     try {
       await bulkGiftCardAction({
         ids: Array.from(selectedIds),
         action,
       });
       setSelectedIds(new Set());
+      setBulkDeleteDialogOpen(false);
       await fetchGiftCards();
       await fetchStats();
+      toast.success(`Bulk ${action.toLowerCase()} completed for ${selectedIds.size} gift cards`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bulk action failed");
+      toast.error(err instanceof Error ? err.message : "Bulk action failed");
     }
   };
 
@@ -402,6 +418,7 @@ export default function GiftCardsPage() {
             <Button
               variant="outline"
               size="icon"
+              aria-label="Refresh gift cards"
               onClick={() => {
                 fetchGiftCards();
                 fetchStats();
@@ -844,6 +861,28 @@ export default function GiftCardsPage() {
               className="bg-destructive text-destructive-foreground"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Gift Cards</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size} selected gift cards?
+              This action cannot be undone. Any remaining balances will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => executeBulkAction("DELETE")}
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete {selectedIds.size} Gift Cards
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

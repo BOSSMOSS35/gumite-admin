@@ -302,7 +302,16 @@ export default function ReturnsPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Reset filters and search"
+                disabled={activeFilters.length === 0 && searchQuery.trim().length === 0}
+                onClick={() => {
+                  clearFilters();
+                  setSearchQuery("");
+                }}
+              >
                 <SlidersHorizontal className="h-4 w-4" />
               </Button>
             </div>
@@ -310,7 +319,7 @@ export default function ReturnsPage() {
 
           {/* Error State */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
               <Button variant="ghost" size="sm" onClick={fetchReturns} className="ml-auto">

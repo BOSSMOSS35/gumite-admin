@@ -263,7 +263,7 @@ function DraggableCategoryRow({
         <TableCell className="text-center">{category.product_count}</TableCell>
         <TableCell>
           {category.is_active ? (
-            <Badge className="bg-green-100 text-green-800">Active</Badge>
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Active</Badge>
           ) : (
             <Badge variant="secondary">Inactive</Badge>
           )}
@@ -469,6 +469,7 @@ export default function CategoriesPage() {
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Modal states
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -514,6 +515,13 @@ export default function CategoriesPage() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const toggleExpanded = async (id: string) => {
     const isCurrentlyExpanded = expanded.has(id);
@@ -844,7 +852,7 @@ export default function CategoriesPage() {
       );
   };
 
-  const filteredCategories = filterCategories(categoryTree, searchQuery);
+  const filteredCategories = filterCategories(categoryTree, debouncedSearch);
 
   // Get root categories for parent selection
   const rootCategories = categories.filter((c) => !c.parent_category_id);
@@ -1028,7 +1036,7 @@ export default function CategoriesPage() {
             </Button>
             <Button
               onClick={editModalOpen ? handleUpdate : handleCreate}
-              disabled={!formData.name.trim() || saving}
+              disabled={!formData.name.trim() || !formData.handle.trim() || saving}
             >
               {saving ? (
                 <>
@@ -1047,13 +1055,13 @@ export default function CategoriesPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-auto">

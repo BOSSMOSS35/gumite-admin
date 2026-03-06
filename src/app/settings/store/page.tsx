@@ -83,6 +83,7 @@ import {
   type SeoSettings,
   type ThemeSettings,
 } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function StoreSettingsPage() {
   // State for store selection
@@ -344,6 +345,7 @@ export default function StoreSettingsPage() {
       setCreateStoreOpen(false);
       setNewStoreName("");
       setNewStoreCurrency("GBP");
+      toast.success("Store created");
       // Auto-select the new store
       handleSelectStore(response.store);
     } catch (err) {
@@ -369,6 +371,7 @@ export default function StoreSettingsPage() {
         socialLinks: businessForm.socialLinks,
       });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setBusinessInfoOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save business info");
@@ -388,6 +391,7 @@ export default function StoreSettingsPage() {
         currencyDisplayFormat: localizationForm.currencyDisplayFormat || undefined,
       });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setLocalizationOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save localization");
@@ -402,6 +406,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await updateStoreFeatures(selectedStore.id, featuresForm);
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setFeaturesOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save features");
@@ -416,6 +421,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await updateStorePolicies(selectedStore.id, { policies: policiesForm });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setPoliciesOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save policies");
@@ -430,6 +436,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await updateStoreCheckoutSettings(selectedStore.id, { checkoutSettings: checkoutForm });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setCheckoutOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save checkout settings");
@@ -444,6 +451,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await updateStoreShippingSettings(selectedStore.id, { shippingSettings: shippingForm });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setShippingOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save shipping settings");
@@ -458,6 +466,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await updateStoreSeoSettings(selectedStore.id, { seoSettings: seoForm });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setSeoOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save SEO settings");
@@ -472,6 +481,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await updateStoreThemeSettings(selectedStore.id, { themeSettings: themeForm });
       setSettings(response.storeSettings);
+      toast.success("Settings saved");
       setThemeOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save theme settings");
@@ -540,7 +550,7 @@ export default function StoreSettingsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={fetchStores}>
+            <Button variant="outline" size="icon" aria-label="Refresh stores" onClick={() => { fetchStores(); toast.success("Refreshed"); }}>
               <RefreshCw className="h-4 w-4" />
             </Button>
             <Button onClick={() => setCreateStoreOpen(true)}>
@@ -694,7 +704,7 @@ export default function StoreSettingsPage() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="icon" onClick={() => fetchSettings(selectedStore.id)}>
+        <Button variant="outline" size="icon" aria-label="Refresh settings" onClick={() => { fetchSettings(selectedStore.id); toast.success("Refreshed"); }}>
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
@@ -759,7 +769,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Contact details and branding</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setBusinessInfoOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit business information" onClick={() => setBusinessInfoOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -826,7 +836,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Regional settings</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setLocalizationOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit localization" onClick={() => setLocalizationOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -862,7 +872,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Enable or disable store features</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setFeaturesOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit features" onClick={() => setFeaturesOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -910,7 +920,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Store policies and legal info</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setPoliciesOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit policies" onClick={() => setPoliciesOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -960,7 +970,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Checkout flow configuration</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setCheckoutOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit checkout" onClick={() => setCheckoutOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -998,7 +1008,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Delivery settings</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShippingOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit shipping" onClick={() => setShippingOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -1035,7 +1045,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Search engine optimization</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setSeoOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit SEO" onClick={() => setSeoOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -1073,7 +1083,7 @@ export default function StoreSettingsPage() {
                     <CardDescription>Storefront colors and fonts</CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setThemeOpen(true)}>
+                <Button variant="ghost" size="icon" aria-label="Edit theme" onClick={() => setThemeOpen(true)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
               </CardHeader>

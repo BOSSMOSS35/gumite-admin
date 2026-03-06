@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   useNotifications,
   useMarkAsRead,
@@ -185,12 +186,26 @@ export default function NotificationsPage() {
 
   // Handle mark as read
   const handleMarkAsRead = (id: string) => {
-    markAsRead.mutate(id);
+    markAsRead.mutate(id, {
+      onSuccess: () => {
+        toast.success("Marked as read");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to mark notification as read");
+      },
+    });
   };
 
   // Handle mark all as read
   const handleMarkAllAsRead = () => {
-    markAllAsRead.mutate();
+    markAllAsRead.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("All notifications marked as read");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to mark all notifications as read");
+      },
+    });
   };
 
   return (

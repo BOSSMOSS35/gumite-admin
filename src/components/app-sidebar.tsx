@@ -18,6 +18,8 @@ import {
   Warehouse,
   Loader2,
   RotateCcw,
+  Star,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -132,6 +134,21 @@ const navItems: NavItem[] = [
     title: "Pricing",
     url: "/pricing",
     icon: CreditCard,
+  },
+  {
+    title: "Reviews",
+    url: "/reviews",
+    icon: Star,
+    children: [
+      { title: "All Reviews", url: "/reviews" },
+      { title: "Pending", url: "/reviews?tab=pending" },
+      { title: "Flagged", url: "/reviews?tab=flagged" },
+    ],
+  },
+  {
+    title: "Marketing",
+    url: "/marketing",
+    icon: Megaphone,
   },
 ];
 

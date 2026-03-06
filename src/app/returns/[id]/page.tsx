@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,6 +13,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -65,6 +67,8 @@ export default function ReturnDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
+  const [restockOnReceive, setRestockOnReceive] = useState(true);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -92,10 +96,18 @@ export default function ReturnDetailPage() {
     setActionLoading("receive");
     setActionError(null);
     try {
-      await receiveReturn(returnId);
+      await receiveReturn(returnId, { restock: restockOnReceive });
+      setReceiveDialogOpen(false);
+      toast.success(
+        restockOnReceive
+          ? "Return marked as received and restocked"
+          : "Return marked as received without restocking"
+      );
       await fetchReturn();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to mark as received");
+      const message = err instanceof Error ? err.message : "Failed to mark as received";
+      setActionError(message);
+      toast.error(message);
     } finally {
       setActionLoading(null);
     }
@@ -107,9 +119,12 @@ export default function ReturnDetailPage() {
     try {
       await processReturnRefund(returnId);
       setRefundDialogOpen(false);
+      toast.success("Refund processed");
       await fetchReturn();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to process refund");
+      const message = err instanceof Error ? err.message : "Failed to process refund";
+      setActionError(message);
+      toast.error(message);
     } finally {
       setActionLoading(null);
     }
@@ -127,9 +142,12 @@ export default function ReturnDetailPage() {
       await rejectReturn(returnId, { reason: rejectReason });
       setRejectDialogOpen(false);
       setRejectReason("");
+      toast.success("Return rejected");
       await fetchReturn();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to reject return");
+      const message = err instanceof Error ? err.message : "Failed to reject return";
+      setActionError(message);
+      toast.error(message);
     } finally {
       setActionLoading(null);
     }
@@ -159,7 +177,7 @@ export default function ReturnDetailPage() {
   if (error || !returnData) {
     return (
       <div className="p-6">
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error || "Return not found"}</span>
           <Button variant="ghost" size="sm" onClick={fetchReturn} className="ml-auto">
@@ -192,14 +210,54 @@ export default function ReturnDetailPage() {
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           {returnData.canReceive && (
-            <Button onClick={handleReceive} disabled={actionLoading === "receive"}>
-              {actionLoading === "receive" ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Package className="h-4 w-4 mr-2" />
-              )}
-              Mark Received
-            </Button>
+            <Dialog
+              open={receiveDialogOpen}
+              onOpenChange={(open) => {
+                setReceiveDialogOpen(open);
+                if (open) setRestockOnReceive(true);
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>
+                  <Package className="h-4 w-4 mr-2" />
+                  Mark Received
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Mark Return as Received</DialogTitle>
+                  <DialogDescription>
+                    Confirm that the returned items have arrived at the warehouse.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 rounded-md border p-3">
+                    <Checkbox
+                      id="restock-return-items"
+                      checked={restockOnReceive}
+                      onCheckedChange={(checked) => setRestockOnReceive(checked === true)}
+                    />
+                    <div className="space-y-1">
+                      <label htmlFor="restock-return-items" className="text-sm font-medium">
+                        Add returned items back to stock
+                      </label>
+                      <p className="text-sm text-muted-foreground">
+                        Turn this off for damaged or non-sellable items.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setReceiveDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleReceive} disabled={actionLoading === "receive"}>
+                    {actionLoading === "receive" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Confirm Receive
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
           {returnData.canRefund && (
             <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
@@ -273,7 +331,7 @@ export default function ReturnDetailPage() {
 
       {/* Action Error Display */}
       {actionError && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{actionError}</span>
           <Button variant="ghost" size="sm" onClick={() => setActionError(null)} className="ml-auto">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -23,13 +24,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Search,
   RefreshCw,
@@ -111,6 +114,7 @@ export default function PricingPage() {
   const [editingRule, setEditingRule] = useState<PricingRuleDto | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<PricingRuleDto | null>(null);
+  const [togglingRuleId, setTogglingRuleId] = useState<string | null>(null);
 
   // WebSocket for real-time updates
   const { isConnected, events } = usePricingEvents({
@@ -167,6 +171,7 @@ export default function PricingPage() {
   };
 
   const handleToggleRuleStatus = async (rule: PricingRuleDto) => {
+    setTogglingRuleId(rule.id);
     try {
       if (rule.isActive) {
         await deactivatePricingRule(rule.id);
@@ -174,9 +179,11 @@ export default function PricingPage() {
         await activatePricingRule(rule.id);
       }
       await fetchRules();
+      toast.success(rule.isActive ? "Rule deactivated" : "Rule activated");
     } catch (err) {
-      console.error("Failed to toggle rule status:", err);
-      setError(err instanceof Error ? err.message : "Failed to update rule");
+      toast.error(err instanceof Error ? err.message : "Failed to update rule");
+    } finally {
+      setTogglingRuleId(null);
     }
   };
 
@@ -192,9 +199,9 @@ export default function PricingPage() {
       await fetchRules();
       setDeleteDialogOpen(false);
       setRuleToDelete(null);
+      toast.success("Rule deleted");
     } catch (err) {
-      console.error("Failed to delete rule:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete rule");
+      toast.error(err instanceof Error ? err.message : "Failed to delete rule");
     }
   };
 
@@ -377,12 +384,15 @@ export default function PricingPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">Pricing Workbench</h1>
             {isConnected ? (
-              <Badge variant="outline" className="gap-1 text-green-600 border-green-200">
+              <Badge
+                variant="outline"
+                className="gap-1 border-green-300/80 bg-green-500/10 text-green-700 dark:border-green-500/40 dark:text-green-300"
+              >
                 <Wifi className="h-3 w-3" />
                 Live
               </Badge>
             ) : (
-              <Badge variant="outline" className="gap-1 text-gray-500">
+              <Badge variant="outline" className="gap-1 text-muted-foreground">
                 <WifiOff className="h-3 w-3" />
                 Offline
               </Badge>
@@ -394,7 +404,10 @@ export default function PricingPage() {
         </div>
         {pendingChanges.size > 0 && (
           <div className="flex items-center gap-2">
-            <Badge className="bg-yellow-100 text-yellow-800">
+            <Badge
+              variant="outline"
+              className="border-amber-300/80 bg-amber-100 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-300"
+            >
               {pendingChanges.size} unsaved changes
             </Badge>
             <Button variant="outline" size="sm" onClick={handleDiscardChanges} disabled={saving}>
@@ -500,7 +513,7 @@ export default function PricingPage() {
                 </CardHeader>
                 <CardContent>
                   {error && (
-                    <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 rounded-lg">
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-300/60 bg-red-100/70 p-4 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
                       <AlertCircle className="h-5 w-5" />
                       <span>{error}</span>
                       <Button variant="ghost" size="sm" onClick={fetchWorkbench} className="ml-auto">
@@ -549,7 +562,11 @@ export default function PricingPage() {
                           items.map((item) => (
                             <TableRow
                               key={item.variantId}
-                              className={hasPriceChanged(item.variantId) ? "bg-yellow-50" : ""}
+                              className={
+                                hasPriceChanged(item.variantId)
+                                  ? "bg-amber-100/70 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+                                  : ""
+                              }
                             >
                               <TableCell>
                                 <Checkbox
@@ -594,7 +611,7 @@ export default function PricingPage() {
                                     type="text"
                                     className={`w-24 text-right ${
                                       hasPriceChanged(item.variantId)
-                                        ? "border-yellow-400 bg-yellow-50"
+                                        ? "border-amber-400 bg-amber-50 text-amber-950 placeholder:text-amber-800/60 dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-100 dark:placeholder:text-amber-200/60"
                                         : ""
                                     }`}
                                     value={getPriceDisplay(item).toFixed(2)}
@@ -607,8 +624,8 @@ export default function PricingPage() {
                                       variant="outline"
                                       className={
                                         pendingChanges.get(item.variantId)!.newPrice > item.currentPrice
-                                          ? "text-green-600"
-                                          : "text-red-600"
+                                          ? "border-green-300/80 bg-green-100/70 text-green-700 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300"
+                                          : "border-red-300/80 bg-red-100/70 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
                                       }
                                     >
                                       {pendingChanges.get(item.variantId)!.newPrice > item.currentPrice ? (
@@ -743,16 +760,19 @@ export default function PricingPage() {
                                       <Pencil className="h-4 w-4 mr-2" />
                                       Edit
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleToggleRuleStatus(rule)}>
+                                    <DropdownMenuItem
+                                      onClick={() => handleToggleRuleStatus(rule)}
+                                      disabled={togglingRuleId === rule.id}
+                                    >
                                       {rule.isActive ? (
                                         <>
                                           <PowerOff className="h-4 w-4 mr-2" />
-                                          Deactivate
+                                          {togglingRuleId === rule.id ? "Deactivating..." : "Deactivate"}
                                         </>
                                       ) : (
                                         <>
                                           <Power className="h-4 w-4 mr-2" />
-                                          Activate
+                                          {togglingRuleId === rule.id ? "Activating..." : "Activate"}
                                         </>
                                       )}
                                     </DropdownMenuItem>
@@ -824,9 +844,9 @@ export default function PricingPage() {
                                 <span
                                   className={
                                     change.priceDifference > 0
-                                      ? "text-green-600"
+                                      ? "text-green-700 dark:text-green-300"
                                       : change.priceDifference < 0
-                                      ? "text-red-600"
+                                      ? "text-red-700 dark:text-red-300"
                                       : ""
                                   }
                                 >
@@ -922,24 +942,22 @@ export default function PricingPage() {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Pricing Rule</DialogTitle>
-            <DialogDescription>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Pricing Rule</AlertDialogTitle>
+            <AlertDialogDescription>
               Are you sure you want to delete &quot;{ruleToDelete?.name}&quot;? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteRule}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteRule} className="bg-destructive text-destructive-foreground">
               Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
