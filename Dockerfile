@@ -1,13 +1,15 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && corepack prepare pnpm@latest --activate && pnpm install --frozen-lockfile
 
 COPY . .
 
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WS_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL}
 
 RUN pnpm build
 
