@@ -78,6 +78,7 @@ export default function RegionsSettingsPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [settingDefaultRegionId, setSettingDefaultRegionId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("GBP");
   const [taxRatePercent, setTaxRatePercent] = useState("20");
@@ -140,6 +141,23 @@ export default function RegionsSettingsPage() {
     setAutomaticTaxes(true);
     setTaxInclusive(true);
     setSetDefaultRegion(true);
+  };
+
+  const handleSetDefault = async (regionId: string) => {
+    if (stores.length === 0) {
+      toast.error("No store found. Create a store first.");
+      return;
+    }
+    try {
+      setSettingDefaultRegionId(regionId);
+      await updateStore(stores[0].id, { default_region_id: regionId });
+      toast.success("Default region updated");
+      await fetchData(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to set default region");
+    } finally {
+      setSettingDefaultRegionId(null);
+    }
   };
 
   const handleCreateRegion = async () => {
@@ -311,6 +329,15 @@ export default function RegionsSettingsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              disabled={defaultStores.length > 0 || settingDefaultRegionId === region.id}
+                              onClick={() => handleSetDefault(region.id)}
+                            >
+                              {settingDefaultRegionId === region.id ? (
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              ) : null}
+                              {defaultStores.length > 0 ? "Already Default" : "Set as Store Default"}
+                            </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/settings/regions?regionId=${region.id}`}>Manage Region</Link>
                             </DropdownMenuItem>
