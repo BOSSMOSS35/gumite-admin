@@ -4367,7 +4367,7 @@ export async function getCampaigns(params?: {
   if (params?.offset) query.set("offset", params.offset.toString());
   if (params?.status) query.set("status", params.status);
   if (params?.q) query.set("q", params.q);
-  return apiFetch<CampaignsResponse>(`/admin/campaigns${query.toString() ? `?${query}` : ""}`);
+  return apiFetch<CampaignsResponse>(`/admin/marketing/campaigns${query.toString() ? `?${query}` : ""}`);
 }
 
 // =============================================================================
