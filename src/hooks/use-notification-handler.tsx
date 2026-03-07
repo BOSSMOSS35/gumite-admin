@@ -73,16 +73,21 @@ export function useNotificationHandler() {
   const subscriptionRef = useRef<ReturnType<typeof subscribe> | null>(null);
   const hasSubscribedRef = useRef(false);
 
+  // Stable refs for callback dependencies to avoid re-subscription loops
+  const handleNewNotificationRef = useRef(handleNewNotification);
+  handleNewNotificationRef.current = handleNewNotification;
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
   // Handle incoming notification from WebSocket
   const handleNotificationMessage = useCallback(
     (message: unknown) => {
       const msg = message as NotificationWebSocketMessage;
       const notification = toNotification(msg);
 
-      console.log("[NotificationHandler] Received notification:", notification);
 
       // Update React Query cache
-      handleNewNotification(notification);
+      handleNewNotificationRef.current(notification);
 
       // Show browser notification if permitted
       const browserPermission = getBrowserPermission();
@@ -92,7 +97,7 @@ export function useNotificationHandler() {
           tag: notification.id,
           onClick: () => {
             if (notification.navigateTo) {
-              router.push(notification.navigateTo);
+              routerRef.current.push(notification.navigateTo);
             }
           },
         });
@@ -106,32 +111,25 @@ export function useNotificationHandler() {
           ? {
               label: getActionLabel(notification.entityType),
               onClick: () => {
-                router.push(notification.navigateTo!);
+                routerRef.current.push(notification.navigateTo!);
               },
             }
           : undefined,
       });
     },
-    [handleNewNotification, router]
+    []
   );
 
   // Subscribe to notification queue when connected
   useEffect(() => {
-    console.log("[NotificationHandler] Effect triggered, isConnected:", isConnected);
-
     if (!isConnected) {
-      console.log("[NotificationHandler] Not connected, resetting subscription state");
       hasSubscribedRef.current = false;
       return;
     }
 
-    // Prevent duplicate subscriptions
     if (hasSubscribedRef.current) {
-      console.log("[NotificationHandler] Already subscribed, skipping");
       return;
     }
-
-    console.log("[NotificationHandler] Subscribing to:", USER_NOTIFICATION_QUEUE);
     hasSubscribedRef.current = true;
 
     const subscription = subscribe(
@@ -139,7 +137,6 @@ export function useNotificationHandler() {
       handleNotificationMessage
     );
 
-    console.log("[NotificationHandler] Subscription result:", subscription ? "success" : "null (pending)");
 
     if (subscription) {
       subscriptionRef.current = subscription;
@@ -147,7 +144,6 @@ export function useNotificationHandler() {
 
     return () => {
       if (subscriptionRef.current) {
-        console.log("[NotificationHandler] Cleanup: unsubscribing from notifications queue");
         unsubscribe(subscriptionRef.current);
         subscriptionRef.current = null;
         hasSubscribedRef.current = false;

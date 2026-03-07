@@ -91,6 +91,7 @@ export function SettingsSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     className={cn(
                       "block rounded-md px-2 py-1.5 text-sm transition-colors",
                       pathname === item.href
