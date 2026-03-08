@@ -39,7 +39,7 @@ export default function LoginPage() {
   const isLoading = isSubmitting || authLoading;
 
   return (
-    <div className="force-light relative flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="relative flex min-h-screen">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-zinc-950 via-zinc-900 to-neutral-900 relative overflow-hidden">
         {/* Background pattern */}
@@ -93,20 +93,20 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login form */}
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12">
-        <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 justify-center mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900">
-              <Store className="h-6 w-6 text-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-700">
+              <Store className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-semibold">Gumite</span>
+            <span className="text-xl font-semibold text-zinc-900 dark:text-white">Gumite</span>
           </div>
 
           {/* Header */}
           <div className="space-y-2 text-center lg:text-left">
-            <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">Sign in</h2>
+            <p className="text-zinc-500 dark:text-zinc-400">
               Enter your credentials to access the admin dashboard
             </p>
           </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-zinc-700 dark:text-zinc-300">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -134,13 +134,13 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   autoFocus
-                  className="h-11 bg-white dark:bg-white"
+                  className="h-11 bg-white dark:bg-zinc-800 dark:border-zinc-600 dark:text-white dark:placeholder:text-zinc-500"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-zinc-700 dark:text-zinc-300">Password</Label>
                 </div>
                 <Input
                   id="password"
@@ -151,7 +151,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                   required
                   autoComplete="current-password"
-                  className="h-11 bg-white dark:bg-white"
+                  className="h-11 bg-white dark:bg-zinc-800 dark:border-zinc-600 dark:text-white dark:placeholder:text-zinc-500"
                 />
               </div>
 
@@ -164,7 +164,7 @@ export default function LoginPage() {
                 />
                 <Label
                   htmlFor="remember"
-                  className="text-sm font-normal text-muted-foreground cursor-pointer"
+                  className="text-sm font-normal text-zinc-500 dark:text-zinc-400 cursor-pointer"
                 >
                   Remember me for 30 days
                 </Label>
@@ -188,11 +188,11 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
             Need help?{" "}
             <a
               href="mailto:support@gumite.com"
-              className="text-foreground hover:underline"
+              className="text-zinc-900 dark:text-white hover:underline"
             >
               Contact support
             </a>
