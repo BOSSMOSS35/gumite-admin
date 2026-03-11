@@ -10,7 +10,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { NotificationHandlerProvider } from "@/hooks/use-notification-handler";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { getTaxSetupStatus } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import {

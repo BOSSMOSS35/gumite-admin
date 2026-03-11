@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { getUserDisplayName, getUserInitials, getRoleDisplayName, getRoleBadgeColor } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 

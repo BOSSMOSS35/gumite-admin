@@ -35,6 +35,9 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Public routes that don't require authentication
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
+// Refresh access token every 20 hours (cookie maxAge is 24h)
+const TOKEN_REFRESH_INTERVAL = 20 * 60 * 60 * 1000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,16 +51,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname?.startsWith(route));
 
-  // Fetch current user
+  // Try to refresh the access token using the refresh cookie
+  const tryRefresh = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch(
+        `${AUTH_CONFIG.apiUrl}${AUTH_CONFIG.endpoints.refresh}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        }
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Fetch current user (with automatic refresh on 401)
   const fetchUser = useCallback(async (): Promise<InternalUserInfo | null> => {
     try {
-      const response = await fetch(`${AUTH_CONFIG.apiUrl}${AUTH_CONFIG.endpoints.me}`, {
+      let response = await fetch(`${AUTH_CONFIG.apiUrl}${AUTH_CONFIG.endpoints.me}`, {
         method: "GET",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
       });
+
+      // If access token expired, try refreshing it
+      if (response.status === 401) {
+        const refreshed = await tryRefresh();
+        if (refreshed) {
+          // Retry the /me call with the new access token cookie
+          response = await fetch(`${AUTH_CONFIG.apiUrl}${AUTH_CONFIG.endpoints.me}`, {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
 
       if (!response.ok) {
         return null;
@@ -68,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Failed to fetch user:", error);
       return null;
     }
-  }, []);
+  }, [tryRefresh]);
 
   // Login
   const login = useCallback(
@@ -111,30 +145,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Logout
-  const logout = useCallback(async () => {
+  // Force logout: clear cookies on server + redirect to login
+  const forceLogout = useCallback(async () => {
     try {
       await fetch(`${AUTH_CONFIG.apiUrl}${AUTH_CONFIG.endpoints.logout}`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      // Reset auth tracking refs
-      justAuthenticatedRef.current = false;
-
-      setState({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-      });
-      router.push("/login");
+    } catch {
+      // Even if the API call fails, still clear local state
     }
+    justAuthenticatedRef.current = false;
+    setState({ user: null, isLoading: false, isAuthenticated: false });
+    router.push("/login");
   }, [router]);
+
+  // Logout — delegates to forceLogout for cookie cleanup
+  const logout = useCallback(async () => {
+    await forceLogout();
+  }, [forceLogout]);
 
   // Refresh user data
   const refreshUser = useCallback(async () => {
@@ -156,9 +186,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // If we just authenticated via login, skip the re-fetch
-      // The state is already set correctly from the login response
       if (justAuthenticatedRef.current) {
-        justAuthenticatedRef.current = false; // Reset for future use
+        justAuthenticatedRef.current = false;
         return;
       }
 
@@ -178,6 +207,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
   }, [fetchUser, isPublicRoute, router]);
+
+  // Periodic silent token refresh — if refresh fails, fully log out
+  useEffect(() => {
+    if (!state.isAuthenticated) return;
+
+    const interval = setInterval(async () => {
+      const refreshed = await tryRefresh();
+      if (!refreshed) {
+        forceLogout();
+      }
+    }, TOKEN_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [state.isAuthenticated, tryRefresh, forceLogout]);
+
+  // Refresh token when tab regains focus — if session expired, fully log out
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState === "visible" && state.isAuthenticated) {
+        const user = await fetchUser();
+        if (!user) {
+          forceLogout();
+        } else {
+          setState({ user, isLoading: false, isAuthenticated: true });
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [state.isAuthenticated, fetchUser, forceLogout]);
 
   // Redirect authenticated users away from login page
   useEffect(() => {

@@ -112,6 +112,8 @@ export default function DiscountsPage() {
   const [deletingDiscount, setDeletingDiscount] = useState<Promotion | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   // Fetch data
   const fetchDiscounts = useCallback(async () => {
@@ -182,6 +184,8 @@ export default function DiscountsPage() {
   };
 
   const handleToggleStatus = async (discount: Promotion) => {
+    if (togglingId) return;
+    setTogglingId(discount.id);
     try {
       if (discount.isActive) {
         await deactivateDiscount(discount.id);
@@ -194,10 +198,14 @@ export default function DiscountsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update status");
       toast.error(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setTogglingId(null);
     }
   };
 
   const handleDuplicate = async (discount: Promotion) => {
+    if (duplicatingId) return;
+    setDuplicatingId(discount.id);
     try {
       await duplicateDiscount(discount.id);
       await fetchDiscounts();
@@ -206,6 +214,8 @@ export default function DiscountsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to duplicate");
       toast.error(err instanceof Error ? err.message : "Failed to duplicate");
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -461,6 +471,7 @@ export default function DiscountsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleBulkAction("ACTIVATE")}
+                    disabled={bulkActionLoading}
                   >
                     <Power className="h-4 w-4 mr-1" />
                     Activate
@@ -469,6 +480,7 @@ export default function DiscountsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleBulkAction("DEACTIVATE")}
+                    disabled={bulkActionLoading}
                   >
                     <PowerOff className="h-4 w-4 mr-1" />
                     Deactivate
@@ -637,13 +649,15 @@ export default function DiscountsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDuplicate(discount)}
+                                  disabled={duplicatingId === discount.id}
                                 >
                                   <Copy className="h-4 w-4 mr-2" />
-                                  Duplicate
+                                  {duplicatingId === discount.id ? "Duplicating..." : "Duplicate"}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => handleToggleStatus(discount)}
+                                  disabled={togglingId === discount.id}
                                 >
                                   {discount.isActive ? (
                                     <>
