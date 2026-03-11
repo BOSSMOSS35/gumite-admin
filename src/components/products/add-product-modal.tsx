@@ -217,12 +217,23 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     setError(null);
 
     try {
+      // Upload images to S3 first
+      let imageUrls: string[] = [];
+      if (formData.images.length > 0) {
+        const uploadResults = await Promise.all(
+          formData.images.map((file) => uploadProductImage(file))
+        );
+        imageUrls = uploadResults.map((r) => r.url);
+      }
+
       // Build the product input
       const productInput: CreateProductInput = {
         title: formData.title,
         description: formData.description || undefined,
         handle: formData.handle || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         status: isDraft ? "draft" : "published",
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+        thumbnail: imageUrls.length > 0 ? imageUrls[0] : undefined,
         shippingProfileId: "default", // TODO: Get from backend
         categoryIds: formData.category ? [formData.category] : [],
         options: formData.hasVariants
