@@ -34,6 +34,7 @@ import {
   getCategories,
   getCollections,
   createProduct,
+  uploadProductImage,
   type ProductCategory,
   type ProductCollection,
   type CreateProductInput,
