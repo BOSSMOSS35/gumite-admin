@@ -71,6 +71,7 @@ import { SendEmailDialog } from "@/components/customers/SendEmailDialog";
 import { SendGiftCardDialog } from "@/components/customers/SendGiftCardDialog";
 import { SuspendCustomerDialog } from "@/components/customers/SuspendCustomerDialog";
 import { ChangeTierDialog } from "@/components/customers/ChangeTierDialog";
+import { CreateCustomerDialog } from "@/components/customers/CreateCustomerDialog";
 import { toast } from "sonner";
 
 function getTierBadge(tier: CustomerTier) {
@@ -106,6 +107,7 @@ export default function CustomersPage() {
   const [giftCardDialogOpen, setGiftCardDialogOpen] = useState(false);
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [changeTierDialogOpen, setChangeTierDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -199,7 +201,7 @@ export default function CustomersPage() {
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
             <UserPlus className="h-4 w-4" />
             Add Customer
           </Button>
@@ -444,6 +446,15 @@ export default function CustomersPage() {
           />
         </>
       )}
+
+      <CreateCustomerDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={() => {
+          toast.success("Customer created successfully");
+          fetchCustomers();
+        }}
+      />
     </div>
   );
 }

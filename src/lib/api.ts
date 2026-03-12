@@ -110,7 +110,7 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
 }
 
 // Generic API fetch with auth
-async function apiFetch<T>(
+export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
