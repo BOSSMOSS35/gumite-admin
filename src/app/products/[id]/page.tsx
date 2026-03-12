@@ -652,7 +652,7 @@ export default function ProductDetailPage() {
       return url;
     }
     // If it's a relative URL, prepend the API base
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const apiBase = "";
     return `${apiBase}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 

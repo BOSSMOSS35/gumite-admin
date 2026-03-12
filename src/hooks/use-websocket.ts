@@ -4,8 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const WS_ENDPOINT = `${API_URL}/ws`;
+const WS_ENDPOINT = "/ws";
 
 export interface UseWebSocketOptions {
   autoConnect?: boolean;
@@ -42,7 +41,7 @@ function notifyConnectionState(connected: boolean) {
 
 async function fetchWsToken(): Promise<string | null> {
   try {
-    const response = await fetch(`${API_URL}/api/v1/internal/auth/ws-token`, {
+    const response = await fetch(`/api/v1/internal/auth/ws-token`, {
       method: "POST",
       credentials: "include",
     });

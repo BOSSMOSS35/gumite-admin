@@ -1,7 +1,7 @@
 // Auth configuration and utilities for internal admin users
 
 export const AUTH_CONFIG = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+  apiUrl: "",
   endpoints: {
     login: "/api/v1/internal/auth/login",
     me: "/api/v1/internal/auth/me",

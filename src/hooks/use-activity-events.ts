@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState, useRef } from "react";
 import { useWebSocket } from "./use-websocket";
 import { ActivityItem } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = "";
 const ACTIVITY_TOPIC = "/topic/auditlog";
 const MAX_ACTIVITIES = 100;
 const DEFAULT_POLLING_INTERVAL = 120000; // 2 minutes

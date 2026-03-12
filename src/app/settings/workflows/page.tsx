@@ -356,7 +356,7 @@ export default function WorkflowsSettingsPage() {
   const handleRetry = useCallback(async () => {
     if (!selectedExecution) return;
 
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const apiBaseUrl = "";
     setIsRetrying(true);
     try {
       const response = await fetch(
