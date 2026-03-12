@@ -4383,3 +4383,14 @@ export async function updateAdminProfile(data: {
     body: JSON.stringify(data),
   });
 }
+
+// =============================================================================
+// Password Reset API
+// =============================================================================
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>("/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}
