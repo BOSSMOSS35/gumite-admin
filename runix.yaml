@@ -1,0 +1,10 @@
+name: gumite-admin
+services:
+  - name: gumite-admin
+    type: web-service
+    repo: https://github.com/BOSSMOSS35/gumite-admin
+    branch: main
+    env:
+      NEXT_PUBLIC_API_URL: "https://gumite-backend-b961ae13.runixcloud.dev"
+      NEXT_PUBLIC_WS_URL: "wss://gumite-backend-b961ae13.runixcloud.dev/ws"
+      NODE_ENV: "production"

@@ -727,7 +727,19 @@ export default function ProductDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://gumite-storefront-apu1.runixcloud.dev";
+              const handle = product?.handle || formData.handle;
+              if (handle) {
+                window.open(`${storefrontUrl}/products/${handle}`, "_blank");
+              } else {
+                toast.error("Product handle is missing — save the product first");
+              }
+            }}
+          >
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
