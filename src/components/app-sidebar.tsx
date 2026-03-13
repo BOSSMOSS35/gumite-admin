@@ -345,7 +345,7 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton size="lg">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/avatars/admin.jpg" alt="Admin" />
+                    <AvatarImage src="" alt="Admin" />
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
                       <Store className="size-4" />
                     </AvatarFallback>

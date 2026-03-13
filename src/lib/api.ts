@@ -3428,7 +3428,7 @@ export interface StoreRegionsResponse {
 }
 
 export async function getStoreRegions(): Promise<StoreRegionsResponse> {
-  return apiFetch<StoreRegionsResponse>("/store/regions");
+  return apiFetch<StoreRegionsResponse>("/admin/regions");
 }
 
 export interface AdminRegionCountry {
