@@ -5,6 +5,23 @@ import { useWebSocket } from "./use-websocket";
 
 const API_BASE_URL = "";
 
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function deepCamelCase(obj: unknown): unknown {
+  if (Array.isArray(obj)) return obj.map(deepCamelCase);
+  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
+        toCamelCase(k),
+        deepCamelCase(v),
+      ])
+    );
+  }
+  return obj;
+}
+
 // Event types matching backend
 export type WorkflowEventType =
   | "WORKFLOW_STARTED"
@@ -204,7 +221,7 @@ export function useWorkflowEvents(options: UseWorkflowEventsOptions = {}) {
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      const activeExecutions = (await response.json()) as Array<{
+      const activeExecutions = (deepCamelCase(await response.json()) as Array<{
         id: string;
         workflowName: string;
         status: string;
@@ -225,7 +242,7 @@ export function useWorkflowEvents(options: UseWorkflowEventsOptions = {}) {
           startedAt?: string;
           completedAt?: string;
         }>;
-      }>;
+      }>);
 
       setExecutions((prev) => {
         const newMap = new Map(prev);
@@ -270,7 +287,7 @@ export function useWorkflowEvents(options: UseWorkflowEventsOptions = {}) {
         headers: { "Content-Type": "application/json" },
       });
       if (recentResponse.ok) {
-        const recentExecutions = (await recentResponse.json()) as Array<{
+        const recentExecutions = (deepCamelCase(await recentResponse.json()) as Array<{
           id: string;
           workflowName: string;
           status: string;
@@ -291,7 +308,7 @@ export function useWorkflowEvents(options: UseWorkflowEventsOptions = {}) {
             startedAt?: string;
             completedAt?: string;
           }>;
-        }>;
+        }>);
 
         setExecutions((prev) => {
           const newMap = new Map(prev);
