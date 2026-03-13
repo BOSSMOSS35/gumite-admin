@@ -177,7 +177,9 @@ export async function apiFetch<T>(
   }
 
   const json = await response.json();
-  return deepCamelCase(json) as T;
+  // Note: response keys are NOT converted — interfaces already use snake_case
+  // to match the backend. Only request bodies are converted (camelCase → snake_case).
+  return json as T;
 }
 
 // Order types
