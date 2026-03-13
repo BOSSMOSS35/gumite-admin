@@ -50,13 +50,13 @@ import { toast } from "sonner";
 interface ProductTag {
   id: string;
   value: string;
-  product_count: number;
-  created_at: string;
-  updated_at: string;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ProductTagsResponse {
-  product_tags: ProductTag[];
+  productTags: ProductTag[];
   count: number;
   offset: number;
   limit: number;
@@ -74,7 +74,7 @@ export default function ProductTagsSettingsPage() {
     try {
       setLoading(true);
       const data = await apiFetch<ProductTagsResponse>("/admin/product-tags?limit=100");
-      setProductTags(data.product_tags);
+      setProductTags(data.productTags || []);
     } catch (err) {
       console.error("Failed to fetch product tags:", err);
     } finally {
@@ -171,7 +171,7 @@ export default function ProductTagsSettingsPage() {
                       <Badge variant="secondary">{tag.value}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {tag.product_count} products
+                      {tag.productCount} products
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

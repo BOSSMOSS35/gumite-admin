@@ -50,13 +50,13 @@ interface ProductType {
   id: string;
   value: string;
   description: string | null;
-  product_count: number;
-  created_at: string;
-  updated_at: string;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ProductTypesResponse {
-  product_types: ProductType[];
+  productTypes: ProductType[];
   count: number;
   offset: number;
   limit: number;
@@ -75,7 +75,7 @@ export default function ProductTypesSettingsPage() {
     try {
       setLoading(true);
       const data = await apiFetch<ProductTypesResponse>("/admin/product-types?limit=100");
-      setProductTypes(data.product_types);
+      setProductTypes(data.productTypes || []);
     } catch (err) {
       console.error("Failed to fetch product types:", err);
     } finally {
@@ -176,7 +176,7 @@ export default function ProductTypesSettingsPage() {
                       {type.description || "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {type.product_count} products
+                      {type.productCount} products
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

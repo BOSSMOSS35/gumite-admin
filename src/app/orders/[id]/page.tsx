@@ -409,7 +409,7 @@ export default function OrderDetailsPage() {
       id: "shipped",
       type: "shipped",
       title: "Order shipped",
-      description: order.metadata?.tracking_number ? `Tracking: ${order.metadata.tracking_number}` : "Shipped",
+      description: order.metadata?.trackingNumber ? `Tracking: ${order.metadata.trackingNumber}` : "Shipped",
       timestamp: formatDateTime(order.updatedAt),
     });
   }
@@ -694,14 +694,14 @@ export default function OrderDetailsPage() {
                 </>
               )}
 
-              {order.metadata?.tracking_number && (
+              {order.metadata?.trackingNumber && (
                 <>
                   <Separator />
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Tracking</span>
                     <div className="flex items-center gap-2">
                       <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-mono">{order.metadata.tracking_number}</span>
+                      <span className="text-sm font-mono">{order.metadata.trackingNumber}</span>
                     </div>
                   </div>
                 </>
