@@ -75,6 +75,7 @@ import {
   updateProduct,
   deleteProduct,
   getCategories,
+  getCollections,
   createVariant,
   updateVariant,
   deleteVariant,
@@ -91,6 +92,7 @@ import {
   type ProductStatus,
   type ProductCategory,
   type UpdateProductInput,
+  type ProductCollection,
   type CreateVariantInput,
   type UpdateVariantInput,
   type CreateOptionInput,
@@ -120,6 +122,7 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [collections, setCollections] = useState<ProductCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,6 +177,7 @@ export default function ProductDetailPage() {
     originCountry: "",
     tags: [] as string[],
     categoryId: "",
+    collectionId: "",
   });
 
   // New tag input
@@ -190,6 +194,7 @@ export default function ProductDetailPage() {
     }
     fetchProduct();
     fetchCategories();
+    fetchCollections();
   }, [productId, router]);
 
   const fetchProduct = async () => {
@@ -209,6 +214,7 @@ export default function ProductDetailPage() {
         originCountry: data.originCountry || "",
         tags: data.tags || [],
         categoryId: data.categories?.[0] || "",
+        collectionId: data.collectionId || "",
       });
       setHasChanges(false);
     } catch (err) {
@@ -224,6 +230,15 @@ export default function ProductDetailPage() {
       setCategories(response.categories || []);
     } catch (err) {
       toast.error("Failed to load categories");
+    }
+  };
+
+  const fetchCollections = async () => {
+    try {
+      const response = await getCollections({ limit: 100 });
+      setCollections(response.collections || []);
+    } catch (err) {
+      toast.error("Failed to load collections");
     }
   };
 
@@ -252,6 +267,7 @@ export default function ProductDetailPage() {
         originCountry: formData.originCountry || undefined,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         categories: formData.categoryId ? [formData.categoryId] : undefined,
+        collectionId: formData.collectionId || undefined,
       };
 
       await updateProduct(product.id, updateData);
@@ -848,7 +864,7 @@ export default function ProductDetailPage() {
                   className="min-h-[120px]"
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <Label htmlFor="brand">Brand</Label>
                   <Input id="brand" value={product.brandName || ""} disabled className="bg-muted" />
@@ -867,6 +883,24 @@ export default function ProductDetailPage() {
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="collection">Collection</Label>
+                  <Select
+                    value={formData.collectionId}
+                    onValueChange={(value) => updateField("collectionId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select collection" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {collections.map((col) => (
+                        <SelectItem key={col.id} value={col.id}>
+                          {col.title}
                         </SelectItem>
                       ))}
                     </SelectContent>
