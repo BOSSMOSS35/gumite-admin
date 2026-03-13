@@ -90,9 +90,6 @@ import { getRoleBadgeColor, getRoleDisplayName } from "@/lib/auth";
 
 const AVAILABLE_ROLES: { value: InternalUserRole; label: string; description: string }[] = [
   { value: "ADMIN", label: "Admin", description: "Full access to all features" },
-  { value: "DEVELOPER", label: "Developer", description: "Developer access for integrations" },
-  { value: "CUSTOMER_SERVICE", label: "Customer Service", description: "Manage orders and customers" },
-  { value: "WAREHOUSE_MANAGER", label: "Warehouse Manager", description: "Manage inventory and fulfillment" },
 ];
 
 export default function UsersSettingsPage() {
@@ -106,7 +103,7 @@ export default function UsersSettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteFirstName, setInviteFirstName] = useState("");
   const [inviteLastName, setInviteLastName] = useState("");
-  const [inviteRoles, setInviteRoles] = useState<string[]>(["CUSTOMER_SERVICE"]);
+  const [inviteRoles, setInviteRoles] = useState<string[]>(["ADMIN"]);
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
 
@@ -203,7 +200,7 @@ export default function UsersSettingsPage() {
     setInviteEmail("");
     setInviteFirstName("");
     setInviteLastName("");
-    setInviteRoles(["CUSTOMER_SERVICE"]);
+    setInviteRoles(["ADMIN"]);
     setInviteError(null);
   };
 

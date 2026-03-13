@@ -3664,7 +3664,7 @@ export async function getTaxSetupStatus(): Promise<TaxSetupStatus> {
 // Internal Users API
 // =============================================================================
 
-export type InternalUserRole = "ADMIN" | "DEVELOPER" | "CUSTOMER_SERVICE" | "WAREHOUSE_MANAGER";
+export type InternalUserRole = "ADMIN" | "CUSTOMER" | "GUEST";
 
 export type InviteStatus = "NONE" | "PENDING" | "ACCEPTED" | "EXPIRED";
 

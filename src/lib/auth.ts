@@ -9,7 +9,7 @@ export const AUTH_CONFIG = {
     refresh: "/api/v1/internal/auth/refresh",
   },
   // Admin roles that can access the dashboard
-  adminRoles: ["ADMIN", "CUSTOMER_SERVICE", "WAREHOUSE_MANAGER", "DEVELOPER"],
+  adminRoles: ["ADMIN"],
 };
 
 // Internal user info returned from auth endpoints
@@ -18,7 +18,7 @@ export type InternalUserInfo = {
   email: string;
   firstName: string | null;
   lastName: string | null;
-  role: string; // Primary role: ADMIN, DEVELOPER, CUSTOMER_SERVICE, WAREHOUSE_MANAGER
+  role: string; // ADMIN, CUSTOMER, GUEST
 };
 
 // Login request
@@ -66,12 +66,10 @@ export function getRoleBadgeColor(role: string): string {
   switch (role) {
     case "ADMIN":
       return "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300";
-    case "DEVELOPER":
-      return "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300";
-    case "CUSTOMER_SERVICE":
+    case "CUSTOMER":
       return "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300";
-    case "WAREHOUSE_MANAGER":
-      return "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300";
+    case "GUEST":
+      return "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300";
     default:
       return "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300";
   }
@@ -81,12 +79,10 @@ export function getRoleDisplayName(role: string): string {
   switch (role) {
     case "ADMIN":
       return "Admin";
-    case "DEVELOPER":
-      return "Developer";
-    case "CUSTOMER_SERVICE":
-      return "Customer Service";
-    case "WAREHOUSE_MANAGER":
-      return "Warehouse Manager";
+    case "CUSTOMER":
+      return "Customer";
+    case "GUEST":
+      return "Guest";
     default:
       return role;
   }
