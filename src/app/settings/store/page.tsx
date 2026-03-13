@@ -339,7 +339,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await createStore({
         name: newStoreName.trim(),
-        default_currency_code: newStoreCurrency,
+        defaultCurrencyCode: newStoreCurrency,
       });
       setStores([...stores, response.store]);
       setCreateStoreOpen(false);
@@ -608,7 +608,7 @@ export default function StoreSettingsPage() {
                       <div>
                         <h3 className="font-medium">{store.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Currency: {store.default_currency_code} &middot; ID: {store.id.slice(0, 8)}...
+                          Currency: {store.defaultCurrencyCode} &middot; ID: {store.id.slice(0, 8)}...
                         </p>
                       </div>
                     </div>
@@ -752,7 +752,7 @@ export default function StoreSettingsPage() {
               <CardTitle>{selectedStore.name}</CardTitle>
               <CardDescription className="flex items-center gap-4">
                 <span>Store ID: {selectedStore.id}</span>
-                <Badge variant="secondary">{selectedStore.default_currency_code}</Badge>
+                <Badge variant="secondary">{selectedStore.defaultCurrencyCode}</Badge>
               </CardDescription>
             </CardHeader>
           </Card>

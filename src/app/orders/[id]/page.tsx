@@ -195,7 +195,7 @@ export default function OrderDetailsPage() {
   const fetchShippingOptions = async () => {
     try {
       const response = await getShippingOptions();
-      setShippingOptions(response.shipping_options || []);
+      setShippingOptions(response.shippingOptions || []);
     } catch (err) {
       console.error("Failed to load shipping options:", err);
     }

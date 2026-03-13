@@ -105,9 +105,9 @@ export default function TaxRegionsSettingsPage() {
       }
       setError(null);
       const response = await getTaxRegions({ limit: 100, offset: 0 });
-      setTaxRegions(response.tax_regions ?? []);
-      if (!selectedRegionId && (response.tax_regions?.length ?? 0) > 0) {
-        setSelectedRegionId(response.tax_regions[0].region_id);
+      setTaxRegions(response.taxRegions ?? []);
+      if (!selectedRegionId && (response.taxRegions?.length ?? 0) > 0) {
+        setSelectedRegionId(response.taxRegions[0].regionId);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tax regions");
@@ -123,7 +123,7 @@ export default function TaxRegionsSettingsPage() {
   }, []);
 
   const allTaxRates = useMemo(
-    () => taxRegions.flatMap((region) => region.tax_rates.map((rate) => ({ ...rate, regionName: region.region_name }))),
+    () => taxRegions.flatMap((region) => region.taxRates.map((rate) => ({ ...rate, regionName: region.regionName }))),
     [taxRegions]
   );
 
@@ -305,19 +305,19 @@ export default function TaxRegionsSettingsPage() {
               </TableHeader>
               <TableBody>
                 {taxRegions.map((region) => (
-                  <TableRow key={region.region_id}>
-                    <TableCell className="font-medium">{region.region_name}</TableCell>
+                  <TableRow key={region.regionId}>
+                    <TableCell className="font-medium">{region.regionName}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{region.currency_code}</Badge>
+                      <Badge variant="secondary">{region.currencyCode}</Badge>
                     </TableCell>
-                    <TableCell>{formatPercent(region.default_tax_rate)}</TableCell>
+                    <TableCell>{formatPercent(region.defaultTaxRate)}</TableCell>
                     <TableCell>
-                      {region.tax_rate_count === 0 ? (
+                      {region.taxRateCount === 0 ? (
                         <span className="text-muted-foreground">0</span>
                       ) : (
                         <div className="flex flex-wrap items-center gap-1">
-                          <Badge variant="outline">{region.tax_rate_count} rate(s)</Badge>
-                          {region.tax_rates.slice(0, 2).map((rate) => (
+                          <Badge variant="outline">{region.taxRateCount} rate(s)</Badge>
+                          {region.taxRates.slice(0, 2).map((rate) => (
                             <Badge key={rate.id} variant="secondary">
                               {rate.name}
                             </Badge>
@@ -333,7 +333,7 @@ export default function TaxRegionsSettingsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openCreateRateForRegion(region.region_id)}>
+                          <DropdownMenuItem onClick={() => openCreateRateForRegion(region.regionId)}>
                             Add Tax Rate
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -419,8 +419,8 @@ export default function TaxRegionsSettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {taxRegions.map((region) => (
-                    <SelectItem key={region.region_id} value={region.region_id}>
-                      {region.region_name}
+                    <SelectItem key={region.regionId} value={region.regionId}>
+                      {region.regionName}
                     </SelectItem>
                   ))}
                 </SelectContent>

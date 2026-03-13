@@ -169,11 +169,11 @@ export default function ReviewsPage() {
   const handleToggleFeatured = async (review: AdminReview) => {
     setActionLoading(review.id);
     try {
-      const result = await setReviewFeatured(review.id, !review.is_featured);
+      const result = await setReviewFeatured(review.id, !review.isFeatured);
       setReviews((prev) =>
         prev.map((r) => (r.id === review.id ? result.review : r))
       );
-      toast.success(review.is_featured ? "Review unfeatured" : "Review featured");
+      toast.success(review.isFeatured ? "Review unfeatured" : "Review featured");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update featured status");
       toast.error(err instanceof Error ? err.message : "Failed to update featured status");
@@ -340,8 +340,8 @@ export default function ReviewsPage() {
                     >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium text-sm">{review.customer_name}</span>
-                          {review.verified_purchase && (
+                          <span className="font-medium text-sm">{review.customerName}</span>
+                          {review.verifiedPurchase && (
                             <span className="text-xs text-green-600">Verified Purchase</span>
                           )}
                         </div>
@@ -357,7 +357,7 @@ export default function ReviewsPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {formatDate(review.created_at)}
+                          {formatDate(review.createdAt)}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -445,19 +445,19 @@ export default function ReviewsPage() {
               <DialogHeader>
                 <DialogTitle>Review Details</DialogTitle>
                 <DialogDescription>
-                  By {selectedReview.customer_name} on {formatDate(selectedReview.created_at)}
+                  By {selectedReview.customerName} on {formatDate(selectedReview.createdAt)}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="flex items-center gap-3">
                   <StarDisplay rating={selectedReview.rating} />
                   <ReviewStatusBadge status={selectedReview.status} />
-                  {selectedReview.verified_purchase && (
+                  {selectedReview.verifiedPurchase && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
                       Verified Purchase
                     </span>
                   )}
-                  {selectedReview.is_featured && (
+                  {selectedReview.isFeatured && (
                     <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
                       Featured
                     </span>
@@ -489,16 +489,16 @@ export default function ReviewsPage() {
                 )}
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <ThumbsUp className="h-3.5 w-3.5" /> {selectedReview.helpful_count}
+                    <ThumbsUp className="h-3.5 w-3.5" /> {selectedReview.helpfulCount}
                   </span>
                   <span className="flex items-center gap-1">
-                    <ThumbsDown className="h-3.5 w-3.5" /> {selectedReview.not_helpful_count}
+                    <ThumbsDown className="h-3.5 w-3.5" /> {selectedReview.notHelpfulCount}
                   </span>
                 </div>
-                {selectedReview.admin_response && (
+                {selectedReview.adminResponse && (
                   <div className="bg-muted p-3 rounded-lg">
                     <p className="text-xs font-medium text-muted-foreground mb-1">Admin Response</p>
-                    <p className="text-sm">{selectedReview.admin_response}</p>
+                    <p className="text-sm">{selectedReview.adminResponse}</p>
                   </div>
                 )}
               </div>
@@ -510,7 +510,7 @@ export default function ReviewsPage() {
                   disabled={actionLoading === selectedReview.id}
                 >
                   <Award className="h-4 w-4 mr-1" />
-                  {selectedReview.is_featured ? "Unfeature" : "Feature"}
+                  {selectedReview.isFeatured ? "Unfeature" : "Feature"}
                 </Button>
                 <Button
                   variant="outline"

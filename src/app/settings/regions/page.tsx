@@ -124,10 +124,10 @@ export default function RegionsSettingsPage() {
   const defaultRegionToStores = useMemo(() => {
     const map = new Map<string, string[]>();
     stores.forEach((store) => {
-      if (!store.default_region_id) return;
-      const list = map.get(store.default_region_id) ?? [];
+      if (!store.defaultRegionId) return;
+      const list = map.get(store.defaultRegionId) ?? [];
       list.push(store.name);
-      map.set(store.default_region_id, list);
+      map.set(store.defaultRegionId, list);
     });
     return map;
   }, [stores]);
@@ -150,7 +150,7 @@ export default function RegionsSettingsPage() {
     }
     try {
       setSettingDefaultRegionId(regionId);
-      await updateStore(stores[0].id, { default_region_id: regionId });
+      await updateStore(stores[0].id, { defaultRegionId: regionId });
       toast.success("Default region updated");
       await fetchData(true);
     } catch (err) {
@@ -210,7 +210,7 @@ export default function RegionsSettingsPage() {
       }
 
       if (setDefaultRegion && defaultStoreId) {
-        await updateStore(defaultStoreId, { default_region_id: createdRegion.id });
+        await updateStore(defaultStoreId, { defaultRegionId: createdRegion.id });
       }
 
       toast.success("Region created");
@@ -300,14 +300,14 @@ export default function RegionsSettingsPage() {
                       <TableCell>
                         {region.countries.length === 0
                           ? "-"
-                          : `${region.countries.slice(0, 3).map((country) => country.iso_2).join(", ")}${
+                          : `${region.countries.slice(0, 3).map((country) => country.iso2).join(", ")}${
                               region.countries.length > 3 ? ` +${region.countries.length - 3}` : ""
                             }`}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{region.currency_code}</Badge>
+                        <Badge variant="secondary">{region.currencyCode}</Badge>
                       </TableCell>
-                      <TableCell>{formatTaxRate(region.tax_rate)}</TableCell>
+                      <TableCell>{formatTaxRate(region.taxRate)}</TableCell>
                       <TableCell>
                         {defaultStores.length === 0 ? (
                           <span className="text-muted-foreground">-</span>

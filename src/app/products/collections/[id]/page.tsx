@@ -839,7 +839,7 @@ export default function CollectionDetailPage() {
               <div>
                 <CardTitle>Products</CardTitle>
                 <CardDescription>
-                  {collection.product_count ?? 0} product{(collection.product_count ?? 0) !== 1 ? "s" : ""} in this collection
+                  {collection.productCount ?? 0} product{(collection.productCount ?? 0) !== 1 ? "s" : ""} in this collection
                 </CardDescription>
               </div>
               <Button onClick={() => setAddProductsModalOpen(true)} size="sm">
@@ -932,10 +932,10 @@ export default function CollectionDetailPage() {
               <CardTitle>Thumbnail</CardTitle>
             </CardHeader>
             <CardContent>
-              {collection.image_url ? (
+              {collection.imageUrl ? (
                 <div className="space-y-3">
                   <img
-                    src={collection.image_url}
+                    src={collection.imageUrl}
                     alt={collection.title}
                     className="w-full aspect-square rounded-lg object-cover"
                   />
@@ -990,12 +990,12 @@ export default function CollectionDetailPage() {
               <Separator />
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Created</span>
-                <span className="text-sm">{formatDate(collection.created_at)}</span>
+                <span className="text-sm">{formatDate(collection.createdAt)}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Updated</span>
-                <span className="text-sm">{formatDate(collection.updated_at)}</span>
+                <span className="text-sm">{formatDate(collection.updatedAt)}</span>
               </div>
             </CardContent>
           </Card>

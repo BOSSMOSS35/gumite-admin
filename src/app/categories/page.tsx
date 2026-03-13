@@ -101,14 +101,14 @@ type CategoryFormData = {
   name: string;
   handle: string;
   description: string;
-  parent_category_id: string;
+  parentCategoryId: string;
 };
 
 const initialFormData: CategoryFormData = {
   name: "",
   handle: "",
   description: "",
-  parent_category_id: "",
+  parentCategoryId: "",
 };
 
 function buildCategoryTree(categories: ProductCategory[]): CategoryWithChildren[] {
@@ -121,8 +121,8 @@ function buildCategoryTree(categories: ProductCategory[]): CategoryWithChildren[
 
   categories.forEach((cat) => {
     const categoryWithChildren = categoryMap.get(cat.id)!;
-    if (cat.parent_category_id && categoryMap.has(cat.parent_category_id)) {
-      const parent = categoryMap.get(cat.parent_category_id)!;
+    if (cat.parentCategoryId && categoryMap.has(cat.parentCategoryId)) {
+      const parent = categoryMap.get(cat.parentCategoryId)!;
       parent.children.push(categoryWithChildren);
     } else {
       rootCategories.push(categoryWithChildren);
@@ -260,9 +260,9 @@ function DraggableCategoryRow({
             /{category.handle}
           </code>
         </TableCell>
-        <TableCell className="text-center">{category.product_count}</TableCell>
+        <TableCell className="text-center">{category.productCount}</TableCell>
         <TableCell>
-          {category.is_active ? (
+          {category.isActive ? (
             <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Active</Badge>
           ) : (
             <Badge variant="secondary">Inactive</Badge>
@@ -286,7 +286,7 @@ function DraggableCategoryRow({
                 Add Subcategory
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onToggleActive(category)}>
-                {category.is_active ? (
+                {category.isActive ? (
                   <>
                     <EyeOff className="mr-2 h-4 w-4" />
                     Deactivate
@@ -560,7 +560,7 @@ export default function CategoriesPage() {
   const handleOpenAdd = (parentId?: string) => {
     setFormData({
       ...initialFormData,
-      parent_category_id: parentId || "",
+      parentCategoryId: parentId || "",
     });
     setAddModalOpen(true);
   };
@@ -571,7 +571,7 @@ export default function CategoriesPage() {
       name: category.name,
       handle: category.handle,
       description: category.description || "",
-      parent_category_id: category.parent_category_id || "",
+      parentCategoryId: category.parentCategoryId || "",
     });
     setEditModalOpen(true);
   };
@@ -594,7 +594,7 @@ export default function CategoriesPage() {
         name: formData.name,
         handle: formData.handle || generateHandle(formData.name),
         description: formData.description || undefined,
-        parent_category_id: formData.parent_category_id || undefined,
+        parentCategoryId: formData.parentCategoryId || undefined,
       };
       await createCategory(data);
       setSuccess("Category created successfully");
@@ -619,7 +619,7 @@ export default function CategoriesPage() {
         name: formData.name,
         handle: formData.handle || undefined,
         description: formData.description || undefined,
-        parent_category_id: formData.parent_category_id || undefined,
+        parentCategoryId: formData.parentCategoryId || undefined,
       });
       setSuccess("Category updated successfully");
       handleCloseModal();
@@ -656,7 +656,7 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      if (category.is_active) {
+      if (category.isActive) {
         await deactivateCategory(category.id);
         setSuccess(`"${category.name}" deactivated`);
       } else {
@@ -765,10 +765,10 @@ export default function CategoriesPage() {
 
     // Dropping on root zone
     if (over.id === "drop-root") {
-      if (draggedCategory.parent_category_id) {
+      if (draggedCategory.parentCategoryId) {
         try {
           await updateCategory(draggedCategory.id, {
-            parent_category_id: undefined,
+            parentCategoryId: undefined,
           });
           setSuccess(`"${draggedCategory.name}" moved to root level`);
           await fetchCategories();
@@ -798,11 +798,11 @@ export default function CategoriesPage() {
       if (isDescendant(draggedCategory, targetCategory.id)) return;
 
       // Don't move if already a child of target
-      if (draggedCategory.parent_category_id === targetCategory.id) return;
+      if (draggedCategory.parentCategoryId === targetCategory.id) return;
 
       try {
         await updateCategory(draggedCategory.id, {
-          parent_category_id: targetCategory.id,
+          parentCategoryId: targetCategory.id,
         });
         setSuccess(`"${draggedCategory.name}" moved under "${targetCategory.name}"`);
         // Expand the target to show the moved category
@@ -855,11 +855,11 @@ export default function CategoriesPage() {
   const filteredCategories = filterCategories(categoryTree, debouncedSearch);
 
   // Get root categories for parent selection
-  const rootCategories = categories.filter((c) => !c.parent_category_id);
+  const rootCategories = categories.filter((c) => !c.parentCategoryId);
 
   // Stats
-  const totalProducts = categories.reduce((acc, cat) => acc + cat.product_count, 0);
-  const activeCategories = categories.filter((c) => c.is_active).length;
+  const totalProducts = categories.reduce((acc, cat) => acc + cat.productCount, 0);
+  const activeCategories = categories.filter((c) => c.isActive).length;
 
   if (loading) {
     return (
@@ -914,9 +914,9 @@ export default function CategoriesPage() {
             <DialogTitle>Delete Category</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete &quot;{categoryToDelete?.name}&quot;?
-              {categoryToDelete && categoryToDelete.subcategory_count > 0 && (
+              {categoryToDelete && categoryToDelete.subcategoryCount > 0 && (
                 <span className="block mt-2 text-red-600">
-                  This category has {categoryToDelete.subcategory_count} subcategories
+                  This category has {categoryToDelete.subcategoryCount} subcategories
                   that will also be affected.
                 </span>
               )}
@@ -1005,11 +1005,11 @@ export default function CategoriesPage() {
             <div className="space-y-2">
               <Label htmlFor="parent">Parent Category</Label>
               <Select
-                value={formData.parent_category_id}
+                value={formData.parentCategoryId}
                 onValueChange={(value) =>
                   setFormData({
                     ...formData,
-                    parent_category_id: value === "none" ? "" : value,
+                    parentCategoryId: value === "none" ? "" : value,
                   })
                 }
               >
@@ -1155,7 +1155,7 @@ export default function CategoriesPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Root drop zone */}
-            {activeCategory && activeCategory.parent_category_id && (
+            {activeCategory && activeCategory.parentCategoryId && (
               <RootDropZone isOver={isOverRoot} />
             )}
 

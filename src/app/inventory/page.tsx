@@ -149,8 +149,8 @@ export default function InventoryPage() {
         getStockLocations({ limit: 50 }),
       ]);
 
-      setInventoryLevels(levelsResponse.inventory_levels);
-      setLocations(locationsResponse.stock_locations);
+      setInventoryLevels(levelsResponse.inventoryLevels || []);
+      setLocations(locationsResponse.stockLocations || []);
     } catch (err) {
       console.error("Failed to fetch inventory data:", err);
       setError(err instanceof Error ? err.message : "Failed to load inventory");

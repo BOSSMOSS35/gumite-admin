@@ -404,9 +404,9 @@ export default function CollectionsPage() {
                 <TableRow key={collection.id} className="cursor-pointer hover:bg-muted/50">
                   <TableCell>
                     <Link href={`/products/collections/${collection.id}`}>
-                      {collection.image_url ? (
+                      {collection.imageUrl ? (
                         <img
-                          src={collection.image_url}
+                          src={collection.imageUrl}
                           alt={collection.title}
                           className="h-10 w-10 rounded-md object-cover"
                         />
@@ -428,10 +428,10 @@ export default function CollectionsPage() {
                     </code>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {formatDate(collection.created_at)}
+                    {formatDate(collection.createdAt)}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {formatDate(collection.updated_at)}
+                    {formatDate(collection.updatedAt)}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

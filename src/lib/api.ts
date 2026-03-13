@@ -177,9 +177,7 @@ export async function apiFetch<T>(
   }
 
   const json = await response.json();
-  // Note: response keys are NOT converted — interfaces already use snake_case
-  // to match the backend. Only request bodies are converted (camelCase → snake_case).
-  return json as T;
+  return deepCamelCase(json) as T;
 }
 
 // Order types
@@ -517,8 +515,8 @@ export async function getReturns(params?: {
 }
 
 // Get single return
-export async function getReturn(id: string): Promise<{ return_request: Return }> {
-  return apiFetch<{ return_request: Return }>(`/admin/returns/${id}`);
+export async function getReturn(id: string): Promise<{ returnRequest: Return }> {
+  return apiFetch<{ returnRequest: Return }>(`/admin/returns/${id}`);
 }
 
 // Get return stats
@@ -530,8 +528,8 @@ export async function getReturnStats(): Promise<ReturnStats> {
 export async function receiveReturn(
   id: string,
   data?: { receivedBy?: string; notes?: string; restock?: boolean }
-): Promise<{ return_request: Return; message: string }> {
-  return apiFetch<{ return_request: Return; message: string }>(`/admin/returns/${id}/receive`, {
+): Promise<{ returnRequest: Return; message: string }> {
+  return apiFetch<{ returnRequest: Return; message: string }>(`/admin/returns/${id}/receive`, {
     method: "POST",
     body: JSON.stringify(data || {}),
   });
@@ -541,8 +539,8 @@ export async function receiveReturn(
 export async function processReturnRefund(
   id: string,
   data?: { processedBy?: string }
-): Promise<{ return_request: Return; message: string }> {
-  return apiFetch<{ return_request: Return; message: string }>(`/admin/returns/${id}/refund`, {
+): Promise<{ returnRequest: Return; message: string }> {
+  return apiFetch<{ returnRequest: Return; message: string }>(`/admin/returns/${id}/refund`, {
     method: "POST",
     body: JSON.stringify(data || {}),
   });
@@ -552,8 +550,8 @@ export async function processReturnRefund(
 export async function rejectReturn(
   id: string,
   data: { reason: string; rejectedBy?: string }
-): Promise<{ return_request: Return; message: string }> {
-  return apiFetch<{ return_request: Return; message: string }>(`/admin/returns/${id}/reject`, {
+): Promise<{ returnRequest: Return; message: string }> {
+  return apiFetch<{ returnRequest: Return; message: string }>(`/admin/returns/${id}/reject`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -589,7 +587,7 @@ export interface InventoryLevel {
 }
 
 export interface InventoryLevelsResponse {
-  inventory_levels: InventoryLevel[];
+  inventoryLevels: InventoryLevel[];
   count: number;
   offset: number;
   limit: number;
@@ -612,7 +610,7 @@ export interface StockLocation {
 }
 
 export interface StockLocationsResponse {
-  stock_locations: StockLocation[];
+  stockLocations: StockLocation[];
   count: number;
   offset: number;
   limit: number;
@@ -669,8 +667,8 @@ export async function getInventoryLevels(params?: {
 }
 
 // Get single inventory level
-export async function getInventoryLevel(id: string): Promise<{ inventory_level: InventoryLevel }> {
-  return apiFetch<{ inventory_level: InventoryLevel }>(`/admin/inventory/levels/${id}`);
+export async function getInventoryLevel(id: string): Promise<{ inventoryLevel: InventoryLevel }> {
+  return apiFetch<{ inventoryLevel: InventoryLevel }>(`/admin/inventory/levels/${id}`);
 }
 
 // Adjust inventory
@@ -695,15 +693,15 @@ export async function getStockLocations(params?: {
 }
 
 // Get single stock location
-export async function getStockLocation(id: string): Promise<{ stock_location: StockLocation }> {
-  return apiFetch<{ stock_location: StockLocation }>(`/admin/inventory/locations/${id}`);
+export async function getStockLocation(id: string): Promise<{ stockLocation: StockLocation }> {
+  return apiFetch<{ stockLocation: StockLocation }>(`/admin/inventory/locations/${id}`);
 }
 
 // Create stock location
 export async function createStockLocation(
   data: CreateStockLocationRequest
-): Promise<{ stock_location: StockLocation; message: string }> {
-  return apiFetch<{ stock_location: StockLocation; message: string }>("/admin/inventory/locations", {
+): Promise<{ stockLocation: StockLocation; message: string }> {
+  return apiFetch<{ stockLocation: StockLocation; message: string }>("/admin/inventory/locations", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -817,8 +815,8 @@ export async function getInventoryLevelMovements(
 }
 
 // Get available movement types
-export async function getMovementTypes(): Promise<{ movement_types: MovementTypeInfo[] }> {
-  return apiFetch<{ movement_types: MovementTypeInfo[] }>("/admin/inventory/movements/types");
+export async function getMovementTypes(): Promise<{ movementTypes: MovementTypeInfo[] }> {
+  return apiFetch<{ movementTypes: MovementTypeInfo[] }>("/admin/inventory/movements/types");
 }
 
 // Movement type display helper
@@ -845,18 +843,18 @@ export function getMovementTypeDisplay(type: MovementType): { label: string; col
 export interface ShippingOption {
   id: string;
   name: string;
-  price_type: string;
+  priceType: string;
   amount: number;
-  is_return: boolean;
-  admin_only: boolean;
-  provider_id?: string;
-  region_id?: string;
+  isReturn: boolean;
+  adminOnly: boolean;
+  providerId?: string;
+  regionId?: string;
   data?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
 
 export interface ShippingOptionsResponse {
-  shipping_options: ShippingOption[];
+  shippingOptions: ShippingOption[];
 }
 
 // Get shipping options (uses store endpoint as it's public)
@@ -952,17 +950,17 @@ export interface ProductCategory {
   handle: string;
   description?: string;
   image?: string;
-  is_active: boolean;
-  is_internal: boolean;
+  isActive: boolean;
+  isInternal: boolean;
   position: number;
-  parent_category_id?: string;
-  external_id?: string;
+  parentCategoryId?: string;
+  externalId?: string;
   source?: string;
-  product_count: number;
-  subcategory_count: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  productCount: number;
+  subcategoryCount: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface CollectionProduct {
@@ -977,12 +975,12 @@ export interface ProductCollection {
   id: string;
   title: string;
   handle: string;
-  image_url: string | null;
-  product_count: number;
+  imageUrl: string | null;
+  productCount: number;
   products: CollectionProduct[];
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -1158,23 +1156,23 @@ export interface CreateCategoryInput {
   handle?: string;
   description?: string;
   image?: string;
-  is_active?: boolean;
-  is_internal?: boolean;
+  isActive?: boolean;
+  isInternal?: boolean;
   position?: number;
-  parent_category_id?: string;
+  parentCategoryId?: string;
 }
 
 export async function getCategories(params?: {
   offset?: number;
   limit?: number;
   q?: string;
-  is_active?: boolean;
+  isActive?: boolean;
 }): Promise<AdminCategoriesResponse> {
   const searchParams = new URLSearchParams();
   if (params?.offset) searchParams.set("offset", params.offset.toString());
   if (params?.limit) searchParams.set("limit", params.limit.toString());
   if (params?.q) searchParams.set("q", params.q);
-  if (params?.is_active !== undefined) searchParams.set("is_active", params.is_active.toString());
+  if (params?.isActive !== undefined) searchParams.set("is_active", params.isActive.toString());
 
   const query = searchParams.toString();
   return apiFetch<AdminCategoriesResponse>(`/admin/categories${query ? `?${query}` : ""}`);
@@ -3322,15 +3320,15 @@ export async function initializeStoreSettings(storeId: string): Promise<StoreSet
 export interface Store {
   id: string;
   name: string;
-  default_currency_code: string;
-  swap_link_template?: string;
-  payment_link_template?: string;
-  invite_link_template?: string;
-  default_sales_channel_id?: string;
-  default_region_id?: string;
-  default_location_id?: string;
-  created_at: string;
-  updated_at: string;
+  defaultCurrencyCode: string;
+  swapLinkTemplate?: string;
+  paymentLinkTemplate?: string;
+  inviteLinkTemplate?: string;
+  defaultSalesChannelId?: string;
+  defaultRegionId?: string;
+  defaultLocationId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StoresResponse {
@@ -3346,21 +3344,21 @@ export interface StoreResponse {
 
 export interface CreateStoreRequest {
   name: string;
-  default_currency_code?: string;
-  swap_link_template?: string;
-  payment_link_template?: string;
-  invite_link_template?: string;
+  defaultCurrencyCode?: string;
+  swapLinkTemplate?: string;
+  paymentLinkTemplate?: string;
+  inviteLinkTemplate?: string;
 }
 
 export interface UpdateStoreRequest {
   name?: string;
-  default_currency_code?: string;
-  swap_link_template?: string;
-  payment_link_template?: string;
-  invite_link_template?: string;
-  default_sales_channel_id?: string;
-  default_region_id?: string;
-  default_location_id?: string;
+  defaultCurrencyCode?: string;
+  swapLinkTemplate?: string;
+  paymentLinkTemplate?: string;
+  inviteLinkTemplate?: string;
+  defaultSalesChannelId?: string;
+  defaultRegionId?: string;
+  defaultLocationId?: string;
 }
 
 // Get all stores
@@ -3411,17 +3409,17 @@ export async function deleteStore(storeId: string): Promise<void> {
 // ============================================================================
 
 export interface StoreRegionCountry {
-  iso_2: string;
+  iso2: string;
   name: string;
-  display_name: string;
+  displayName: string;
 }
 
 export interface StoreRegion {
   id: string;
   name: string;
-  currency_code: string;
-  tax_rate: number;
-  tax_code: string | null;
+  currencyCode: string;
+  taxRate: number;
+  taxCode: string | null;
   countries: StoreRegionCountry[];
 }
 
@@ -3434,23 +3432,23 @@ export async function getStoreRegions(): Promise<StoreRegionsResponse> {
 }
 
 export interface AdminRegionCountry {
-  iso_2: string;
+  iso2: string;
   name: string;
-  display_name: string;
+  displayName: string;
 }
 
 export interface AdminRegion {
   id: string;
   name: string;
-  currency_code: string;
-  automatic_taxes: boolean;
-  tax_code: string | null;
-  gift_cards_taxable: boolean;
-  tax_rate: number;
-  tax_inclusive: boolean;
+  currencyCode: string;
+  automaticTaxes: boolean;
+  taxCode: string | null;
+  giftCardsTaxable: boolean;
+  taxRate: number;
+  taxInclusive: boolean;
   countries: AdminRegionCountry[];
-  created_at: string | null;
-  updated_at: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface AdminRegionsResponse {
@@ -3508,7 +3506,7 @@ export interface AdminCreatedRegion {
 export interface CreateRegionsResponse {
   regions: AdminCreatedRegion[];
   count: number;
-  correlation_id: string;
+  correlationId: string;
 }
 
 export async function createAdminRegion(data: AdminCreateRegionRequest): Promise<CreateRegionsResponse> {
@@ -3523,41 +3521,41 @@ export interface AdminTaxRate {
   name: string;
   code: string | null;
   rate: number;
-  region_id: string;
-  region_name: string | null;
-  product_types: string | null;
-  product_categories: string | null;
-  shipping_option_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
+  regionId: string;
+  regionName: string | null;
+  productTypes: string | null;
+  productCategories: string | null;
+  shippingOptionId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
   metadata?: Record<string, unknown>;
 }
 
 export interface TaxRegion {
-  region_id: string;
-  region_name: string;
-  currency_code: string;
-  default_tax_rate: number;
-  tax_rates: AdminTaxRate[];
-  tax_rate_count: number;
+  regionId: string;
+  regionName: string;
+  currencyCode: string;
+  defaultTaxRate: number;
+  taxRates: AdminTaxRate[];
+  taxRateCount: number;
 }
 
 export interface TaxRegionsResponse {
-  tax_regions: TaxRegion[];
+  taxRegions: TaxRegion[];
   count: number;
   offset: number;
   limit: number;
 }
 
 export interface TaxRatesResponse {
-  tax_rates: AdminTaxRate[];
+  taxRates: AdminTaxRate[];
   count: number;
   offset: number;
   limit: number;
 }
 
 export interface TaxRateResponse {
-  tax_rate: AdminTaxRate;
+  taxRate: AdminTaxRate;
 }
 
 export interface CreateTaxRateRequest {
@@ -3648,7 +3646,7 @@ export async function getTaxSetupStatus(): Promise<TaxSetupStatus> {
 
   const hasStores = storesResponse.stores.length > 0;
   const hasRegions = regionsResponse.regions.length > 0;
-  const hasDefaultRegion = storesResponse.stores.some((store) => Boolean(store.default_region_id));
+  const hasDefaultRegion = storesResponse.stores.some((store) => Boolean(store.defaultRegionId));
 
   return {
     hasStores,
@@ -4127,16 +4125,16 @@ export interface SecurityEventsResponse {
 }
 
 export interface SecurityConfig {
-  block_vpn: boolean;
-  block_proxy: boolean;
-  block_datacenter: boolean;
-  block_tor: boolean;
-  block_bots: boolean;
-  fraud_score_threshold: number;
-  session_timeout_minutes: number;
-  max_sessions_per_user: number;
-  ipqs_enabled: boolean;
-  require_allowlist: boolean;
+  blockVpn: boolean;
+  blockProxy: boolean;
+  blockDatacenter: boolean;
+  blockTor: boolean;
+  blockBots: boolean;
+  fraudScoreThreshold: number;
+  sessionTimeoutMinutes: number;
+  maxSessionsPerUser: number;
+  ipqsEnabled: boolean;
+  requireAllowlist: boolean;
 }
 
 export interface SecurityConfigResponse {
@@ -4144,11 +4142,11 @@ export interface SecurityConfigResponse {
 }
 
 export interface SecurityStats {
-  active_sessions: number;
-  blocked_attempts_24h: number;
-  unresolved_events: number;
-  vpn_flagged_24h: number;
-  proxy_flagged_24h: number;
+  activeSessions: number;
+  blockedAttempts24h: number;
+  unresolvedEvents: number;
+  vpnFlagged24h: number;
+  proxyFlagged24h: number;
 }
 
 export interface AddIpToListInput {
@@ -4159,16 +4157,16 @@ export interface AddIpToListInput {
 }
 
 export interface UpdateSecurityConfigInput {
-  block_vpn?: boolean;
-  block_proxy?: boolean;
-  block_datacenter?: boolean;
-  block_tor?: boolean;
-  block_bots?: boolean;
-  fraud_score_threshold?: number;
-  session_timeout_minutes?: number;
-  max_sessions_per_user?: number;
-  ipqs_enabled?: boolean;
-  require_allowlist?: boolean;
+  blockVpn?: boolean;
+  blockProxy?: boolean;
+  blockDatacenter?: boolean;
+  blockTor?: boolean;
+  blockBots?: boolean;
+  fraudScoreThreshold?: number;
+  sessionTimeoutMinutes?: number;
+  maxSessionsPerUser?: number;
+  ipqsEnabled?: boolean;
+  requireAllowlist?: boolean;
 }
 
 // Sessions
@@ -4213,14 +4211,14 @@ export async function removeIpFromList(id: string): Promise<{ id: string; delete
 export async function getSecurityEvents(params?: {
   limit?: number;
   offset?: number;
-  event_type?: string;
+  eventType?: string;
   severity?: string;
   resolved?: boolean;
 }): Promise<SecurityEventsResponse> {
   const query = new URLSearchParams();
   if (params?.limit) query.set("limit", params.limit.toString());
   if (params?.offset) query.set("offset", params.offset.toString());
-  if (params?.event_type) query.set("event_type", params.event_type);
+  if (params?.eventType) query.set("event_type", params.eventType);
   if (params?.severity) query.set("severity", params.severity);
   if (params?.resolved !== undefined) query.set("resolved", params.resolved.toString());
   return apiFetch<SecurityEventsResponse>(`/admin/security/events${query.toString() ? `?${query}` : ""}`);
@@ -4268,27 +4266,27 @@ export type ReviewStatus = "pending" | "approved" | "rejected" | "flagged";
 
 export interface AdminReview {
   id: string;
-  product_id: string;
-  customer_id: string;
-  customer_name: string;
-  customer_avatar: string | null;
+  productId: string;
+  customerId: string;
+  customerName: string;
+  customerAvatar: string | null;
   rating: number;
   title: string;
   content: string;
   pros: string[] | null;
   cons: string[] | null;
-  images: { url: string; thumbnail_url: string | null; caption: string | null; sort_order: number }[] | null;
-  verified_purchase: boolean;
-  variant_title: string | null;
-  helpful_count: number;
-  not_helpful_count: number;
+  images: { url: string; thumbnailUrl: string | null; caption: string | null; sortOrder: number }[] | null;
+  verifiedPurchase: boolean;
+  variantTitle: string | null;
+  helpfulCount: number;
+  notHelpfulCount: number;
   status: ReviewStatus;
-  is_featured: boolean;
-  is_edited: boolean;
-  admin_response: string | null;
-  admin_response_at: string | null;
-  created_at: string;
-  updated_at: string;
+  isFeatured: boolean;
+  isEdited: boolean;
+  adminResponse: string | null;
+  adminResponseAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AdminReviewsResponse {
@@ -4382,12 +4380,12 @@ export interface Campaign {
   description: string | null;
   type: string;
   status: string;
-  starts_at: string | null;
-  ends_at: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
   budget: number | null;
-  currency_code: string | null;
-  created_at: string;
-  updated_at: string;
+  currencyCode: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CampaignsResponse {
@@ -4443,6 +4441,6 @@ export async function updateAdminProfile(data: {
 export async function resetPassword(token: string, newPassword: string): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>("/reset-password", {
     method: "POST",
-    body: JSON.stringify({ token, new_password: newPassword }),
+    body: JSON.stringify({ token, newPassword }),
   });
 }

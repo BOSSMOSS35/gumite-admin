@@ -316,18 +316,18 @@ export default function MarketingPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {campaign.starts_at ? formatDate(campaign.starts_at) : "-"}
+                          {campaign.startsAt ? formatDate(campaign.startsAt) : "-"}
                         </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {campaign.ends_at ? formatDate(campaign.ends_at) : "-"}
+                          {campaign.endsAt ? formatDate(campaign.endsAt) : "-"}
                         </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {campaign.budget && campaign.currency_code
-                            ? formatPrice(campaign.budget, campaign.currency_code)
+                          {campaign.budget && campaign.currencyCode
+                            ? formatPrice(campaign.budget, campaign.currencyCode)
                             : "-"}
                         </span>
                       </TableCell>

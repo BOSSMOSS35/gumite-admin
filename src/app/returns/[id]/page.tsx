@@ -80,7 +80,7 @@ export default function ReturnDetailPage() {
     setError(null);
     try {
       const response = await getReturn(returnId);
-      setReturnData(response.return_request);
+      setReturnData(response.returnRequest);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load return");
     } finally {

@@ -105,7 +105,7 @@ export default function LocationsPage() {
       setIsLoading(true);
       setError(null);
       const response = await getStockLocations({ limit: 100 });
-      setLocations(response.stock_locations);
+      setLocations(response.stockLocations);
     } catch (err) {
       console.error("Failed to fetch locations:", err);
       setError(err instanceof Error ? err.message : "Failed to load locations");
