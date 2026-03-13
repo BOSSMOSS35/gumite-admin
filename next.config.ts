@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         hostname: "localhost",
         port: "9000",
       },
+      {
+        protocol: "https",
+        hostname: "gumite-minio-sdsl.runixcloud.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "*.runixcloud.dev",
+      },
     ],
   },
   async rewrites() {
