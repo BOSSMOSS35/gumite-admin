@@ -70,6 +70,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   getProduct,
   updateProduct,
@@ -160,6 +161,8 @@ export default function ProductDetailPage() {
   const [editingOption, setEditingOption] = useState<{ id: string; title: string; values: string[] } | null>(null);
   const [optionSaving, setOptionSaving] = useState(false);
   const [optionError, setOptionError] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
+
   const [optionForm, setOptionForm] = useState({
     title: "",
     values: "",
@@ -285,7 +288,14 @@ export default function ProductDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!product || !confirm("Are you sure you want to delete this product?")) return;
+    if (!product) return;
+    const confirmed = await confirm({
+      title: "Delete Product",
+      description: "Are you sure you want to delete this product? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
     try {
       await deleteProduct(product.id);
       router.push("/products");
@@ -428,7 +438,13 @@ export default function ProductDetailPage() {
   };
 
   const handleDeleteVariant = async (variantId: string) => {
-    if (!confirm("Are you sure you want to delete this variant?")) return;
+    const confirmed = await confirm({
+      title: "Delete Variant",
+      description: "Are you sure you want to delete this variant? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       await deleteVariant(variantId);
@@ -523,7 +539,14 @@ export default function ProductDetailPage() {
   };
 
   const handleDeleteOption = async (optionId: string) => {
-    if (!product || !confirm("Are you sure you want to delete this option?")) return;
+    if (!product) return;
+    const confirmed = await confirm({
+      title: "Delete Option",
+      description: "Are you sure you want to delete this option? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       await deleteOption(product.id, optionId);
@@ -582,7 +605,14 @@ export default function ProductDetailPage() {
   };
 
   const handleDeleteImage = async (imageId: string) => {
-    if (!product || !confirm("Are you sure you want to delete this image?")) return;
+    if (!product) return;
+    const confirmed = await confirm({
+      title: "Delete Image",
+      description: "Are you sure you want to delete this image? This action cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
 
     try {
       await deleteProductImage(product.id, imageId);
@@ -719,6 +749,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      {confirmDialog}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -775,8 +806,13 @@ export default function ProductDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() => {
-                  if (!confirm("Are you sure you want to archive this product?")) return;
+                onClick={async () => {
+                  const confirmed = await confirm({
+                    title: "Archive Product",
+                    description: "Are you sure you want to archive this product? It will be marked as draft.",
+                    confirmLabel: "Archive",
+                  });
+                  if (!confirmed) return;
                   updateField("status", "draft" as ProductStatus);
                   toast.info("Product marked as draft. Save to apply.");
                 }}
