@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { getImageUrl } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -326,7 +327,7 @@ export default function ProductsPage() {
                         <Link href={`/products/${product.id}`}>
                           {product.thumbnail ? (
                             <img
-                              src={product.thumbnail}
+                              src={getImageUrl(product.thumbnail) || ""}
                               alt={product.title}
                               className="h-12 w-12 rounded object-cover"
                             />

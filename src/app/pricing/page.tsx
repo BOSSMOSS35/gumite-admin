@@ -76,6 +76,7 @@ import {
   useKeyboardShortcutsContext,
 } from "@/contexts/keyboard-shortcuts-context";
 import { SHORTCUTS, formatShortcut } from "@/hooks/use-keyboard-shortcut";
+import { getImageUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -577,7 +578,7 @@ export default function PricingPage() {
                               <TableCell>
                                 {item.thumbnail ? (
                                   <img
-                                    src={item.thumbnail}
+                                    src={getImageUrl(item.thumbnail) || ""}
                                     alt={item.productTitle}
                                     className="h-10 w-10 rounded object-cover"
                                   />

@@ -48,6 +48,7 @@ import {
   formatDateTime,
   getReturnStatusDisplay,
 } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 function ReturnStatusBadge({ status }: { status: string }) {
   const { label, color } = getReturnStatusDisplay(status);
@@ -358,7 +359,7 @@ export default function ReturnDetailPage() {
                     {item.thumbnail && (
                       <div className="relative w-16 h-20 bg-muted rounded overflow-hidden shrink-0">
                         <Image
-                          src={item.thumbnail}
+                          src={getImageUrl(item.thumbnail) || ""}
                           alt={item.title}
                           fill
                           className="object-cover"

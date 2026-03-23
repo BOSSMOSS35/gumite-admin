@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getImageUrl } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -690,16 +691,7 @@ export default function ProductDetailPage() {
     return product.variants[0].prices[0];
   };
 
-  // Get image URL - handle both absolute and relative URLs
-  const getImageUrl = (url: string | undefined) => {
-    if (!url) return null;
-    // If it's already an absolute URL, use it directly
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    // Relative URL — proxy through the backend /files endpoint
-    return url.startsWith("/") ? url : `/${url}`;
-  };
+  // Defined in @/lib/utils — imported at top
 
   if (loading) {
     return (

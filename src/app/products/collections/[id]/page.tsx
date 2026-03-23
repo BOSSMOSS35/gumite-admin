@@ -78,6 +78,7 @@ import {
   type CollectionProduct,
   type ProductSummary,
 } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 export default function CollectionDetailPage() {
   const params = useParams();
@@ -605,7 +606,7 @@ export default function CollectionDetailPage() {
                         <TableCell>
                           {product.thumbnail ? (
                             <img
-                              src={product.thumbnail}
+                              src={getImageUrl(product.thumbnail) || ""}
                               alt={product.title}
                               className="h-10 w-10 rounded object-cover"
                             />
@@ -876,7 +877,7 @@ export default function CollectionDetailPage() {
                         <TableCell>
                           {product.thumbnail ? (
                             <img
-                              src={product.thumbnail}
+                              src={getImageUrl(product.thumbnail) || ""}
                               alt={product.title}
                               className="h-10 w-10 rounded object-cover"
                             />
@@ -935,7 +936,7 @@ export default function CollectionDetailPage() {
               {collection.imageUrl ? (
                 <div className="space-y-3">
                   <img
-                    src={collection.imageUrl}
+                    src={getImageUrl(collection.imageUrl) || ""}
                     alt={collection.title}
                     className="w-full aspect-square rounded-lg object-cover"
                   />

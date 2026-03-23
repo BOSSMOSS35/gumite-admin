@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { Package } from "lucide-react";
 
 type ThumbnailProps = {
@@ -26,7 +26,7 @@ export function Thumbnail({
   className,
   alt = "Product image",
 }: ThumbnailProps) {
-  const initialImage = thumbnail || images?.[0]?.url;
+  const initialImage = getImageUrl(thumbnail || images?.[0]?.url) || undefined;
 
   return (
     <div
@@ -116,7 +116,7 @@ export function StackedThumbnails({
           )}
         >
           <Image
-            src={image}
+            src={getImageUrl(image) || ""}
             alt={`Image ${index + 1}`}
             fill
             className="object-cover"

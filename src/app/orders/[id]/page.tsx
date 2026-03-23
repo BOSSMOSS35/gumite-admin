@@ -80,6 +80,7 @@ import {
   getFulfillmentStatusDisplay,
   getOrderStatusDisplay,
 } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 const STATUS_BADGE_TONE_BY_DOT_COLOR: Record<string, string> = {
   "bg-green-500": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
@@ -547,7 +548,7 @@ export default function OrderDetailsPage() {
                 <div key={item.id} className="flex items-center gap-4">
                   <div className="h-12 w-12 bg-muted rounded flex items-center justify-center overflow-hidden">
                     {item.thumbnail ? (
-                      <img src={item.thumbnail} alt={item.title} className="h-full w-full object-cover" />
+                      <img src={getImageUrl(item.thumbnail) || ""} alt={item.title} className="h-full w-full object-cover" />
                     ) : (
                       <Package className="h-6 w-6 text-muted-foreground" />
                     )}

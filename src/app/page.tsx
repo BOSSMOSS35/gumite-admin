@@ -25,6 +25,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/api";
 import { Wifi, WifiOff, Radio } from "lucide-react";
+import { getImageUrl } from "@/lib/utils";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -282,7 +283,7 @@ export default function DashboardPage() {
                         >
                           {item.image ? (
                             <Image
-                              src={item.image}
+                              src={getImageUrl(item.image) || ""}
                               alt={item.name}
                               fill
                               className="object-cover"

@@ -91,6 +91,7 @@ import {
   type CreateCategoryInput,
   type CategoryProductItem,
 } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 type CategoryWithChildren = ProductCategory & {
   children: CategoryWithChildren[];
@@ -231,7 +232,7 @@ function DraggableCategoryRow({
             {category.image && level === 0 ? (
               <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
                 <img
-                  src={category.image}
+                  src={getImageUrl(category.image) || ""}
                   alt={category.name}
                   className="h-full w-full object-cover"
                 />
@@ -397,7 +398,7 @@ function DraggableProduct({
           </button>
           {product.thumbnail ? (
             <img
-              src={product.thumbnail}
+              src={getImageUrl(product.thumbnail) || ""}
               alt={product.title}
               className="h-8 w-8 rounded object-cover"
             />

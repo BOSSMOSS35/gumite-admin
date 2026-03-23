@@ -59,6 +59,7 @@ import {
   publishCollection,
   type Collection,
 } from "@/lib/api";
+import { getImageUrl } from "@/lib/utils";
 
 type CollectionFormData = {
   title: string;
@@ -406,7 +407,7 @@ export default function CollectionsPage() {
                     <Link href={`/products/collections/${collection.id}`}>
                       {collection.imageUrl ? (
                         <img
-                          src={collection.imageUrl}
+                          src={getImageUrl(collection.imageUrl) || ""}
                           alt={collection.title}
                           className="h-10 w-10 rounded-md object-cover"
                         />

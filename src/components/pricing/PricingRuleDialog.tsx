@@ -53,6 +53,7 @@ import {
   type PricingRuleType,
 } from "@/lib/api";
 import { useKeyboardShortcut, SHORTCUTS, formatShortcut } from "@/hooks/use-keyboard-shortcut";
+import { getImageUrl } from "@/lib/utils";
 
 interface PricingRuleDialogProps {
   open: boolean;
@@ -827,7 +828,7 @@ export function PricingRuleDialog({
                                   >
                                     {product.thumbnail ? (
                                       <img
-                                        src={product.thumbnail}
+                                        src={getImageUrl(product.thumbnail) || ""}
                                         alt=""
                                         className="h-10 w-10 rounded object-cover"
                                       />
