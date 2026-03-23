@@ -697,9 +697,8 @@ export default function ProductDetailPage() {
     if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
     }
-    // If it's a relative URL, prepend the API base
-    const apiBase = "";
-    return `${apiBase}${url.startsWith("/") ? "" : "/"}${url}`;
+    // Relative URL — proxy through the backend /files endpoint
+    return url.startsWith("/") ? url : `/${url}`;
   };
 
   if (loading) {
