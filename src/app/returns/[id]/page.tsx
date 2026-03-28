@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -38,17 +38,18 @@ import {
   Loader2,
 } from "lucide-react";
 import {
-  getReturn,
-  receiveReturn,
-  processReturnRefund,
-  rejectReturn,
-  Return,
   formatPrice,
   formatDate,
   formatDateTime,
   getReturnStatusDisplay,
 } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import {
+  useReturn,
+  useReceiveReturn,
+  useProcessReturnRefund,
+  useRejectReturn,
+} from "@/hooks/use-returns";
 
 function ReturnStatusBadge({ status }: { status: string }) {
   const { label, color } = getReturnStatusDisplay(status);
@@ -63,10 +64,8 @@ function ReturnStatusBadge({ status }: { status: string }) {
 export default function ReturnDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [returnData, setReturnData] = useState<Return | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const returnId = params.id as string;
+
   const [rejectReason, setRejectReason] = useState("");
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [restockOnReceive, setRestockOnReceive] = useState(true);
@@ -74,61 +73,57 @@ export default function ReturnDetailPage() {
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const returnId = params.id as string;
+  const {
+    data: returnData,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useReturn(returnId);
 
-  const fetchReturn = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getReturn(returnId);
-      setReturnData(response.returnRequest);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load return");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const receiveMutation = useReceiveReturn();
+  const refundMutation = useProcessReturnRefund();
+  const rejectMutation = useRejectReturn();
 
-  useEffect(() => {
-    fetchReturn();
-  }, [returnId]);
+  const error = queryError?.message ?? null;
 
   const handleReceive = async () => {
-    setActionLoading("receive");
     setActionError(null);
-    try {
-      await receiveReturn(returnId, { restock: restockOnReceive });
-      setReceiveDialogOpen(false);
-      toast.success(
-        restockOnReceive
-          ? "Return marked as received and restocked"
-          : "Return marked as received without restocking"
-      );
-      await fetchReturn();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to mark as received";
-      setActionError(message);
-      toast.error(message);
-    } finally {
-      setActionLoading(null);
-    }
+    receiveMutation.mutate(
+      { id: returnId, data: { restock: restockOnReceive } },
+      {
+        onSuccess: () => {
+          setReceiveDialogOpen(false);
+          toast.success(
+            restockOnReceive
+              ? "Return marked as received and restocked"
+              : "Return marked as received without restocking"
+          );
+        },
+        onError: (err) => {
+          const message = err instanceof Error ? err.message : "Failed to mark as received";
+          setActionError(message);
+          toast.error(message);
+        },
+      }
+    );
   };
 
   const handleRefund = async () => {
-    setActionLoading("refund");
     setActionError(null);
-    try {
-      await processReturnRefund(returnId);
-      setRefundDialogOpen(false);
-      toast.success("Refund processed");
-      await fetchReturn();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to process refund";
-      setActionError(message);
-      toast.error(message);
-    } finally {
-      setActionLoading(null);
-    }
+    refundMutation.mutate(
+      { id: returnId },
+      {
+        onSuccess: () => {
+          setRefundDialogOpen(false);
+          toast.success("Refund processed");
+        },
+        onError: (err) => {
+          const message = err instanceof Error ? err.message : "Failed to process refund";
+          setActionError(message);
+          toast.error(message);
+        },
+      }
+    );
   };
 
   const handleReject = async () => {
@@ -137,21 +132,22 @@ export default function ReturnDetailPage() {
       return;
     }
 
-    setActionLoading("reject");
     setActionError(null);
-    try {
-      await rejectReturn(returnId, { reason: rejectReason });
-      setRejectDialogOpen(false);
-      setRejectReason("");
-      toast.success("Return rejected");
-      await fetchReturn();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to reject return";
-      setActionError(message);
-      toast.error(message);
-    } finally {
-      setActionLoading(null);
-    }
+    rejectMutation.mutate(
+      { id: returnId, data: { reason: rejectReason } },
+      {
+        onSuccess: () => {
+          setRejectDialogOpen(false);
+          setRejectReason("");
+          toast.success("Return rejected");
+        },
+        onError: (err) => {
+          const message = err instanceof Error ? err.message : "Failed to reject return";
+          setActionError(message);
+          toast.error(message);
+        },
+      }
+    );
   };
 
   if (loading) {
@@ -181,7 +177,7 @@ export default function ReturnDetailPage() {
         <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
           <span>{error || "Return not found"}</span>
-          <Button variant="ghost" size="sm" onClick={fetchReturn} className="ml-auto">
+          <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
             Retry
           </Button>
         </div>
@@ -252,8 +248,8 @@ export default function ReturnDetailPage() {
                   <Button variant="ghost" onClick={() => setReceiveDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleReceive} disabled={actionLoading === "receive"}>
-                    {actionLoading === "receive" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  <Button onClick={handleReceive} disabled={receiveMutation.isPending}>
+                    {receiveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Confirm Receive
                   </Button>
                 </DialogFooter>
@@ -281,8 +277,8 @@ export default function ReturnDetailPage() {
                   <Button variant="ghost" onClick={() => setRefundDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleRefund} disabled={actionLoading === "refund"}>
-                    {actionLoading === "refund" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  <Button onClick={handleRefund} disabled={refundMutation.isPending}>
+                    {refundMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Confirm Refund
                   </Button>
                 </DialogFooter>
@@ -318,9 +314,9 @@ export default function ReturnDetailPage() {
                   <Button
                     variant="destructive"
                     onClick={handleReject}
-                    disabled={actionLoading === "reject" || !rejectReason.trim()}
+                    disabled={rejectMutation.isPending || !rejectReason.trim()}
                   >
-                    {actionLoading === "reject" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {rejectMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Reject Return
                   </Button>
                 </DialogFooter>

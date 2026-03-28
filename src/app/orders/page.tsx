@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -43,8 +42,6 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import {
-  getOrders,
-  OrderSummary,
   PaymentStatus,
   FulfillmentStatus,
   formatPrice,
@@ -52,6 +49,8 @@ import {
   getPaymentStatusDisplay,
   getFulfillmentStatusDisplay,
 } from "@/lib/api";
+import { useOrders } from "@/hooks/use-orders";
+import { useOrderStore } from "@/stores/order-store";
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   const { label, color } = getPaymentStatusDisplay(status);
@@ -73,88 +72,57 @@ function FulfillmentStatusBadge({ status }: { status: FulfillmentStatus }) {
   );
 }
 
-type Filter = {
-  id: string;
-  label: string;
-  value: string;
-};
-
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [pagination, setPagination] = useState({
-    limit: 20,
-    offset: 0,
-    count: 0,
-  });
+  // ─── Zustand: client-only UI state ──────────────────────
+  const {
+    searchQuery,
+    setSearchQuery,
+    activeFilters,
+    addFilter,
+    removeFilter,
+    clearFilters,
+    limit,
+    offset,
+    setOffset,
+  } = useOrderStore();
 
-  // Extract active filter values for API params
+  // Derive API filter params from active filter chips
   const paymentFilter = activeFilters.find((f) => f.id === "payment")?.value;
   const fulfillmentFilter = activeFilters.find((f) => f.id === "fulfillment")?.value;
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getOrders({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        q: searchQuery || undefined,
-        payment_status: paymentFilter,
-        fulfillment_status: fulfillmentFilter,
-      });
-      setOrders(response.orders);
-      setPagination((prev) => ({
-        ...prev,
-        count: response.count,
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load orders");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── Debounced search value ─────────────────────────────
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [pagination.offset, pagination.limit, paymentFilter, fulfillmentFilter]);
+  // ─── React Query: server state ──────────────────────────
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useOrders({
+    limit,
+    offset,
+    q: debouncedSearch || undefined,
+    payment_status: paymentFilter,
+    fulfillment_status: fulfillmentFilter,
+  });
 
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (pagination.offset === 0) {
-        fetchOrders();
-      } else {
-        setPagination((prev) => ({ ...prev, offset: 0 }));
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const orders = data?.orders ?? [];
+  const count = data?.count ?? 0;
 
-  const addFilter = (filter: Filter) => {
-    if (!activeFilters.find((f) => f.id === filter.id && f.value === filter.value)) {
-      setActiveFilters([...activeFilters, filter]);
-      setPagination((prev) => ({ ...prev, offset: 0 }));
-    }
-  };
+  const totalPages = Math.ceil(count / limit);
+  const currentPage = Math.floor(offset / limit) + 1;
 
-  const removeFilter = (filterId: string, value: string) => {
-    setActiveFilters(activeFilters.filter((f) => !(f.id === filterId && f.value === value)));
-    setPagination((prev) => ({ ...prev, offset: 0 }));
-  };
-
-  const clearFilters = () => {
-    setActiveFilters([]);
-    setPagination((prev) => ({ ...prev, offset: 0 }));
+  const goToPage = (page: number) => {
+    setOffset((page - 1) * limit);
   };
 
   const handleExport = () => {
     try {
       const headers = ["Order", "Date", "Customer", "Payment", "Fulfillment", "Order Total"];
-      const rows = filteredOrders.map((order) => [
+      const rows = orders.map((order) => [
         `#${order.displayId}`,
         formatDate(order.createdAt),
         order.email,
@@ -172,22 +140,9 @@ export default function OrdersPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Export complete");
-    } catch (err) {
+    } catch {
       toast.error("Failed to export orders");
     }
-  };
-
-  // Filters are now applied server-side via API params
-  const filteredOrders = orders;
-
-  const totalPages = Math.ceil(pagination.count / pagination.limit);
-  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
-
-  const goToPage = (page: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      offset: (page - 1) * prev.limit,
-    }));
   };
 
   return (
@@ -196,8 +151,8 @@ export default function OrdersPage() {
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Orders</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" aria-label="Refresh" onClick={fetchOrders} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
             <Button variant="outline" onClick={handleExport} disabled={orders.length === 0}>
               Export
@@ -321,18 +276,18 @@ export default function OrdersPage() {
           </div>
 
           {/* Error State */}
-          {error && (
+          {isError && (
             <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={fetchOrders} className="ml-auto">
+              <span>{error instanceof Error ? error.message : "Failed to load orders"}</span>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
                 Retry
               </Button>
             </div>
           )}
 
           {/* Loading State */}
-          {loading && orders.length === 0 ? (
+          {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
@@ -360,20 +315,20 @@ export default function OrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOrders.length === 0 ? (
+                  {orders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6}>
                         <EmptyState
                           icon={ShoppingCart}
-                          title={orders.length === 0 ? "No orders yet" : "No orders match your filters"}
-                          description={orders.length === 0
+                          title={count === 0 && !searchQuery && activeFilters.length === 0 ? "No orders yet" : "No orders match your filters"}
+                          description={count === 0 && !searchQuery && activeFilters.length === 0
                             ? "Orders will appear here when customers make purchases."
                             : "Try adjusting your search or filter criteria."}
                         />
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOrders.map((order) => (
+                    orders.map((order) => (
                       <TableRow
                         key={order.id}
                         className="cursor-pointer hover:bg-muted/50"
@@ -400,7 +355,9 @@ export default function OrdersPage() {
               {/* Pagination */}
               <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                 <span>
-                  {pagination.offset + 1} — {Math.min(pagination.offset + pagination.limit, pagination.count)} of {pagination.count} results
+                  {count > 0
+                    ? `${offset + 1} — ${Math.min(offset + limit, count)} of ${count} results`
+                    : "0 results"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span>
@@ -430,4 +387,16 @@ export default function OrdersPage() {
       </Card>
     </div>
   );
+}
+
+// ─── Tiny debounce hook (no useEffect for data fetching) ──
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+
+  return debounced;
 }

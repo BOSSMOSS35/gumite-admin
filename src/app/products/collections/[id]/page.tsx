@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -67,14 +67,15 @@ import {
   X,
 } from "lucide-react";
 import {
-  getCollection,
-  updateCollection,
-  deleteCollection,
-  uploadCollectionImage,
-  addProductsToCollection,
-  removeProductsFromCollection,
+  useCollection,
+  useUpdateCollection,
+  useDeleteCollection,
+  useUploadCollectionImage,
+  useAddProductsToCollection,
+  useRemoveProductsFromCollection,
+} from "@/hooks/use-collections";
+import {
   getProducts,
-  type Collection,
   type CollectionProduct,
   type ProductSummary,
 } from "@/lib/api";
@@ -85,25 +86,29 @@ export default function CollectionDetailPage() {
   const router = useRouter();
   const collectionId = params.id as string;
 
-  const [collection, setCollection] = useState<Collection | null>(null);
-  const [loading, setLoading] = useState(true);
+  // React Query
+  const { data, isLoading, error: queryError } = useCollection(collectionId);
+  const updateMutation = useUpdateCollection();
+  const deleteMutation = useDeleteCollection();
+  const uploadImageMutation = useUploadCollectionImage();
+  const addProductsMutation = useAddProductsToCollection();
+  const removeProductsMutation = useRemoveProductsFromCollection();
+
+  const collection = data?.collection ?? null;
+
+  // Local UI state
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   // Edit form
   const [editForm, setEditForm] = useState({
     title: "",
     handle: "",
   });
-
-  // Image upload
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Add products modal
   const [addProductsModalOpen, setAddProductsModalOpen] = useState(false);
@@ -112,7 +117,6 @@ export default function CollectionDetailPage() {
   const [showOnlyNewProducts, setShowOnlyNewProducts] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchingProducts, setSearchingProducts] = useState(false);
-  const [addingProducts, setAddingProducts] = useState(false);
   const [removingProduct, setRemovingProduct] = useState<string | null>(null);
   const [confirmRemoveProduct, setConfirmRemoveProduct] = useState<CollectionProduct | null>(null);
 
@@ -120,26 +124,16 @@ export default function CollectionDetailPage() {
   const NEW_PRODUCT_MS = NEW_PRODUCT_DAYS * 24 * 60 * 60 * 1000;
   const PRODUCT_FETCH_BATCH_SIZE = 100;
 
-  const fetchCollection = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getCollection(collectionId);
-      setCollection(response.collection);
+  // Sync edit form when collection loads (only when opening the modal)
+  const openEditModal = () => {
+    if (collection) {
       setEditForm({
-        title: response.collection.title,
-        handle: response.collection.handle,
+        title: collection.title,
+        handle: collection.handle,
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load collection");
-    } finally {
-      setLoading(false);
     }
+    setEditModalOpen(true);
   };
-
-  useEffect(() => {
-    fetchCollection();
-  }, [collectionId]);
 
   const handleCopy = async (text: string) => {
     try {
@@ -153,40 +147,36 @@ export default function CollectionDetailPage() {
   const handleSaveEdit = async () => {
     if (!collection) return;
 
-    setSaving(true);
     setError(null);
 
     try {
-      const response = await updateCollection(collection.id, {
-        title: editForm.title,
-        handle: editForm.handle,
+      const response = await updateMutation.mutateAsync({
+        id: collection.id,
+        data: {
+          title: editForm.title,
+          handle: editForm.handle,
+        },
       });
-      setCollection(response.collection);
       setSuccess("Collection updated successfully");
       setEditModalOpen(false);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update collection");
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
     if (!collection) return;
 
-    setDeleting(true);
     setError(null);
 
     try {
-      await deleteCollection(collection.id);
+      await deleteMutation.mutateAsync(collection.id);
       setSuccess("Collection deleted successfully");
       setDeleteDialogOpen(false);
-      // Redirect to collections list
       router.push("/products/collections");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete collection");
-      setDeleting(false);
     }
   };
 
@@ -194,19 +184,15 @@ export default function CollectionDetailPage() {
     const file = e.target.files?.[0];
     if (!file || !collection) return;
 
-    setUploadingImage(true);
     setError(null);
 
     try {
-      await uploadCollectionImage(file, collection.id);
+      await uploadImageMutation.mutateAsync({ file, collectionId: collection.id });
       setSuccess("Image uploaded successfully");
-      await fetchCollection();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload image");
     } finally {
-      setUploadingImage(false);
-      // Reset input
       e.target.value = "";
     }
   };
@@ -252,7 +238,6 @@ export default function CollectionDetailPage() {
     return products;
   };
 
-  // Search for products to add (or list all when query is empty)
   const handleSearchProducts = async (query: string) => {
     setProductSearch(query);
 
@@ -260,7 +245,6 @@ export default function CollectionDetailPage() {
     try {
       const trimmedQuery = query.trim();
       const products = await fetchProductsForSelection(trimmedQuery);
-      // Filter out products already in collection
       const existingIds = new Set(collection?.products.map((p) => p.id) || []);
       const availableProducts = products
         .filter((p) => !existingIds.has(p.id))
@@ -301,22 +285,20 @@ export default function CollectionDetailPage() {
   const handleAddProducts = async () => {
     if (!collection || selectedProducts.length === 0) return;
 
-    setAddingProducts(true);
     setError(null);
 
     try {
-      await addProductsToCollection(collection.id, selectedProducts);
+      await addProductsMutation.mutateAsync({
+        collectionId: collection.id,
+        productIds: selectedProducts,
+      });
       toast.success(`Added ${selectedProducts.length} product(s) to collection`);
       setAddProductsModalOpen(false);
       setSelectedProducts([]);
       setProductSearch("");
       setSearchResults([]);
-      await fetchCollection();
-      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add products");
-    } finally {
-      setAddingProducts(false);
     }
   };
 
@@ -333,9 +315,11 @@ export default function CollectionDetailPage() {
     setError(null);
 
     try {
-      await removeProductsFromCollection(collection.id, [productId]);
+      await removeProductsMutation.mutateAsync({
+        collectionId: collection.id,
+        productIds: [productId],
+      });
       toast.success("Product removed from collection");
-      await fetchCollection();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove product");
     } finally {
@@ -361,7 +345,7 @@ export default function CollectionDetailPage() {
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <Skeleton className="h-6 w-64" />
@@ -410,12 +394,12 @@ export default function CollectionDetailPage() {
     );
   }
 
-  if (error && !collection) {
+  if ((queryError || error) && !collection) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
-          <span>{error}</span>
+          <span>{error || (queryError instanceof Error ? queryError.message : "Failed to load collection")}</span>
         </div>
         <Button variant="outline" onClick={() => router.push("/products/collections")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -440,15 +424,15 @@ export default function CollectionDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteMutation.isPending}>
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={deleting}
+              disabled={deleteMutation.isPending}
             >
-              {deleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
@@ -517,11 +501,11 @@ export default function CollectionDetailPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditModalOpen(false)} disabled={saving}>
+            <Button variant="outline" onClick={() => setEditModalOpen(false)} disabled={updateMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit} disabled={saving || !editForm.title.trim()}>
-              {saving ? (
+            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending || !editForm.title.trim()}>
+              {updateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
@@ -669,15 +653,15 @@ export default function CollectionDetailPage() {
             <Button
               variant="outline"
               onClick={() => void handleAddProductsModalOpenChange(false)}
-              disabled={addingProducts}
+              disabled={addProductsMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               onClick={handleAddProducts}
-              disabled={addingProducts || selectedProducts.length === 0}
+              disabled={addProductsMutation.isPending || selectedProducts.length === 0}
             >
-              {addingProducts ? (
+              {addProductsMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Adding...
@@ -763,7 +747,7 @@ export default function CollectionDetailPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
+                    <DropdownMenuItem onClick={openEditModal}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
@@ -819,9 +803,9 @@ export default function CollectionDetailPage() {
               <div className="flex justify-end">
                 <Button
                   onClick={handleSaveEdit}
-                  disabled={saving || (editForm.title === collection.title && editForm.handle === collection.handle)}
+                  disabled={updateMutation.isPending || (editForm.title === collection.title && editForm.handle === collection.handle)}
                 >
-                  {saving ? (
+                  {updateMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
@@ -941,7 +925,7 @@ export default function CollectionDetailPage() {
                     className="w-full aspect-square rounded-lg object-cover"
                   />
                   <label className="flex items-center justify-center gap-2 w-full py-2 border rounded-lg cursor-pointer hover:bg-muted transition-colors">
-                    {uploadingImage ? (
+                    {uploadImageMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Upload className="h-4 w-4" />
@@ -952,13 +936,13 @@ export default function CollectionDetailPage() {
                       accept="image/*"
                       className="hidden"
                       onChange={handleImageUpload}
-                      disabled={uploadingImage}
+                      disabled={uploadImageMutation.isPending}
                     />
                   </label>
                 </div>
               ) : (
-                <label className={`flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:border-muted-foreground/50 transition-colors ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
-                  {uploadingImage ? (
+                <label className={`flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:border-muted-foreground/50 transition-colors ${uploadImageMutation.isPending ? "opacity-50 pointer-events-none" : ""}`}>
+                  {uploadImageMutation.isPending ? (
                     <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
                   ) : (
                     <>
@@ -971,7 +955,7 @@ export default function CollectionDetailPage() {
                     accept="image/*"
                     className="hidden"
                     onChange={handleImageUpload}
-                    disabled={uploadingImage}
+                    disabled={uploadImageMutation.isPending}
                   />
                 </label>
               )}

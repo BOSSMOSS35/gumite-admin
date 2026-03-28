@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getImageUrl } from "@/lib/utils";
@@ -53,7 +53,6 @@ import {
   Pencil,
   Trash2,
   Eye,
-  Filter,
   Download,
   RefreshCw,
   AlertCircle,
@@ -62,15 +61,9 @@ import {
 import { StackedThumbnails } from "@/components/ui/thumbnail";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AddProductModal } from "@/components/products/add-product-modal";
-import {
-  getProducts,
-  deleteProduct,
-  getCategories,
-  formatPrice,
-  type ProductSummary,
-  type ProductStatus,
-  type ProductCategory,
-} from "@/lib/api";
+import type { ProductStatus, ProductSummary } from "@/lib/api";
+import { useProducts, useDeleteProduct, useCategories } from "@/hooks/use-products";
+import { useProductStore } from "@/stores/product-store";
 import { toast } from "sonner";
 
 function getStatusBadge(status: ProductStatus) {
@@ -93,102 +86,88 @@ function ProductsPageContent({ onOpenModal }: { onOpenModal: () => void }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    if (searchParams.get("action") === "add") {
-      onOpenModal();
-      router.replace("/products", { scroll: false });
-    }
-  }, [searchParams, router, onOpenModal]);
+  // Check on mount only — no useEffect needed for this one-shot redirect
+  if (searchParams.get("action") === "add") {
+    onOpenModal();
+    router.replace("/products", { scroll: false });
+  }
 
   return null;
 }
 
 export default function ProductsPage() {
   const [addProductOpen, setAddProductOpen] = useState(false);
-  const [products, setProducts] = useState<ProductSummary[]>([]);
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [pagination, setPagination] = useState({
-    start: 0,
-    end: 20,
-    totalElements: 0,
-    totalPages: 0,
+
+  // Zustand store — client UI state
+  const {
+    filters,
+    pagination,
+    setSearchQuery,
+    setStatusFilter,
+    setCategoryFilter,
+    deleteDialogOpen,
+    productToDeleteId,
+    openDeleteDialog,
+    closeDeleteDialog,
+  } = useProductStore();
+
+  // React Query — server state
+  const {
+    data: productsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useProducts({
+    start: pagination.start,
+    end: pagination.end,
+    q: filters.searchQuery || undefined,
+    status: filters.status !== "all" ? filters.status : undefined,
   });
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<ProductSummary | null>(null);
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
+  const { data: categoriesData } = useCategories({ limit: 100 });
+
+  const deleteProductMutation = useDeleteProduct();
+
+  const products = productsData?.content ?? [];
+  const totalElements = productsData?.totalElements ?? 0;
+  const totalPages = productsData?.totalPages ?? 0;
+  const categories = categoriesData?.categories ?? [];
+
+  // Find the product being deleted for the dialog title
+  const productToDelete = productToDeleteId
+    ? products.find((p) => p.id === productToDeleteId)
+    : null;
+
+  const handleProductSave = useCallback(
+    (_data: unknown, _isDraft: boolean) => {
+      // Refetch products after a save from the modal
+      refetch();
+    },
+    [refetch],
+  );
+
+  const handleDeleteProduct = useCallback(
+    (product: ProductSummary) => {
+      openDeleteDialog(product.id);
+    },
+    [openDeleteDialog],
+  );
+
+  const confirmDeleteProduct = useCallback(async () => {
+    if (!productToDeleteId) return;
     try {
-      const response = await getProducts({
-        start: pagination.start,
-        end: pagination.end,
-        q: searchQuery || undefined,
-        status: statusFilter !== "all" ? (statusFilter as ProductStatus) : undefined,
-      });
-      setProducts(response.content || []);
-      setPagination((prev) => ({
-        ...prev,
-        totalElements: response.totalElements || 0,
-        totalPages: response.totalPages || 0,
-      }));
+      await deleteProductMutation.mutateAsync(productToDeleteId);
+      closeDeleteDialog();
+      toast.success("Product deleted");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load products");
-    } finally {
-      setLoading(false);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete product",
+      );
+      closeDeleteDialog();
     }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await getCategories({ limit: 100 });
-      setCategories(response.categories || []);
-    } catch (err) {
-      console.error("Failed to load categories:", err);
-      toast.error("Failed to load categories");
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchProducts();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, statusFilter, pagination.start]);
-
-  const handleProductSave = (data: any, isDraft: boolean) => {
-    console.log("Product saved:", data, "Draft:", isDraft);
-    // Refresh the list after saving
-    fetchProducts();
-  };
-
-  const handleDeleteProduct = (product: ProductSummary) => {
-    setProductToDelete(product);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteProduct = async () => {
-    if (!productToDelete) return;
-    try {
-      await deleteProduct(productToDelete.id);
-      setDeleteDialogOpen(false);
-      setProductToDelete(null);
-      fetchProducts();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete product");
-      setDeleteDialogOpen(false);
-    }
-  };
+  }, [productToDeleteId, deleteProductMutation, closeDeleteDialog]);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -228,11 +207,11 @@ export default function ProductsPage() {
                 <Input
                   placeholder="Search products..."
                   className="pl-9"
-                  value={searchQuery}
+                  value={filters.searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select value={filters.categoryId} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -245,7 +224,7 @@ export default function ProductsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={filters.status} onValueChange={(v) => setStatusFilter(v as ProductStatus | "all")}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -259,8 +238,8 @@ export default function ProductsPage() {
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={fetchProducts} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               </Button>
               <Button variant="outline" size="icon">
                 <Download className="h-4 w-4" />
@@ -275,23 +254,23 @@ export default function ProductsPage() {
         <CardHeader>
           <CardTitle>All Products</CardTitle>
           <CardDescription>
-            {pagination.totalElements} products in your inventory
+            {totalElements} products in your inventory
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Error State */}
-          {error && (
+          {isError && (
             <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={fetchProducts} className="ml-auto">
+              <span>{error instanceof Error ? error.message : "Failed to load products"}</span>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
                 Retry
               </Button>
             </div>
           )}
 
           {/* Loading State */}
-          {loading && products.length === 0 ? (
+          {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
@@ -402,33 +381,25 @@ export default function ProductsPage() {
           )}
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
               <span>
-                {pagination.start + 1} — {Math.min(pagination.end, pagination.totalElements)} of {pagination.totalElements} products
+                {pagination.start + 1} — {Math.min(pagination.end, totalElements)} of {totalElements} products
               </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   disabled={pagination.start === 0}
-                  onClick={() => setPagination((prev) => ({
-                    ...prev,
-                    start: Math.max(0, prev.start - 20),
-                    end: Math.max(20, prev.end - 20),
-                  }))}
+                  onClick={() => useProductStore.getState().prevPage()}
                 >
                   Prev
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={pagination.end >= pagination.totalElements}
-                  onClick={() => setPagination((prev) => ({
-                    ...prev,
-                    start: prev.start + 20,
-                    end: prev.end + 20,
-                  }))}
+                  disabled={pagination.end >= totalElements}
+                  onClick={() => useProductStore.getState().nextPage()}
                 >
                   Next
                 </Button>
@@ -439,7 +410,7 @@ export default function ProductsPage() {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => { if (!open) closeDeleteDialog(); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Product</DialogTitle>
@@ -448,11 +419,15 @@ export default function ProductsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>
+            <Button variant="ghost" onClick={closeDeleteDialog}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteProduct}>
-              Delete
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteProduct}
+              disabled={deleteProductMutation.isPending}
+            >
+              {deleteProductMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

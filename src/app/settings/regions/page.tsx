@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -52,15 +52,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AlertCircle, Loader2, MoreHorizontal, Plus } from "lucide-react";
-import {
-  createAdminRegion,
-  getAdminRegions,
-  getStores,
-  updateStore,
-  type AdminRegion,
-  type Store,
-} from "@/lib/api";
+import { type Store } from "@/lib/api";
 import { toast } from "sonner";
+import { useRegions, useCreateRegion, useSetDefaultRegion } from "@/hooks/use-regions";
+import { useStores } from "@/hooks/use-settings";
 
 const CURRENCIES = ["GBP", "USD", "EUR", "CAD", "AUD", "JPY", "CHF", "AED", "SGD", "HKD"];
 
@@ -70,15 +65,26 @@ function formatTaxRate(rate: number): string {
 }
 
 export default function RegionsSettingsPage() {
-  const [regions, setRegions] = useState<AdminRegion[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: regionsData,
+    isLoading: regionsLoading,
+    error: regionsError,
+    refetch: refetchRegions,
+    isRefetching: regionsRefetching,
+  } = useRegions({ limit: 100, offset: 0 });
+
+  const {
+    data: storesData,
+    isLoading: storesLoading,
+  } = useStores({ limit: 100 });
+
+  const regions = regionsData?.regions ?? [];
+  const stores = storesData?.stores ?? [];
+
+  const createRegionMutation = useCreateRegion();
+  const setDefaultMutation = useSetDefaultRegion();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [settingDefaultRegionId, setSettingDefaultRegionId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("GBP");
   const [taxRatePercent, setTaxRatePercent] = useState("20");
@@ -89,41 +95,12 @@ export default function RegionsSettingsPage() {
   const [setDefaultRegion, setSetDefaultRegion] = useState(true);
   const [defaultStoreId, setDefaultStoreId] = useState<string>("");
 
-  const fetchData = async (silent = false) => {
-    try {
-      if (silent) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-
-      const [regionsResponse, storesResponse] = await Promise.all([
-        getAdminRegions({ limit: 100, offset: 0 }),
-        getStores({ limit: 100 }),
-      ]);
-
-      setRegions(regionsResponse.regions ?? []);
-      setStores(storesResponse.stores ?? []);
-      if (!defaultStoreId && storesResponse.stores.length > 0) {
-        setDefaultStoreId(storesResponse.stores[0].id);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load regions");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Set default store once loaded
+  const resolvedDefaultStoreId = defaultStoreId || (stores.length > 0 ? stores[0].id : "");
 
   const defaultRegionToStores = useMemo(() => {
     const map = new Map<string, string[]>();
-    stores.forEach((store) => {
+    stores.forEach((store: Store) => {
       if (!store.defaultRegionId) return;
       const list = map.get(store.defaultRegionId) ?? [];
       list.push(store.name);
@@ -141,6 +118,7 @@ export default function RegionsSettingsPage() {
     setAutomaticTaxes(true);
     setTaxInclusive(true);
     setSetDefaultRegion(true);
+    setDefaultStoreId("");
   };
 
   const handleSetDefault = async (regionId: string) => {
@@ -149,14 +127,13 @@ export default function RegionsSettingsPage() {
       return;
     }
     try {
-      setSettingDefaultRegionId(regionId);
-      await updateStore(stores[0].id, { defaultRegionId: regionId });
+      await setDefaultMutation.mutateAsync({
+        storeId: stores[0].id,
+        regionId,
+      });
       toast.success("Default region updated");
-      await fetchData(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to set default region");
-    } finally {
-      setSettingDefaultRegionId(null);
     }
   };
 
@@ -191,9 +168,7 @@ export default function RegionsSettingsPage() {
     }
 
     try {
-      setIsCreating(true);
-
-      const response = await createAdminRegion({
+      const response = await createRegionMutation.mutateAsync({
         name: trimmedName,
         currencyCode,
         automaticTaxes,
@@ -209,20 +184,25 @@ export default function RegionsSettingsPage() {
         throw new Error("Region was created but no region payload was returned");
       }
 
-      if (setDefaultRegion && defaultStoreId) {
-        await updateStore(defaultStoreId, { defaultRegionId: createdRegion.id });
+      const storeId = resolvedDefaultStoreId;
+      if (setDefaultRegion && storeId) {
+        await setDefaultMutation.mutateAsync({
+          storeId,
+          regionId: createdRegion.id,
+        });
       }
 
       toast.success("Region created");
       setIsCreateOpen(false);
       resetCreateForm();
-      await fetchData(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create region");
-    } finally {
-      setIsCreating(false);
     }
   };
+
+  const isLoading = regionsLoading || storesLoading;
+  const isCreating = createRegionMutation.isPending;
+  const isRefreshing = regionsRefetching;
 
   if (isLoading) {
     return (
@@ -234,6 +214,8 @@ export default function RegionsSettingsPage() {
       </div>
     );
   }
+
+  const error = regionsError ? (regionsError instanceof Error ? regionsError.message : "Failed to load regions") : null;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -265,7 +247,7 @@ export default function RegionsSettingsPage() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => fetchData(true)} disabled={isRefreshing}>
+            <Button variant="outline" onClick={() => refetchRegions()} disabled={isRefreshing}>
               {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
             </Button>
             <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
@@ -294,6 +276,7 @@ export default function RegionsSettingsPage() {
               <TableBody>
                 {regions.map((region) => {
                   const defaultStores = defaultRegionToStores.get(region.id) ?? [];
+                  const isSettingDefault = setDefaultMutation.isPending && setDefaultMutation.variables?.regionId === region.id;
                   return (
                     <TableRow key={region.id}>
                       <TableCell className="font-medium">{region.name}</TableCell>
@@ -330,10 +313,10 @@ export default function RegionsSettingsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              disabled={defaultStores.length > 0 || settingDefaultRegionId === region.id}
+                              disabled={defaultStores.length > 0 || isSettingDefault}
                               onClick={() => handleSetDefault(region.id)}
                             >
-                              {settingDefaultRegionId === region.id ? (
+                              {isSettingDefault ? (
                                 <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                               ) : null}
                               {defaultStores.length > 0 ? "Already Default" : "Set as Store Default"}
@@ -462,7 +445,7 @@ export default function RegionsSettingsPage() {
             <div className="space-y-2">
               <Label>Store</Label>
               <Select
-                value={defaultStoreId}
+                value={resolvedDefaultStoreId}
                 onValueChange={setDefaultStoreId}
                 disabled={!setDefaultRegion || stores.length === 0}
               >
@@ -470,7 +453,7 @@ export default function RegionsSettingsPage() {
                   <SelectValue placeholder={stores.length === 0 ? "Create a store first" : "Select store"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {stores.map((store) => (
+                  {stores.map((store: Store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
                     </SelectItem>

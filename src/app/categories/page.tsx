@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -79,14 +79,16 @@ import {
   Move,
 } from "lucide-react";
 import {
-  getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  activateCategory,
-  deactivateCategory,
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  useActivateCategory,
+  useDeactivateCategory,
+  useMoveProductToCategory,
+} from "@/hooks/use-categories";
+import {
   getCategoryProducts,
-  moveProductToCategory,
   type ProductCategory,
   type CreateCategoryInput,
   type CategoryProductItem,
@@ -463,8 +465,18 @@ function RootDropZone({ isOver }: { isOver: boolean }) {
 }
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  // React Query
+  const { data, isLoading, error: queryError } = useCategories({ limit: 500 });
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory();
+  const deleteMutation = useDeleteCategory();
+  const activateMutation = useActivateCategory();
+  const deactivateMutation = useDeactivateCategory();
+  const moveProductMutation = useMoveProductToCategory();
+
+  const categories = data?.categories ?? [];
+
+  // Local UI state
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -479,8 +491,6 @@ export default function CategoriesPage() {
   const [categoryToEdit, setCategoryToEdit] = useState<ProductCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>(initialFormData);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   // Drag state
   const [activeCategory, setActiveCategory] = useState<CategoryWithChildren | null>(null);
@@ -500,29 +510,22 @@ export default function CategoriesPage() {
     useSensor(KeyboardSensor)
   );
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getCategories({ limit: 500 });
-      setCategories(response.categories);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
+  // Debounce search
+  useState(() => {
+    // This is handled via the effect-free pattern below
+  });
+
+  // Use a timeout ref for debouncing without useEffect
+  const [, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setDebounceTimer((prev) => {
+      if (prev) clearTimeout(prev);
+      return setTimeout(() => {
+        setDebouncedSearch(value);
+      }, 300);
+    });
   };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   const toggleExpanded = async (id: string) => {
     const isCurrentlyExpanded = expanded.has(id);
@@ -587,69 +590,60 @@ export default function CategoriesPage() {
   const handleCreate = async () => {
     if (!formData.name.trim()) return;
 
-    setSaving(true);
     setError(null);
 
     try {
-      const data: CreateCategoryInput = {
+      const input: CreateCategoryInput = {
         name: formData.name,
         handle: formData.handle || generateHandle(formData.name),
         description: formData.description || undefined,
         parentCategoryId: formData.parentCategoryId || undefined,
       };
-      await createCategory(data);
+      await createMutation.mutateAsync(input);
       setSuccess("Category created successfully");
       handleCloseModal();
-      await fetchCategories();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create category");
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleUpdate = async () => {
     if (!categoryToEdit || !formData.name.trim()) return;
 
-    setSaving(true);
     setError(null);
 
     try {
-      await updateCategory(categoryToEdit.id, {
-        name: formData.name,
-        handle: formData.handle || undefined,
-        description: formData.description || undefined,
-        parentCategoryId: formData.parentCategoryId || undefined,
+      await updateMutation.mutateAsync({
+        id: categoryToEdit.id,
+        data: {
+          name: formData.name,
+          handle: formData.handle || undefined,
+          description: formData.description || undefined,
+          parentCategoryId: formData.parentCategoryId || undefined,
+        },
       });
       setSuccess("Category updated successfully");
       handleCloseModal();
-      await fetchCategories();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update category");
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
     if (!categoryToDelete) return;
 
-    setDeleting(true);
     setError(null);
 
     try {
-      await deleteCategory(categoryToDelete.id);
+      await deleteMutation.mutateAsync(categoryToDelete.id);
       setSuccess("Category deleted successfully");
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
-      await fetchCategories();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete category");
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -658,13 +652,12 @@ export default function CategoriesPage() {
 
     try {
       if (category.isActive) {
-        await deactivateCategory(category.id);
+        await deactivateMutation.mutateAsync(category.id);
         setSuccess(`"${category.name}" deactivated`);
       } else {
-        await activateCategory(category.id);
+        await activateMutation.mutateAsync(category.id);
         setSuccess(`"${category.name}" activated`);
       }
-      await fetchCategories();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update category");
@@ -729,7 +722,11 @@ export default function CategoriesPage() {
         if (fromCategoryId === targetCategory.id) return;
 
         try {
-          await moveProductToCategory(targetCategory.id, product.id, fromCategoryId);
+          await moveProductMutation.mutateAsync({
+            targetCategoryId: targetCategory.id,
+            productId: product.id,
+            fromCategoryId,
+          });
           setSuccess(`"${product.title}" moved to "${targetCategory.name}"`);
 
           // Update local state: remove from source, add to target
@@ -751,8 +748,6 @@ export default function CategoriesPage() {
           // Expand target category to show the product
           setExpanded((prev) => new Set([...prev, targetCategory.id]));
 
-          // Reload to get updated counts
-          await fetchCategories();
           setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
           setError(err instanceof Error ? err.message : "Failed to move product");
@@ -768,11 +763,11 @@ export default function CategoriesPage() {
     if (over.id === "drop-root") {
       if (draggedCategory.parentCategoryId) {
         try {
-          await updateCategory(draggedCategory.id, {
-            parentCategoryId: undefined,
+          await updateMutation.mutateAsync({
+            id: draggedCategory.id,
+            data: { parentCategoryId: undefined },
           });
           setSuccess(`"${draggedCategory.name}" moved to root level`);
-          await fetchCategories();
           setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
           setError(err instanceof Error ? err.message : "Failed to move category");
@@ -802,13 +797,13 @@ export default function CategoriesPage() {
       if (draggedCategory.parentCategoryId === targetCategory.id) return;
 
       try {
-        await updateCategory(draggedCategory.id, {
-          parentCategoryId: targetCategory.id,
+        await updateMutation.mutateAsync({
+          id: draggedCategory.id,
+          data: { parentCategoryId: targetCategory.id },
         });
         setSuccess(`"${draggedCategory.name}" moved under "${targetCategory.name}"`);
         // Expand the target to show the moved category
         setExpanded((prev) => new Set([...prev, targetCategory.id]));
-        await fetchCategories();
         setTimeout(() => setSuccess(null), 3000);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to move category");
@@ -862,7 +857,7 @@ export default function CategoriesPage() {
   const totalProducts = categories.reduce((acc, cat) => acc + cat.productCount, 0);
   const activeCategories = categories.filter((c) => c.isActive).length;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -927,12 +922,12 @@ export default function CategoriesPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
-              disabled={deleting}
+              disabled={deleteMutation.isPending}
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? (
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
@@ -1131,7 +1126,7 @@ export default function CategoriesPage() {
               placeholder="Search categories..."
               className="pl-9"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
         </CardContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -53,12 +53,12 @@ import {
   Info,
 } from "lucide-react";
 import {
-  getCollections,
-  createCollection,
-  deleteCollection,
-  publishCollection,
-  type Collection,
-} from "@/lib/api";
+  useCollections,
+  useCreateCollection,
+  useDeleteCollection,
+  usePublishCollection,
+} from "@/hooks/use-collections";
+import { type Collection } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 
 type CollectionFormData = {
@@ -73,40 +73,25 @@ const initialFormData: CollectionFormData = {
 
 export default function CollectionsPage() {
   const router = useRouter();
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  // Modal states
+  // React Query
+  const { data, isLoading, error: queryError } = useCollections({ offset: 0, limit: 100 });
+  const createMutation = useCreateCollection();
+  const deleteMutation = useDeleteCollection();
+  const publishMutation = usePublishCollection();
+
+  const collections = data?.collections ?? [];
+
+  // Local UI state
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
   const [formData, setFormData] = useState<CollectionFormData>(initialFormData);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Search & pagination
+  // Search
   const [searchQuery, setSearchQuery] = useState("");
-  const [totalCount, setTotalCount] = useState(0);
-
-  const fetchCollections = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getCollections({ offset: 0, limit: 100 });
-      setCollections(response.collections);
-      setTotalCount(response.count);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load collections");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCollections();
-  }, []);
 
   const generateHandle = (title: string) => {
     return title
@@ -123,52 +108,42 @@ export default function CollectionsPage() {
   const handleCreate = async () => {
     if (!formData.title.trim()) return;
 
-    setSaving(true);
     setError(null);
 
     try {
-      const response = await createCollection({
+      const response = await createMutation.mutateAsync({
         title: formData.title,
         handle: formData.handle || generateHandle(formData.title),
       });
       setSuccess("Collection created successfully");
       handleClose();
-      await fetchCollections();
       setTimeout(() => setSuccess(null), 3000);
-      // Navigate to the new collection
       router.push(`/products/collections/${response.collection.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create collection");
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
     if (!collectionToDelete) return;
 
-    setDeleting(true);
     setError(null);
 
     try {
-      await deleteCollection(collectionToDelete.id);
+      await deleteMutation.mutateAsync(collectionToDelete.id);
       setSuccess("Collection deleted successfully");
       setDeleteDialogOpen(false);
       setCollectionToDelete(null);
-      await fetchCollections();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete collection");
-    } finally {
-      setDeleting(false);
     }
   };
 
   const handlePublish = async (collection: Collection) => {
     try {
-      await publishCollection(collection.id);
+      await publishMutation.mutateAsync(collection.id);
       setSuccess(`Collection "${collection.title}" published successfully`);
-      await fetchCollections();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to publish collection");
@@ -193,7 +168,7 @@ export default function CollectionsPage() {
     });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -249,15 +224,15 @@ export default function CollectionsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteMutation.isPending}>
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={deleting}
+              disabled={deleteMutation.isPending}
             >
-              {deleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
@@ -317,11 +292,11 @@ export default function CollectionsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleClose} disabled={saving}>
+            <Button variant="outline" onClick={handleClose} disabled={createMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={!formData.title.trim() || saving}>
-              {saving ? (
+            <Button onClick={handleCreate} disabled={!formData.title.trim() || createMutation.isPending}>
+              {createMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
@@ -341,10 +316,10 @@ export default function CollectionsPage() {
           <span>{success}</span>
         </div>
       )}
-      {error && (
+      {(error || queryError) && (
         <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
-          <span>{error}</span>
+          <span>{error || (queryError instanceof Error ? queryError.message : "Failed to load collections")}</span>
           <button onClick={() => setError(null)} className="ml-auto">
             <Trash2 className="h-4 w-4" />
           </button>

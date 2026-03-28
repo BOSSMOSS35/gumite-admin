@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -44,14 +43,11 @@ import {
   CheckCircle,
 } from "lucide-react";
 import {
-  getReturns,
-  getReturnStats,
-  ReturnSummary,
-  ReturnStats,
   formatPrice,
   formatDate,
   getReturnStatusDisplay,
 } from "@/lib/api";
+import { useReturns, useReturnStats } from "@/hooks/use-returns";
 
 function ReturnStatusBadge({ status }: { status: string }) {
   const { label, color } = getReturnStatusDisplay(status);
@@ -78,82 +74,58 @@ const returnStatuses = [
 ];
 
 export default function ReturnsPage() {
-  const [returns, setReturns] = useState<ReturnSummary[]>([]);
-  const [stats, setStats] = useState<ReturnStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState({
     limit: 20,
     offset: 0,
-    count: 0,
   });
 
-  const fetchReturns = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const statusFilter = activeFilters.find((f) => f.id === "status");
-      const response = await getReturns({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        q: searchQuery || undefined,
-        status: statusFilter?.value,
-      });
-      setReturns(response.returns);
-      setPagination((prev) => ({
-        ...prev,
-        count: response.count,
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load returns");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Debounce search to avoid excessive API calls
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
-  const fetchStats = async () => {
-    try {
-      const response = await getReturnStats();
-      setStats(response);
-    } catch (err) {
-      console.error("Failed to load stats:", err);
-    }
-  };
+  const statusFilter = activeFilters.find((f) => f.id === "status");
 
-  useEffect(() => {
-    fetchReturns();
-    fetchStats();
-  }, [pagination.offset, pagination.limit]);
+  const queryParams = useMemo(
+    () => ({
+      limit: pagination.limit,
+      offset: pagination.offset,
+      q: debouncedSearch || undefined,
+      status: statusFilter?.value,
+    }),
+    [pagination.limit, pagination.offset, debouncedSearch, statusFilter?.value]
+  );
 
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (pagination.offset === 0) {
-        fetchReturns();
-      } else {
-        setPagination((prev) => ({ ...prev, offset: 0 }));
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, activeFilters]);
+  const {
+    data: returnsData,
+    isLoading: loading,
+    error: returnsError,
+    refetch,
+  } = useReturns(queryParams);
+
+  const { data: stats } = useReturnStats();
+
+  const returns = returnsData?.returns ?? [];
+  const count = returnsData?.count ?? 0;
+  const error = returnsError?.message ?? null;
 
   const addFilter = (filter: Filter) => {
-    // Remove existing filter of same type
     const newFilters = activeFilters.filter((f) => f.id !== filter.id);
     setActiveFilters([...newFilters, filter]);
+    setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
   const removeFilter = (filterId: string) => {
     setActiveFilters(activeFilters.filter((f) => f.id !== filterId));
+    setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
   const clearFilters = () => {
     setActiveFilters([]);
+    setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
-  const totalPages = Math.ceil(pagination.count / pagination.limit);
+  const totalPages = Math.ceil(count / pagination.limit);
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
 
   const goToPage = (page: number) => {
@@ -214,7 +186,7 @@ export default function ReturnsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Returns</CardTitle>
-          <Button variant="outline" size="icon" onClick={fetchReturns} disabled={loading}>
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </CardHeader>
@@ -299,7 +271,10 @@ export default function ReturnsPage() {
                   placeholder="Search by order or email..."
                   className="pl-8 w-[250px]"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPagination((prev) => ({ ...prev, offset: 0 }));
+                  }}
                 />
               </div>
               <Button
@@ -322,7 +297,7 @@ export default function ReturnsPage() {
             <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={fetchReturns} className="ml-auto">
+              <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
                 Retry
               </Button>
             </div>
@@ -398,8 +373,8 @@ export default function ReturnsPage() {
               {/* Pagination */}
               <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                 <span>
-                  {pagination.offset + 1} — {Math.min(pagination.offset + pagination.limit, pagination.count)} of{" "}
-                  {pagination.count} results
+                  {pagination.offset + 1} — {Math.min(pagination.offset + pagination.limit, count)} of{" "}
+                  {count} results
                 </span>
                 <div className="flex items-center gap-2">
                   <span>
@@ -429,4 +404,16 @@ export default function ReturnsPage() {
       </Card>
     </div>
   );
+}
+
+// ─── Tiny debounce hook ───────────────────────────────────
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+
+  return debounced;
 }

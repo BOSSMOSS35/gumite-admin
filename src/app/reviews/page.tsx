@@ -42,17 +42,18 @@ import {
   Award,
 } from "lucide-react";
 import {
-  getPendingReviews,
-  getFlaggedReviews,
-  getAdminReview,
-  moderateReview,
-  addAdminResponse,
-  setReviewFeatured,
-  deleteAdminReview,
   AdminReview,
   getReviewStatusDisplay,
   formatDate,
 } from "@/lib/api";
+import {
+  usePendingReviews,
+  useFlaggedReviews,
+  useModerateReview,
+  useAddAdminResponse,
+  useSetReviewFeatured,
+  useDeleteReview,
+} from "@/hooks/use-reviews";
 import { toast } from "sonner";
 
 type Tab = "pending" | "flagged";
@@ -83,15 +84,9 @@ function StarDisplay({ rating }: { rating: number }) {
 }
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("pending");
-  const [pagination, setPagination] = useState({
-    size: 20,
-    page: 0,
-    total: 0,
-  });
+  const [page, setPage] = useState(0);
+  const size = 20;
 
   // Dialog states
   const [selectedReview, setSelectedReview] = useState<AdminReview | null>(null);
@@ -100,7 +95,6 @@ export default function ReviewsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [adminResponseText, setAdminResponseText] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Read tab from URL search params on mount
   useEffect(() => {
@@ -109,102 +103,90 @@ export default function ReviewsPage() {
     if (tab === "flagged") setActiveTab("flagged");
   }, []);
 
-  const fetchReviews = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const fetcher = activeTab === "pending" ? getPendingReviews : getFlaggedReviews;
-      const response = await fetcher({
-        page: pagination.page,
-        size: pagination.size,
-      });
-      setReviews(response.reviews);
-      setPagination((prev) => ({ ...prev, total: response.total }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load reviews");
-    } finally {
-      setLoading(false);
-    }
+  // Queries -- only one is enabled at a time
+  const pendingQuery = usePendingReviews({ page, size });
+  const flaggedQuery = useFlaggedReviews({ page, size });
+
+  const activeQuery = activeTab === "pending" ? pendingQuery : flaggedQuery;
+  const reviews = activeQuery.data?.reviews ?? [];
+  const total = activeQuery.data?.total ?? 0;
+  const loading = activeQuery.isLoading;
+  const error = activeQuery.error?.message ?? null;
+
+  // Mutations
+  const moderateMutation = useModerateReview();
+  const responseMutation = useAddAdminResponse();
+  const featuredMutation = useSetReviewFeatured();
+  const deleteMutation = useDeleteReview();
+
+  const handleModerate = (reviewId: string, approved: boolean) => {
+    moderateMutation.mutate(
+      { id: reviewId, data: { approved } },
+      {
+        onSuccess: () => {
+          setShowDetailDialog(false);
+          toast.success(approved ? "Review approved" : "Review rejected");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to moderate review");
+        },
+      }
+    );
   };
 
-  useEffect(() => {
-    fetchReviews();
-  }, [activeTab, pagination.page, pagination.size]);
-
-  const handleModerate = async (reviewId: string, approved: boolean) => {
-    setActionLoading(reviewId);
-    try {
-      await moderateReview(reviewId, { approved });
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-      setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
-      setShowDetailDialog(false);
-      toast.success(approved ? "Review approved" : "Review rejected");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to moderate review");
-      toast.error(err instanceof Error ? err.message : "Failed to moderate review");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleAddResponse = async () => {
+  const handleAddResponse = () => {
     if (!selectedReview || !adminResponseText.trim()) return;
-    setActionLoading("response");
-    try {
-      const result = await addAdminResponse(selectedReview.id, adminResponseText.trim());
-      setReviews((prev) =>
-        prev.map((r) => (r.id === selectedReview.id ? result.review : r))
-      );
-      setShowResponseDialog(false);
-      setAdminResponseText("");
-      toast.success("Response added successfully");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add response");
-      toast.error(err instanceof Error ? err.message : "Failed to add response");
-    } finally {
-      setActionLoading(null);
-    }
+    responseMutation.mutate(
+      { id: selectedReview.id, response: adminResponseText.trim() },
+      {
+        onSuccess: () => {
+          setShowResponseDialog(false);
+          setAdminResponseText("");
+          toast.success("Response added successfully");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to add response");
+        },
+      }
+    );
   };
 
-  const handleToggleFeatured = async (review: AdminReview) => {
-    setActionLoading(review.id);
-    try {
-      const result = await setReviewFeatured(review.id, !review.isFeatured);
-      setReviews((prev) =>
-        prev.map((r) => (r.id === review.id ? result.review : r))
-      );
-      toast.success(review.isFeatured ? "Review unfeatured" : "Review featured");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update featured status");
-      toast.error(err instanceof Error ? err.message : "Failed to update featured status");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleToggleFeatured = (review: AdminReview) => {
+    featuredMutation.mutate(
+      { id: review.id, featured: !review.isFeatured },
+      {
+        onSuccess: () => {
+          toast.success(review.isFeatured ? "Review unfeatured" : "Review featured");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to update featured status");
+        },
+      }
+    );
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!selectedReview) return;
-    setActionLoading("delete");
-    try {
-      await deleteAdminReview(selectedReview.id, deleteReason || undefined);
-      setReviews((prev) => prev.filter((r) => r.id !== selectedReview.id));
-      setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
-      setShowDeleteDialog(false);
-      setDeleteReason("");
-      toast.success("Review deleted");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete review");
-      toast.error(err instanceof Error ? err.message : "Failed to delete review");
-    } finally {
-      setActionLoading(null);
-    }
+    deleteMutation.mutate(
+      { id: selectedReview.id, reason: deleteReason || undefined },
+      {
+        onSuccess: () => {
+          setShowDeleteDialog(false);
+          setDeleteReason("");
+          toast.success("Review deleted");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to delete review");
+        },
+      }
+    );
   };
 
-  const totalPages = Math.ceil(pagination.total / pagination.size);
-  const currentPage = pagination.page + 1;
+  const totalPages = Math.ceil(total / size);
+  const currentPage = page + 1;
 
-  const goToPage = (page: number) => {
-    setPagination((prev) => ({ ...prev, page: page - 1 }));
+  const goToPage = (p: number) => {
+    setPage(p - 1);
   };
 
   return (
@@ -218,7 +200,7 @@ export default function ReviewsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {activeTab === "pending" ? pagination.total : "-"}
+              {activeTab === "pending" ? total : "-"}
             </div>
             <p className="text-xs text-muted-foreground">Awaiting moderation</p>
           </CardContent>
@@ -230,7 +212,7 @@ export default function ReviewsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {activeTab === "flagged" ? pagination.total : "-"}
+              {activeTab === "flagged" ? total : "-"}
             </div>
             <p className="text-xs text-muted-foreground">Reported by users</p>
           </CardContent>
@@ -241,7 +223,7 @@ export default function ReviewsPage() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pagination.total}</div>
+            <div className="text-2xl font-bold">{total}</div>
             <p className="text-xs text-muted-foreground">
               {activeTab === "pending" ? "Pending" : "Flagged"} total
             </p>
@@ -262,7 +244,7 @@ export default function ReviewsPage() {
                 }`}
                 onClick={() => {
                   setActiveTab("pending");
-                  setPagination((prev) => ({ ...prev, page: 0 }));
+                  setPage(0);
                 }}
               >
                 Pending
@@ -275,14 +257,14 @@ export default function ReviewsPage() {
                 }`}
                 onClick={() => {
                   setActiveTab("flagged");
-                  setPagination((prev) => ({ ...prev, page: 0 }));
+                  setPage(0);
                 }}
               >
                 Flagged
               </button>
             </div>
           </div>
-          <Button variant="outline" size="icon" onClick={fetchReviews} disabled={loading}>
+          <Button variant="outline" size="icon" onClick={() => activeQuery.refetch()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </CardHeader>
@@ -292,7 +274,7 @@ export default function ReviewsPage() {
             <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={fetchReviews} className="ml-auto">
+              <Button variant="ghost" size="sm" onClick={() => activeQuery.refetch()} className="ml-auto">
                 Retry
               </Button>
             </div>
@@ -367,7 +349,7 @@ export default function ReviewsPage() {
                             size="icon"
                             className="h-8 w-8 text-green-600"
                             onClick={() => handleModerate(review.id, true)}
-                            disabled={actionLoading === review.id}
+                            disabled={moderateMutation.isPending}
                             title="Approve"
                           >
                             <CheckCircle className="h-4 w-4" />
@@ -377,7 +359,7 @@ export default function ReviewsPage() {
                             size="icon"
                             className="h-8 w-8 text-red-600"
                             onClick={() => handleModerate(review.id, false)}
-                            disabled={actionLoading === review.id}
+                            disabled={moderateMutation.isPending}
                             title="Reject"
                           >
                             <XCircle className="h-4 w-4" />
@@ -407,9 +389,9 @@ export default function ReviewsPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Showing {pagination.page * pagination.size + 1} to{" "}
-                {Math.min((pagination.page + 1) * pagination.size, pagination.total)} of{" "}
-                {pagination.total} reviews
+                Showing {page * size + 1} to{" "}
+                {Math.min((page + 1) * size, total)} of{" "}
+                {total} reviews
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -507,7 +489,7 @@ export default function ReviewsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleToggleFeatured(selectedReview)}
-                  disabled={actionLoading === selectedReview.id}
+                  disabled={featuredMutation.isPending}
                 >
                   <Award className="h-4 w-4 mr-1" />
                   {selectedReview.isFeatured ? "Unfeature" : "Feature"}
@@ -541,7 +523,7 @@ export default function ReviewsPage() {
                   size="sm"
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => handleModerate(selectedReview.id, true)}
-                  disabled={actionLoading === selectedReview.id}
+                  disabled={moderateMutation.isPending}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Approve
@@ -550,7 +532,7 @@ export default function ReviewsPage() {
                   variant="destructive"
                   size="sm"
                   onClick={() => handleModerate(selectedReview.id, false)}
-                  disabled={actionLoading === selectedReview.id}
+                  disabled={moderateMutation.isPending}
                 >
                   <XCircle className="h-4 w-4 mr-1" />
                   Reject
@@ -584,9 +566,9 @@ export default function ReviewsPage() {
             </Button>
             <Button
               onClick={handleAddResponse}
-              disabled={!adminResponseText.trim() || actionLoading === "response"}
+              disabled={!adminResponseText.trim() || responseMutation.isPending}
             >
-              {actionLoading === "response" ? "Saving..." : "Save Response"}
+              {responseMutation.isPending ? "Saving..." : "Save Response"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -615,9 +597,9 @@ export default function ReviewsPage() {
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={actionLoading === "delete"}
+              disabled={deleteMutation.isPending}
             >
-              {actionLoading === "delete" ? "Deleting..." : "Delete Review"}
+              {deleteMutation.isPending ? "Deleting..." : "Delete Review"}
             </Button>
           </DialogFooter>
         </DialogContent>

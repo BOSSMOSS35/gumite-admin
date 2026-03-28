@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -61,7 +61,6 @@ import {
   Plus,
   Gift,
   MoreHorizontal,
-  Pencil,
   Trash2,
   Power,
   PowerOff,
@@ -75,39 +74,31 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  getGiftCards,
-  getGiftCardStats,
-  createGiftCard,
-  updateGiftCard,
-  disableGiftCard,
-  enableGiftCard,
-  deleteGiftCard,
-  bulkGiftCardAction,
-  adjustGiftCardBalance,
   type GiftCardListItem,
-  type GiftCardStatsResponse,
   type GiftCardStatus,
   getGiftCardStatusDisplay,
 } from "@/lib/api";
+import {
+  useGiftCards,
+  useGiftCardStats,
+  useCreateGiftCard,
+  useDisableGiftCard,
+  useEnableGiftCard,
+  useDeleteGiftCard,
+  useBulkGiftCardAction,
+  useAdjustGiftCardBalance,
+} from "@/hooks/use-gift-cards";
 
 export default function GiftCardsPage() {
-  // State
-  const [giftCards, setGiftCards] = useState<GiftCardListItem[]>([]);
-  const [stats, setStats] = useState<GiftCardStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Local UI state
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [pagination, setPagination] = useState({
-    offset: 0,
-    limit: 50,
-    count: 0,
-  });
+  const [offset, setOffset] = useState(0);
+  const limit = 50;
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -122,7 +113,6 @@ export default function GiftCardsPage() {
     message: "",
     expiresInDays: "",
   });
-  const [createLoading, setCreateLoading] = useState(false);
 
   // Balance adjustment form state
   const [balanceForm, setBalanceForm] = useState({
@@ -130,129 +120,114 @@ export default function GiftCardsPage() {
     reason: "",
   });
 
-  // Fetch data
-  const fetchGiftCards = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getGiftCards({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        q: searchQuery || undefined,
-        status: statusFilter !== "all" ? (statusFilter as GiftCardStatus) : undefined,
-      });
-      setGiftCards(response.items);
-      setPagination((prev) => ({
-        ...prev,
-        count: response.count,
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load gift cards");
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.limit, pagination.offset, searchQuery, statusFilter]);
+  // React Query hooks
+  const {
+    data: giftCardsData,
+    isLoading: loading,
+    error: queryError,
+    refetch: refetchGiftCards,
+  } = useGiftCards({
+    limit,
+    offset,
+    q: searchQuery || undefined,
+    status: statusFilter !== "all" ? (statusFilter as GiftCardStatus) : undefined,
+  });
 
-  const fetchStats = async () => {
-    try {
-      const response = await getGiftCardStats();
-      setStats(response);
-    } catch (err) {
-      toast.error("Failed to load gift card stats");
-    }
-  };
+  const { data: stats } = useGiftCardStats();
 
-  useEffect(() => {
-    fetchGiftCards();
-    fetchStats();
-  }, [fetchGiftCards]);
+  const createMutation = useCreateGiftCard();
+  const disableMutation = useDisableGiftCard();
+  const enableMutation = useEnableGiftCard();
+  const deleteMutation = useDeleteGiftCard();
+  const bulkMutation = useBulkGiftCardAction();
+  const adjustBalanceMutation = useAdjustGiftCardBalance();
 
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPagination((prev) => ({ ...prev, offset: 0 }));
-      fetchGiftCards();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const giftCards = giftCardsData?.items || [];
+  const count = giftCardsData?.count || 0;
+  const error = queryError instanceof Error ? queryError.message : queryError ? "Failed to load gift cards" : null;
 
   // Handlers
   const handleCreateGiftCard = async () => {
     if (!createForm.amount) return;
 
-    setCreateLoading(true);
-    try {
-      await createGiftCard({
-        amount: Math.round(parseFloat(createForm.amount) * 100), // Convert to pence
+    createMutation.mutate(
+      {
+        amount: Math.round(parseFloat(createForm.amount) * 100),
         recipientName: createForm.recipientName || undefined,
         recipientEmail: createForm.recipientEmail || undefined,
         message: createForm.message || undefined,
         expiresInDays: createForm.expiresInDays ? parseInt(createForm.expiresInDays) : undefined,
-      });
-      setCreateDialogOpen(false);
-      setCreateForm({
-        amount: "",
-        recipientName: "",
-        recipientEmail: "",
-        message: "",
-        expiresInDays: "",
-      });
-      await fetchGiftCards();
-      await fetchStats();
-      toast.success("Gift card created");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create gift card");
-    } finally {
-      setCreateLoading(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          setCreateDialogOpen(false);
+          setCreateForm({
+            amount: "",
+            recipientName: "",
+            recipientEmail: "",
+            message: "",
+            expiresInDays: "",
+          });
+          toast.success("Gift card created");
+        },
+        onError: (err) => {
+          toast.error(err.message || "Failed to create gift card");
+        },
+      }
+    );
   };
 
   const handleToggleStatus = async (card: GiftCardListItem) => {
-    try {
-      if (card.status === "ACTIVE") {
-        await disableGiftCard(card.id);
-      } else if (card.status === "DISABLED") {
-        await enableGiftCard(card.id);
-      }
-      await fetchGiftCards();
-      await fetchStats();
-      toast.success(card.status === "ACTIVE" ? "Gift card disabled" : "Gift card enabled");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update status");
-    }
+    const mutation = card.status === "ACTIVE" ? disableMutation : enableMutation;
+    if (card.status !== "ACTIVE" && card.status !== "DISABLED") return;
+
+    mutation.mutate(card.id, {
+      onSuccess: () => {
+        toast.success(card.status === "ACTIVE" ? "Gift card disabled" : "Gift card enabled");
+      },
+      onError: (err) => {
+        toast.error(err.message || "Failed to update status");
+      },
+    });
   };
 
   const handleDelete = async () => {
     if (!selectedCard) return;
-    try {
-      await deleteGiftCard(selectedCard.id);
-      setDeleteDialogOpen(false);
-      setSelectedCard(null);
-      await fetchGiftCards();
-      await fetchStats();
-      toast.success("Gift card deleted");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    }
+    deleteMutation.mutate(selectedCard.id, {
+      onSuccess: () => {
+        setDeleteDialogOpen(false);
+        setSelectedCard(null);
+        toast.success("Gift card deleted");
+      },
+      onError: (err) => {
+        toast.error(err.message || "Failed to delete");
+      },
+    });
   };
 
   const handleAdjustBalance = async () => {
     if (!selectedCard || !balanceForm.amount) return;
-    try {
-      const amount = Math.round(parseFloat(balanceForm.amount) * 100); // Convert to pence
-      await adjustGiftCardBalance(selectedCard.id, {
-        amount,
-        reason: balanceForm.reason || undefined,
-      });
-      setBalanceDialogOpen(false);
-      setBalanceForm({ amount: "", reason: "" });
-      setSelectedCard(null);
-      await fetchGiftCards();
-      await fetchStats();
-      toast.success("Balance updated");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to adjust balance");
-    }
+    const amount = Math.round(parseFloat(balanceForm.amount) * 100);
+    adjustBalanceMutation.mutate(
+      {
+        id: selectedCard.id,
+        data: {
+          amount,
+          reason: balanceForm.reason || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          setBalanceDialogOpen(false);
+          setBalanceForm({ amount: "", reason: "" });
+          setSelectedCard(null);
+          toast.success("Balance updated");
+        },
+        onError: (err) => {
+          toast.error(err.message || "Failed to adjust balance");
+        },
+      }
+    );
   };
 
   const handleBulkAction = async (action: "DISABLE" | "ENABLE" | "DELETE") => {
@@ -261,23 +236,34 @@ export default function GiftCardsPage() {
       setBulkDeleteDialogOpen(true);
       return;
     }
-    await executeBulkAction(action);
+    bulkMutation.mutate(
+      { ids: Array.from(selectedIds), action },
+      {
+        onSuccess: () => {
+          setSelectedIds(new Set());
+          toast.success(`Bulk ${action.toLowerCase()} completed for ${selectedIds.size} gift cards`);
+        },
+        onError: (err) => {
+          toast.error(err.message || "Bulk action failed");
+        },
+      }
+    );
   };
 
-  const executeBulkAction = async (action: "DISABLE" | "ENABLE" | "DELETE") => {
-    try {
-      await bulkGiftCardAction({
-        ids: Array.from(selectedIds),
-        action,
-      });
-      setSelectedIds(new Set());
-      setBulkDeleteDialogOpen(false);
-      await fetchGiftCards();
-      await fetchStats();
-      toast.success(`Bulk ${action.toLowerCase()} completed for ${selectedIds.size} gift cards`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Bulk action failed");
-    }
+  const executeBulkDelete = async () => {
+    bulkMutation.mutate(
+      { ids: Array.from(selectedIds), action: "DELETE" },
+      {
+        onSuccess: () => {
+          setSelectedIds(new Set());
+          setBulkDeleteDialogOpen(false);
+          toast.success(`${selectedIds.size} gift cards deleted`);
+        },
+        onError: (err) => {
+          toast.error(err.message || "Bulk delete failed");
+        },
+      }
+    );
   };
 
   const copyCode = (code: string) => {
@@ -380,10 +366,10 @@ export default function GiftCardsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setError(null)}
+            onClick={() => refetchGiftCards()}
             className="ml-auto"
           >
-            Dismiss
+            Retry
           </Button>
         </div>
       )}
@@ -398,7 +384,10 @@ export default function GiftCardsPage() {
                 <Input
                   placeholder="Search by code..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setOffset(0);
+                  }}
                   className="pl-9"
                 />
               </div>
@@ -419,10 +408,7 @@ export default function GiftCardsPage() {
               variant="outline"
               size="icon"
               aria-label="Refresh gift cards"
-              onClick={() => {
-                fetchGiftCards();
-                fetchStats();
-              }}
+              onClick={() => refetchGiftCards()}
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -438,6 +424,7 @@ export default function GiftCardsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction("ENABLE")}
+                disabled={bulkMutation.isPending}
               >
                 <Power className="h-4 w-4 mr-1" />
                 Enable
@@ -446,6 +433,7 @@ export default function GiftCardsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction("DISABLE")}
+                disabled={bulkMutation.isPending}
               >
                 <PowerOff className="h-4 w-4 mr-1" />
                 Disable
@@ -455,6 +443,7 @@ export default function GiftCardsPage() {
                 size="sm"
                 onClick={() => handleBulkAction("DELETE")}
                 className="text-destructive"
+                disabled={bulkMutation.isPending}
               >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Delete
@@ -622,6 +611,7 @@ export default function GiftCardsPage() {
                             {(card.status === "ACTIVE" || card.status === "DISABLED") && (
                               <DropdownMenuItem
                                 onClick={() => handleToggleStatus(card)}
+                                disabled={disableMutation.isPending || enableMutation.isPending}
                               >
                                 {card.status === "ACTIVE" ? (
                                   <>
@@ -659,40 +649,28 @@ export default function GiftCardsPage() {
         </CardContent>
 
         {/* Pagination */}
-        {pagination.count > pagination.limit && (
+        {count > limit && (
           <CardContent className="border-t">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                Showing {pagination.offset + 1} to{" "}
-                {Math.min(pagination.offset + pagination.limit, pagination.count)} of{" "}
-                {pagination.count}
+                Showing {offset + 1} to{" "}
+                {Math.min(offset + limit, count)} of{" "}
+                {count}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={pagination.offset === 0}
-                  onClick={() =>
-                    setPagination((prev) => ({
-                      ...prev,
-                      offset: Math.max(0, prev.offset - prev.limit),
-                    }))
-                  }
+                  disabled={offset === 0}
+                  onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={
-                    pagination.offset + pagination.limit >= pagination.count
-                  }
-                  onClick={() =>
-                    setPagination((prev) => ({
-                      ...prev,
-                      offset: prev.offset + prev.limit,
-                    }))
-                  }
+                  disabled={offset + limit >= count}
+                  onClick={() => setOffset((prev) => prev + limit)}
                 >
                   Next
                 </Button>
@@ -782,9 +760,9 @@ export default function GiftCardsPage() {
             </Button>
             <Button
               onClick={handleCreateGiftCard}
-              disabled={!createForm.amount || createLoading}
+              disabled={!createForm.amount || createMutation.isPending}
             >
-              {createLoading ? "Creating..." : "Create Gift Card"}
+              {createMutation.isPending ? "Creating..." : "Create Gift Card"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -835,9 +813,9 @@ export default function GiftCardsPage() {
             </Button>
             <Button
               onClick={handleAdjustBalance}
-              disabled={!balanceForm.amount}
+              disabled={!balanceForm.amount || adjustBalanceMutation.isPending}
             >
-              Adjust Balance
+              {adjustBalanceMutation.isPending ? "Adjusting..." : "Adjust Balance"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -877,12 +855,13 @@ export default function GiftCardsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={bulkMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => executeBulkAction("DELETE")}
+              onClick={executeBulkDelete}
               className="bg-destructive text-destructive-foreground"
+              disabled={bulkMutation.isPending}
             >
-              Delete {selectedIds.size} Gift Cards
+              {bulkMutation.isPending ? "Deleting..." : `Delete ${selectedIds.size} Gift Cards`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

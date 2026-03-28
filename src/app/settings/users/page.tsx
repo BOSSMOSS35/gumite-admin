@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -49,13 +49,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,25 +70,37 @@ import {
   AlertCircle,
 } from "lucide-react";
 import {
-  getInternalUsers,
-  inviteInternalUser,
-  updateInternalUser,
-  archiveInternalUser,
-  hardDeleteInternalUser,
   ApiError,
   type InternalUser,
   type InternalUserRole,
 } from "@/lib/api";
 import { getRoleBadgeColor, getRoleDisplayName } from "@/lib/auth";
+import {
+  useInternalUsers,
+  useInviteUser,
+  useUpdateUser,
+  useArchiveUser,
+  useHardDeleteUser,
+} from "@/hooks/use-users";
 
 const AVAILABLE_ROLES: { value: InternalUserRole; label: string; description: string }[] = [
   { value: "ADMIN", label: "Admin", description: "Full access to all features" },
 ];
 
 export default function UsersSettingsPage() {
-  const [users, setUsers] = useState<InternalUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: usersData,
+    isLoading,
+    error: queryError,
+  } = useInternalUsers({ limit: 100 });
+
+  const users = usersData?.users || [];
+
+  const inviteMutation = useInviteUser();
+  const updateMutation = useUpdateUser();
+  const archiveMutation = useArchiveUser();
+  const hardDeleteMutation = useHardDeleteUser();
+
   const [searchQuery, setSearchQuery] = useState("");
 
   // Invite modal state
@@ -104,7 +109,6 @@ export default function UsersSettingsPage() {
   const [inviteFirstName, setInviteFirstName] = useState("");
   const [inviteLastName, setInviteLastName] = useState("");
   const [inviteRoles, setInviteRoles] = useState<string[]>(["ADMIN"]);
-  const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   // Edit modal state
@@ -114,24 +118,20 @@ export default function UsersSettingsPage() {
   const [editLastName, setEditLastName] = useState("");
   const [editRoles, setEditRoles] = useState<string[]>([]);
   const [editIsActive, setEditIsActive] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
   // Archive confirmation state
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [archivingUser, setArchivingUser] = useState<InternalUser | null>(null);
-  const [isArchiving, setIsArchiving] = useState(false);
 
   // Hard delete confirmation state (permanent)
   const [isHardDeleteOpen, setIsHardDeleteOpen] = useState(false);
   const [hardDeletingUser, setHardDeletingUser] = useState<InternalUser | null>(null);
-  const [isHardDeleting, setIsHardDeleting] = useState(false);
   const [hardDeleteConfirmText, setHardDeleteConfirmText] = useState("");
 
   // Extract error message from API error
   const getErrorMessage = (err: unknown): string => {
     if (err instanceof ApiError) {
-      // Use the human-readable message from the backend
       return err.message;
     }
     if (err instanceof Error) {
@@ -140,33 +140,15 @@ export default function UsersSettingsPage() {
     return "An unexpected error occurred";
   };
 
-  // Fetch users
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await getInternalUsers({ limit: 100 });
-      setUsers(response.users || []);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   // Filter users by search
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = users.filter((user: InternalUser) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     const fullName = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
     return (
       fullName.includes(query) ||
       user.email.toLowerCase().includes(query) ||
-      user.roles.some((r) => r.toLowerCase().includes(query))
+      user.roles.some((r: string) => r.toLowerCase().includes(query))
     );
   });
 
@@ -178,9 +160,8 @@ export default function UsersSettingsPage() {
     }
 
     try {
-      setIsInviting(true);
       setInviteError(null);
-      await inviteInternalUser({
+      await inviteMutation.mutateAsync({
         email: inviteEmail,
         firstName: inviteFirstName || undefined,
         lastName: inviteLastName || undefined,
@@ -188,11 +169,8 @@ export default function UsersSettingsPage() {
       });
       setIsInviteOpen(false);
       resetInviteForm();
-      fetchUsers();
     } catch (err) {
       setInviteError(getErrorMessage(err));
-    } finally {
-      setIsInviting(false);
     }
   };
 
@@ -222,21 +200,20 @@ export default function UsersSettingsPage() {
     }
 
     try {
-      setIsUpdating(true);
       setEditError(null);
-      await updateInternalUser(editingUser.id, {
-        firstName: editFirstName || undefined,
-        lastName: editLastName || undefined,
-        roles: editRoles,
-        isActive: editIsActive,
+      await updateMutation.mutateAsync({
+        userId: editingUser.id,
+        data: {
+          firstName: editFirstName || undefined,
+          lastName: editLastName || undefined,
+          roles: editRoles,
+          isActive: editIsActive,
+        },
       });
       setIsEditOpen(false);
       setEditingUser(null);
-      fetchUsers();
     } catch (err) {
       setEditError(getErrorMessage(err));
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -250,15 +227,11 @@ export default function UsersSettingsPage() {
     if (!archivingUser) return;
 
     try {
-      setIsArchiving(true);
-      await archiveInternalUser(archivingUser.id);
+      await archiveMutation.mutateAsync(archivingUser.id);
       setIsArchiveOpen(false);
       setArchivingUser(null);
-      fetchUsers();
     } catch (err) {
       console.error("Failed to archive user:", err);
-    } finally {
-      setIsArchiving(false);
     }
   };
 
@@ -273,16 +246,12 @@ export default function UsersSettingsPage() {
     if (!hardDeletingUser) return;
 
     try {
-      setIsHardDeleting(true);
-      await hardDeleteInternalUser(hardDeletingUser.id);
+      await hardDeleteMutation.mutateAsync(hardDeletingUser.id);
       setIsHardDeleteOpen(false);
       setHardDeletingUser(null);
       setHardDeleteConfirmText("");
-      fetchUsers();
     } catch (err) {
       console.error("Failed to permanently delete user:", err);
-    } finally {
-      setIsHardDeleting(false);
     }
   };
 
@@ -314,6 +283,8 @@ export default function UsersSettingsPage() {
       setRoles([...rolesList, role]);
     }
   };
+
+  const error = queryError ? getErrorMessage(queryError) : null;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -361,9 +332,6 @@ export default function UsersSettingsPage() {
             <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 rounded-lg">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
-              <Button variant="outline" size="sm" onClick={fetchUsers} className="ml-auto">
-                Retry
-              </Button>
             </div>
           )}
 
@@ -394,7 +362,7 @@ export default function UsersSettingsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => (
+                    filteredUsers.map((user: InternalUser) => (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -408,7 +376,7 @@ export default function UsersSettingsPage() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {user.roles.map((role) => (
+                            {user.roles.map((role: string) => (
                               <Badge
                                 key={role}
                                 variant="secondary"
@@ -575,8 +543,8 @@ export default function UsersSettingsPage() {
             <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleInvite} disabled={isInviting}>
-              {isInviting ? (
+            <Button onClick={handleInvite} disabled={inviteMutation.isPending}>
+              {inviteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Sending...
@@ -691,8 +659,8 @@ export default function UsersSettingsPage() {
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={isUpdating}>
-              {isUpdating ? (
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
@@ -723,9 +691,9 @@ export default function UsersSettingsPage() {
             <AlertDialogAction
               onClick={handleArchive}
               className="bg-amber-600 hover:bg-amber-700"
-              disabled={isArchiving}
+              disabled={archiveMutation.isPending}
             >
-              {isArchiving ? (
+              {archiveMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Archiving...
@@ -781,9 +749,9 @@ export default function UsersSettingsPage() {
             <AlertDialogAction
               onClick={handleHardDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={isHardDeleting || hardDeleteConfirmText !== "DELETE"}
+              disabled={hardDeleteMutation.isPending || hardDeleteConfirmText !== "DELETE"}
             >
-              {isHardDeleting ? (
+              {hardDeleteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Deleting...

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -60,28 +60,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
-import {
-  createTaxRate,
-  deleteTaxRate,
-  getTaxRegions,
-  updateTaxRate,
-  type AdminTaxRate,
-  type TaxRegion,
-} from "@/lib/api";
+import { type AdminTaxRate } from "@/lib/api";
 import { toast } from "sonner";
+import {
+  useTaxRegions,
+  useCreateTaxRate,
+  useUpdateTaxRate,
+  useDeleteTaxRate,
+} from "@/hooks/use-regions";
 
 function formatPercent(value: number): string {
   return `${value.toFixed(2).replace(/\.00$/, "")}%`;
 }
 
 export default function TaxRegionsSettingsPage() {
-  const [taxRegions, setTaxRegions] = useState<TaxRegion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: taxRegionsData,
+    isLoading,
+    error: queryError,
+    refetch,
+    isRefetching,
+  } = useTaxRegions({ limit: 100, offset: 0 });
+
+  const taxRegions = taxRegionsData?.taxRegions ?? [];
+
+  const createTaxRateMutation = useCreateTaxRate();
+  const updateTaxRateMutation = useUpdateTaxRate();
+  const deleteTaxRateMutation = useDeleteTaxRate();
 
   const [isCreateRateOpen, setIsCreateRateOpen] = useState(false);
-  const [isCreatingRate, setIsCreatingRate] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState("");
   const [rateName, setRateName] = useState("");
   const [rateCode, setRateCode] = useState("");
@@ -90,40 +97,15 @@ export default function TaxRegionsSettingsPage() {
   const [deletingRate, setDeletingRate] = useState<AdminTaxRate | null>(null);
   const [isEditRateOpen, setIsEditRateOpen] = useState(false);
   const [isDeleteRateOpen, setIsDeleteRateOpen] = useState(false);
-  const [isUpdatingRate, setIsUpdatingRate] = useState(false);
-  const [isDeletingRate, setIsDeletingRate] = useState(false);
   const [editRateName, setEditRateName] = useState("");
   const [editRateCode, setEditRateCode] = useState("");
   const [editRatePercent, setEditRatePercent] = useState("0");
 
-  const loadTaxRegions = async (silent = false) => {
-    try {
-      if (silent) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-      const response = await getTaxRegions({ limit: 100, offset: 0 });
-      setTaxRegions(response.taxRegions ?? []);
-      if (!selectedRegionId && (response.taxRegions?.length ?? 0) > 0) {
-        setSelectedRegionId(response.taxRegions[0].regionId);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load tax regions");
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTaxRegions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Set default region once loaded
+  const resolvedRegionId = selectedRegionId || (taxRegions.length > 0 ? taxRegions[0].regionId : "");
 
   const allTaxRates = useMemo(
-    () => taxRegions.flatMap((region) => region.taxRates.map((rate) => ({ ...rate, regionName: region.regionName }))),
+    () => taxRegions.flatMap((region) => region.taxRates.map((rate: AdminTaxRate) => ({ ...rate, regionName: region.regionName }))),
     [taxRegions]
   );
 
@@ -149,7 +131,8 @@ export default function TaxRegionsSettingsPage() {
       toast.error("Tax rate name is required");
       return;
     }
-    if (!selectedRegionId) {
+    const regionId = resolvedRegionId;
+    if (!regionId) {
       toast.error("Select a region");
       return;
     }
@@ -161,12 +144,11 @@ export default function TaxRegionsSettingsPage() {
     }
 
     try {
-      setIsCreatingRate(true);
-      await createTaxRate({
+      await createTaxRateMutation.mutateAsync({
         name: trimmedName,
         code: rateCode.trim() || undefined,
         rate: parsedRate,
-        regionId: selectedRegionId,
+        regionId,
       });
 
       toast.success("Tax rate created");
@@ -174,11 +156,8 @@ export default function TaxRegionsSettingsPage() {
       setRateCode("");
       setRatePercent("20");
       setIsCreateRateOpen(false);
-      await loadTaxRegions(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create tax rate");
-    } finally {
-      setIsCreatingRate(false);
     }
   };
 
@@ -198,20 +177,19 @@ export default function TaxRegionsSettingsPage() {
     }
 
     try {
-      setIsUpdatingRate(true);
-      await updateTaxRate(editingRate.id, {
-        name: trimmedName,
-        code: editRateCode.trim() || null,
-        rate: parsedRate,
+      await updateTaxRateMutation.mutateAsync({
+        id: editingRate.id,
+        data: {
+          name: trimmedName,
+          code: editRateCode.trim() || null,
+          rate: parsedRate,
+        },
       });
       toast.success("Tax rate updated");
       setIsEditRateOpen(false);
       setEditingRate(null);
-      await loadTaxRegions(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update tax rate");
-    } finally {
-      setIsUpdatingRate(false);
     }
   };
 
@@ -224,16 +202,12 @@ export default function TaxRegionsSettingsPage() {
     if (!deletingRate) return;
 
     try {
-      setIsDeletingRate(true);
-      await deleteTaxRate(deletingRate.id);
+      await deleteTaxRateMutation.mutateAsync(deletingRate.id);
       toast.success("Tax rate deleted");
       setIsDeleteRateOpen(false);
       setDeletingRate(null);
-      await loadTaxRegions(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete tax rate");
-    } finally {
-      setIsDeletingRate(false);
     }
   };
 
@@ -247,6 +221,8 @@ export default function TaxRegionsSettingsPage() {
       </div>
     );
   }
+
+  const error = queryError ? (queryError instanceof Error ? queryError.message : "Failed to load tax regions") : null;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -278,8 +254,8 @@ export default function TaxRegionsSettingsPage() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => loadTaxRegions(true)} disabled={isRefreshing}>
-              {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
+            <Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
+              {isRefetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
             </Button>
             <Button className="gap-2" onClick={() => setIsCreateRateOpen(true)} disabled={taxRegions.length === 0}>
               <Plus className="h-4 w-4" />
@@ -317,7 +293,7 @@ export default function TaxRegionsSettingsPage() {
                       ) : (
                         <div className="flex flex-wrap items-center gap-1">
                           <Badge variant="outline">{region.taxRateCount} rate(s)</Badge>
-                          {region.taxRates.slice(0, 2).map((rate) => (
+                          {region.taxRates.slice(0, 2).map((rate: AdminTaxRate) => (
                             <Badge key={rate.id} variant="secondary">
                               {rate.name}
                             </Badge>
@@ -413,7 +389,7 @@ export default function TaxRegionsSettingsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Region</Label>
-              <Select value={selectedRegionId} onValueChange={setSelectedRegionId}>
+              <Select value={resolvedRegionId} onValueChange={setSelectedRegionId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
@@ -461,11 +437,11 @@ export default function TaxRegionsSettingsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateRateOpen(false)} disabled={isCreatingRate}>
+            <Button variant="outline" onClick={() => setIsCreateRateOpen(false)} disabled={createTaxRateMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleCreateTaxRate} disabled={isCreatingRate}>
-              {isCreatingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Tax Rate"}
+            <Button onClick={handleCreateTaxRate} disabled={createTaxRateMutation.isPending}>
+              {createTaxRateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Tax Rate"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -509,11 +485,11 @@ export default function TaxRegionsSettingsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditRateOpen(false)} disabled={isUpdatingRate}>
+            <Button variant="outline" onClick={() => setIsEditRateOpen(false)} disabled={updateTaxRateMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateTaxRate} disabled={isUpdatingRate}>
-              {isUpdatingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+            <Button onClick={handleUpdateTaxRate} disabled={updateTaxRateMutation.isPending}>
+              {updateTaxRateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -528,13 +504,13 @@ export default function TaxRegionsSettingsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingRate}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteTaxRateMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteTaxRate}
-              disabled={isDeletingRate}
+              disabled={deleteTaxRateMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeletingRate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {deleteTaxRateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
