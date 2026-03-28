@@ -3,50 +3,6 @@
 const API_BASE_URL = "";
 
 /**
- * Deep-convert object keys from camelCase to snake_case.
- * Handles nested objects and arrays recursively.
- */
-function toSnakeCase(str: string): string {
-  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-}
-
-// Keys whose VALUES are user-defined maps (e.g., options: {"Size": "M"}).
-// When we encounter these keys, their child object keys are NOT converted.
-const VALUE_MAP_KEYS = new Set(["options", "metadata", "data", "properties", "attributes"]);
-
-function deepSnakeCase(obj: unknown, preserveKeys = false): unknown {
-  if (Array.isArray(obj)) return obj.map(v => deepSnakeCase(v, false));
-  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
-    return Object.fromEntries(
-      Object.entries(obj as Record<string, unknown>).map(([k, v]) => {
-        const snakeKey = preserveKeys ? k : toSnakeCase(k);
-        // If this key holds a user-defined value map, preserve its children's keys
-        const childPreserve = VALUE_MAP_KEYS.has(k) || VALUE_MAP_KEYS.has(snakeKey);
-        return [snakeKey, deepSnakeCase(v, childPreserve)];
-      })
-    );
-  }
-  return obj;
-}
-
-function toCamelCase(str: string): string {
-  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
-function deepCamelCase(obj: unknown): unknown {
-  if (Array.isArray(obj)) return obj.map(deepCamelCase);
-  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
-    return Object.fromEntries(
-      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
-        toCamelCase(k),
-        deepCamelCase(v),
-      ])
-    );
-  }
-  return obj;
-}
-
-/**
  * Standardized API error response from backend.
  */
 export interface ApiErrorResponse {
@@ -158,19 +114,8 @@ export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  // Auto-convert camelCase request bodies to snake_case for the backend
-  let { body, ...rest } = options;
-  if (typeof body === "string") {
-    try {
-      body = JSON.stringify(deepSnakeCase(JSON.parse(body)));
-    } catch {
-      // not JSON, leave as-is
-    }
-  }
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...rest,
-    body,
+    ...options,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -183,7 +128,7 @@ export async function apiFetch<T>(
   }
 
   const json = await response.json();
-  return deepCamelCase(json) as T;
+  return json as T;
 }
 
 // Order types
