@@ -129,18 +129,18 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     store.setError(null);
 
     try {
-      // Upload images to S3 first
+      // Upload images to S3 first (non-blocking — product creation proceeds even if upload fails)
       let imageUrls: string[] = [];
       if (store.images.length > 0) {
-        console.log(`Uploading ${store.images.length} image(s)...`);
-        const uploadResults = await Promise.all(
-          store.images.map((file) => uploadProductImage(file))
-        );
-        imageUrls = uploadResults.map((r) => r.url);
-        console.log("Images uploaded:", imageUrls);
+        try {
+          const uploadResults = await Promise.all(
+            store.images.map((file) => uploadProductImage(file))
+          );
+          imageUrls = uploadResults.map((r) => r.url);
+        } catch (uploadErr) {
+          console.warn("Image upload failed, creating product without images:", uploadErr);
+        }
       }
-
-      console.log("Creating product...");
       // Build the product input
       const productInput: CreateProductInput = {
         title: store.title,
