@@ -57,8 +57,10 @@ import {
   Download,
   RefreshCw,
   AlertCircle,
+  Package,
 } from "lucide-react";
 import { StackedThumbnails } from "@/components/ui/thumbnail";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AddProductModal } from "@/components/products/add-product-modal";
 import {
   getProducts,
@@ -316,8 +318,13 @@ export default function ProductsPage() {
               <TableBody>
                 {products.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No products found
+                    <TableCell colSpan={6}>
+                      <EmptyState
+                        icon={Package}
+                        title="No products found"
+                        description="Get started by adding your first product to the catalog."
+                        action={{ label: "Add Product", onClick: () => setAddProductOpen(true) }}
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

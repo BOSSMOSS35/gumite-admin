@@ -38,7 +38,9 @@ import {
   ChevronDown,
   AlertCircle,
   RefreshCw,
+  ShoppingCart,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import {
   getOrders,
@@ -89,6 +91,10 @@ export default function OrdersPage() {
     count: 0,
   });
 
+  // Extract active filter values for API params
+  const paymentFilter = activeFilters.find((f) => f.id === "payment")?.value;
+  const fulfillmentFilter = activeFilters.find((f) => f.id === "fulfillment")?.value;
+
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
@@ -97,6 +103,8 @@ export default function OrdersPage() {
         limit: pagination.limit,
         offset: pagination.offset,
         q: searchQuery || undefined,
+        payment_status: paymentFilter,
+        fulfillment_status: fulfillmentFilter,
       });
       setOrders(response.orders);
       setPagination((prev) => ({
@@ -112,7 +120,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [pagination.offset, pagination.limit]);
+  }, [pagination.offset, pagination.limit, paymentFilter, fulfillmentFilter]);
 
   // Debounced search
   useEffect(() => {
@@ -129,15 +137,18 @@ export default function OrdersPage() {
   const addFilter = (filter: Filter) => {
     if (!activeFilters.find((f) => f.id === filter.id && f.value === filter.value)) {
       setActiveFilters([...activeFilters, filter]);
+      setPagination((prev) => ({ ...prev, offset: 0 }));
     }
   };
 
   const removeFilter = (filterId: string, value: string) => {
     setActiveFilters(activeFilters.filter((f) => !(f.id === filterId && f.value === value)));
+    setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
   const clearFilters = () => {
     setActiveFilters([]);
+    setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
   const handleExport = () => {
@@ -166,18 +177,8 @@ export default function OrdersPage() {
     }
   };
 
-  // Filter orders based on active filters (API already handles search)
-  const filteredOrders = orders.filter((order) => {
-    for (const filter of activeFilters) {
-      if (filter.id === "payment" && order.paymentStatus !== filter.value) {
-        return false;
-      }
-      if (filter.id === "fulfillment" && order.fulfillmentStatus !== filter.value) {
-        return false;
-      }
-    }
-    return true;
-  });
+  // Filters are now applied server-side via API params
+  const filteredOrders = orders;
 
   const totalPages = Math.ceil(pagination.count / pagination.limit);
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
@@ -361,8 +362,14 @@ export default function OrdersPage() {
                 <TableBody>
                   {filteredOrders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {orders.length === 0 ? "No orders found" : "No orders match your filters"}
+                      <TableCell colSpan={6}>
+                        <EmptyState
+                          icon={ShoppingCart}
+                          title={orders.length === 0 ? "No orders yet" : "No orders match your filters"}
+                          description={orders.length === 0
+                            ? "Orders will appear here when customers make purchases."
+                            : "Try adjusting your search or filter criteria."}
+                        />
                       </TableCell>
                     </TableRow>
                   ) : (

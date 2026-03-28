@@ -265,11 +265,15 @@ export async function getOrders(params?: {
   limit?: number;
   offset?: number;
   q?: string;
+  payment_status?: string;
+  fulfillment_status?: string;
 }): Promise<OrdersResponse> {
   const searchParams = new URLSearchParams();
   if (params?.limit) searchParams.set("limit", params.limit.toString());
   if (params?.offset) searchParams.set("offset", params.offset.toString());
   if (params?.q) searchParams.set("q", params.q);
+  if (params?.payment_status) searchParams.set("payment_status", params.payment_status);
+  if (params?.fulfillment_status) searchParams.set("fulfillment_status", params.fulfillment_status);
 
   const query = searchParams.toString();
   return apiFetch<OrdersResponse>(`/admin/orders${query ? `?${query}` : ""}`);

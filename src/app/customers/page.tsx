@@ -53,6 +53,7 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   getCustomers,
   getCustomerStats,
@@ -293,9 +294,11 @@ export default function CustomersPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : customers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No customers found
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No customers found"
+              description="Customers will appear here once they create an account or place an order."
+            />
           ) : (
             <Table>
               <TableHeader>
