@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -510,12 +510,7 @@ export default function CategoriesPage() {
     useSensor(KeyboardSensor)
   );
 
-  // Debounce search
-  useState(() => {
-    // This is handled via the effect-free pattern below
-  });
-
-  // Use a timeout ref for debouncing without useEffect
+  // Debounce search via setState callback
   const [, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -1027,14 +1022,14 @@ export default function CategoriesPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseModal} disabled={saving}>
+            <Button variant="outline" onClick={handleCloseModal} disabled={createMutation.isPending || updateMutation.isPending}>
               Cancel
             </Button>
             <Button
               onClick={editModalOpen ? handleUpdate : handleCreate}
-              disabled={!formData.name.trim() || !formData.handle.trim() || saving}
+              disabled={!formData.name.trim() || !formData.handle.trim() || createMutation.isPending || updateMutation.isPending}
             >
-              {saving ? (
+              {(createMutation.isPending || updateMutation.isPending) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {editModalOpen ? "Saving..." : "Creating..."}
@@ -1056,10 +1051,10 @@ export default function CategoriesPage() {
           <span>{success}</span>
         </div>
       )}
-      {error && (
+      {(error || queryError) && (
         <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
           <AlertCircle className="h-5 w-5" />
-          <span>{error}</span>
+          <span>{error || (queryError instanceof Error ? queryError.message : "Failed to load categories")}</span>
           <button onClick={() => setError(null)} className="ml-auto">
             <Trash2 className="h-4 w-4" />
           </button>

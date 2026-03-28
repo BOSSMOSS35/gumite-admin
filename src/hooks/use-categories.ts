@@ -44,7 +44,7 @@ interface UseCategoriesParams {
 
 export function useCategories(params?: UseCategoriesParams) {
   return useQuery<AdminCategoriesResponse>({
-    queryKey: categoryKeys.list(params ?? {}),
+    queryKey: categoryKeys.list((params ?? {}) as Record<string, unknown>),
     queryFn: () => getCategories(params),
   });
 }

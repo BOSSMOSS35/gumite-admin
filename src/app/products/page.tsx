@@ -141,7 +141,7 @@ export default function ProductsPage() {
     : null;
 
   const handleProductSave = useCallback(
-    (_data: unknown, _isDraft: boolean) => {
+    (_isDraft: boolean) => {
       // Refetch products after a save from the modal
       refetch();
     },

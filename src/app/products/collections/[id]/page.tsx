@@ -104,11 +104,18 @@ export default function CollectionDetailPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Edit form
+  // Edit form - synced from collection data
   const [editForm, setEditForm] = useState({
     title: "",
     handle: "",
   });
+  const [lastSyncedUpdate, setLastSyncedUpdate] = useState<string | null>(null);
+
+  // Sync edit form when collection data arrives or is updated after a mutation
+  if (collection && collection.updatedAt !== lastSyncedUpdate) {
+    setEditForm({ title: collection.title, handle: collection.handle });
+    setLastSyncedUpdate(collection.updatedAt);
+  }
 
   // Add products modal
   const [addProductsModalOpen, setAddProductsModalOpen] = useState(false);

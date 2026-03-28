@@ -38,7 +38,7 @@ interface UseCollectionsParams {
 
 export function useCollections(params?: UseCollectionsParams) {
   return useQuery<AdminCollectionsResponse>({
-    queryKey: collectionKeys.list(params ?? {}),
+    queryKey: collectionKeys.list((params ?? {}) as Record<string, unknown>),
     queryFn: () => getCollections(params),
   });
 }
