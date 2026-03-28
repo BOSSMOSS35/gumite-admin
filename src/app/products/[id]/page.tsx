@@ -972,8 +972,16 @@ export default function ProductDetailPage() {
                       alt={product.images[selectedImage]?.altText || product.title}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        // Fallback to placeholder on error
-                        e.currentTarget.style.display = "none";
+                        // Show placeholder icon instead of broken image
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          e.currentTarget.style.display = "none";
+                          parent.classList.add("flex", "items-center", "justify-center");
+                          const placeholder = document.createElement("div");
+                          placeholder.className = "text-center text-muted-foreground";
+                          placeholder.innerHTML = '<svg class="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"/></svg><p class="text-xs">Image failed to load</p>';
+                          parent.appendChild(placeholder);
+                        }
                       }}
                     />
                   </div>

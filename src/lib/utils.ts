@@ -12,6 +12,10 @@ export function cn(...inputs: ClassValue[]) {
  *
  * https://gumite-minio-sdsl.runixcloud.dev/gumite/products/abc/img.jpg
  *   → /files?key=products/abc/img.jpg
+ *
+ * Note: we do NOT use encodeURIComponent for the key because it encodes
+ * slashes (/) to %2F which can break some proxy chains. The backend's
+ * allowedKeyPattern (^[a-zA-Z0-9/_.-]+$) ensures keys are safe.
  */
 const MINIO_URL_PATTERN = /^https?:\/\/[^/]*runixcloud\.dev\/gumite\//;
 const MINIO_LOCALHOST_PATTERN = /^https?:\/\/(?:localhost|minio):9000\/gumite\//;
@@ -22,11 +26,11 @@ export function getImageUrl(url: string | undefined | null): string | null {
   // Rewrite MinIO URLs to backend proxy
   if (MINIO_URL_PATTERN.test(url)) {
     const key = url.replace(MINIO_URL_PATTERN, "");
-    return `/files?key=${encodeURIComponent(key)}`;
+    return `/files?key=${key}`;
   }
   if (MINIO_LOCALHOST_PATTERN.test(url)) {
     const key = url.replace(MINIO_LOCALHOST_PATTERN, "");
-    return `/files?key=${encodeURIComponent(key)}`;
+    return `/files?key=${key}`;
   }
 
   // Other absolute URLs (Unsplash, etc.) — use directly
@@ -40,5 +44,5 @@ export function getImageUrl(url: string | undefined | null): string | null {
   }
 
   // Bare key like "products/abc/img.jpg" — proxy it
-  return `/files?key=${encodeURIComponent(url)}`;
+  return `/files?key=${url}`;
 }
