@@ -10,14 +10,20 @@ function toSnakeCase(str: string): string {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-function deepSnakeCase(obj: unknown): unknown {
-  if (Array.isArray(obj)) return obj.map(deepSnakeCase);
+// Keys whose VALUES are user-defined maps (e.g., options: {"Size": "M"}).
+// When we encounter these keys, their child object keys are NOT converted.
+const VALUE_MAP_KEYS = new Set(["options", "metadata", "data", "properties", "attributes"]);
+
+function deepSnakeCase(obj: unknown, preserveKeys = false): unknown {
+  if (Array.isArray(obj)) return obj.map(v => deepSnakeCase(v, false));
   if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
     return Object.fromEntries(
-      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
-        toSnakeCase(k),
-        deepSnakeCase(v),
-      ])
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => {
+        const snakeKey = preserveKeys ? k : toSnakeCase(k);
+        // If this key holds a user-defined value map, preserve its children's keys
+        const childPreserve = VALUE_MAP_KEYS.has(k) || VALUE_MAP_KEYS.has(snakeKey);
+        return [snakeKey, deepSnakeCase(v, childPreserve)];
+      })
     );
   }
   return obj;
