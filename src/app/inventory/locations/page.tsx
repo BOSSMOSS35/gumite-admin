@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -45,18 +45,16 @@ import {
   Warehouse,
   MapPin,
   Trash2,
-  Edit,
   Loader2,
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
+import { type CreateStockLocationRequest } from "@/lib/api";
 import {
-  getStockLocations,
-  createStockLocation,
-  deleteStockLocation,
-  type StockLocation,
-  type CreateStockLocationRequest,
-} from "@/lib/api";
+  useStockLocations,
+  useCreateStockLocation,
+  useDeleteStockLocation,
+} from "@/hooks/use-inventory";
 import { toast } from "sonner";
 
 interface LocationFormData {
@@ -86,96 +84,67 @@ const emptyFormData: LocationFormData = {
 };
 
 export default function LocationsPage() {
-  const [locations, setLocations] = useState<StockLocation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useStockLocations({ limit: 100 });
+  const locations = data?.stockLocations ?? [];
 
   // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [formData, setFormData] = useState<LocationFormData>(emptyFormData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [locationToDelete, setLocationToDelete] = useState<StockLocation | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [locationToDelete, setLocationToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const fetchLocations = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await getStockLocations({ limit: 100 });
-      setLocations(response.stockLocations);
-    } catch (err) {
-      console.error("Failed to fetch locations:", err);
-      setError(err instanceof Error ? err.message : "Failed to load locations");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const createMutation = useCreateStockLocation();
+  const deleteMutation = useDeleteStockLocation();
 
-  useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
-
-  const handleCreateLocation = async () => {
+  const handleCreateLocation = () => {
     if (!formData.name.trim()) {
       toast.error("Location name is required");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
+    const request: CreateStockLocationRequest = {
+      name: formData.name,
+      address1: formData.address1 || undefined,
+      address2: formData.address2 || undefined,
+      city: formData.city || undefined,
+      province: formData.province || undefined,
+      postalCode: formData.postalCode || undefined,
+      countryCode: formData.countryCode || undefined,
+      phone: formData.phone || undefined,
+      priority: formData.priority,
+      fulfillmentEnabled: formData.fulfillmentEnabled,
+    };
 
-      const request: CreateStockLocationRequest = {
-        name: formData.name,
-        address1: formData.address1 || undefined,
-        address2: formData.address2 || undefined,
-        city: formData.city || undefined,
-        province: formData.province || undefined,
-        postalCode: formData.postalCode || undefined,
-        countryCode: formData.countryCode || undefined,
-        phone: formData.phone || undefined,
-        priority: formData.priority,
-        fulfillmentEnabled: formData.fulfillmentEnabled,
-      };
-
-      await createStockLocation(request);
-
-      toast.success(`${formData.name} has been created successfully`);
-
-      setIsCreateDialogOpen(false);
-      setFormData(emptyFormData);
-      await fetchLocations();
-    } catch (err) {
-      console.error("Failed to create location:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to create location");
-    } finally {
-      setIsSubmitting(false);
-    }
+    createMutation.mutate(request, {
+      onSuccess: () => {
+        toast.success(`${formData.name} has been created successfully`);
+        setIsCreateDialogOpen(false);
+        setFormData(emptyFormData);
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to create location");
+      },
+    });
   };
 
-  const handleDeleteLocation = async () => {
+  const handleDeleteLocation = () => {
     if (!locationToDelete) return;
 
-    try {
-      setIsDeleting(true);
-      await deleteStockLocation(locationToDelete.id);
-
-      toast.success(`${locationToDelete.name} has been deleted`);
-
-      setDeleteDialogOpen(false);
-      setLocationToDelete(null);
-      await fetchLocations();
-    } catch (err) {
-      console.error("Failed to delete location:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to delete location");
-    } finally {
-      setIsDeleting(false);
-    }
+    deleteMutation.mutate(locationToDelete.id, {
+      onSuccess: () => {
+        toast.success(`${locationToDelete.name} has been deleted`);
+        setDeleteDialogOpen(false);
+        setLocationToDelete(null);
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to delete location");
+      },
+    });
   };
 
-  const openDeleteDialog = (location: StockLocation) => {
+  const openDeleteDialog = (location: { id: string; name: string }) => {
     setLocationToDelete(location);
     setDeleteDialogOpen(true);
   };
@@ -193,8 +162,8 @@ export default function LocationsPage() {
       <div className="flex flex-col items-center justify-center gap-4 p-6">
         <AlertTriangle className="h-12 w-12 text-destructive" />
         <p className="text-lg font-medium">Failed to load locations</p>
-        <p className="text-muted-foreground">{error}</p>
-        <Button onClick={fetchLocations}>Retry</Button>
+        <p className="text-muted-foreground">{error instanceof Error ? error.message : "Unknown error"}</p>
+        <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }
@@ -436,11 +405,11 @@ export default function LocationsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isSubmitting}>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={createMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleCreateLocation} disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button onClick={handleCreateLocation} disabled={createMutation.isPending}>
+              {createMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
@@ -459,20 +428,20 @@ export default function LocationsPage() {
           <DialogHeader>
             <DialogTitle>Delete Location</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{locationToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{locationToDelete?.name}&quot;? This action cannot be undone.
               Any inventory items at this location will need to be reassigned.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteMutation.isPending}>
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteLocation}
-              disabled={isDeleting}
+              disabled={deleteMutation.isPending}
             >
-              {isDeleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...

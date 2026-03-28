@@ -17,6 +17,7 @@ import {
   updateStoreShippingSettings,
   updateStoreSeoSettings,
   updateStoreThemeSettings,
+  apiFetch,
   type StoresResponse,
   type StoreResponse,
   type StoreSettingsResponse,
@@ -230,6 +231,125 @@ export function useUpdateThemeSettings() {
       queryClient.invalidateQueries({
         queryKey: storeKeys.settings(storeId),
       });
+    },
+  });
+}
+
+// ─── Product Types ───────────────────────────────────────────
+
+export interface ProductType {
+  id: string;
+  value: string;
+  description: string | null;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProductTypesResponse {
+  productTypes: ProductType[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export const productTypeKeys = {
+  all: ["product-types"] as const,
+  list: () => [...productTypeKeys.all, "list"] as const,
+};
+
+export function useProductTypes() {
+  return useQuery<ProductTypesResponse>({
+    queryKey: productTypeKeys.list(),
+    queryFn: () => apiFetch<ProductTypesResponse>("/admin/product-types?limit=100"),
+    staleTime: 30_000,
+  });
+}
+
+export function useCreateProductType() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    unknown,
+    Error,
+    { value: string; description?: string | null }
+  >({
+    mutationFn: (data) =>
+      apiFetch("/admin/product-types", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productTypeKeys.all });
+    },
+  });
+}
+
+export function useDeleteProductType() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, string>({
+    mutationFn: (id) =>
+      apiFetch(`/admin/product-types/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productTypeKeys.all });
+    },
+  });
+}
+
+// ─── Product Tags ────────────────────────────────────────────
+
+export interface ProductTag {
+  id: string;
+  value: string;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProductTagsResponse {
+  productTags: ProductTag[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export const productTagKeys = {
+  all: ["product-tags"] as const,
+  list: () => [...productTagKeys.all, "list"] as const,
+};
+
+export function useProductTags() {
+  return useQuery<ProductTagsResponse>({
+    queryKey: productTagKeys.list(),
+    queryFn: () => apiFetch<ProductTagsResponse>("/admin/product-tags?limit=100"),
+    staleTime: 30_000,
+  });
+}
+
+export function useCreateProductTag() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, { value: string }>({
+    mutationFn: (data) =>
+      apiFetch("/admin/product-tags", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productTagKeys.all });
+    },
+  });
+}
+
+export function useDeleteProductTag() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, string>({
+    mutationFn: (id) =>
+      apiFetch(`/admin/product-tags/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productTagKeys.all });
     },
   });
 }

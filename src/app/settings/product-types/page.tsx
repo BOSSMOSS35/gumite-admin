@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -43,85 +43,55 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Plus, Loader2 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import {
+  useProductTypes,
+  useCreateProductType,
+  useDeleteProductType,
+} from "@/hooks/use-settings";
 import { toast } from "sonner";
 
-interface ProductType {
-  id: string;
-  value: string;
-  description: string | null;
-  productCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ProductTypesResponse {
-  productTypes: ProductType[];
-  count: number;
-  offset: number;
-  limit: number;
-}
-
 export default function ProductTypesSettingsPage() {
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useProductTypes();
+  const productTypes = data?.productTypes ?? [];
+
   const [createOpen, setCreateOpen] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeDesc, setNewTypeDesc] = useState("");
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTypes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await apiFetch<ProductTypesResponse>("/admin/product-types?limit=100");
-      setProductTypes(data.productTypes || []);
-    } catch (err) {
-      console.error("Failed to fetch product types:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const createMutation = useCreateProductType();
+  const deleteMutation = useDeleteProductType();
 
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
-
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!newTypeName.trim()) {
       setError("Type name is required");
       return;
     }
-    setCreating(true);
     setError(null);
-    try {
-      await apiFetch("/admin/product-types", {
-        method: "POST",
-        body: JSON.stringify({
-          value: newTypeName.trim(),
-          description: newTypeDesc.trim() || null,
-        }),
-      });
-      setCreateOpen(false);
-      setNewTypeName("");
-      setNewTypeDesc("");
-      toast.success("Product type created");
-      fetchTypes();
-    } catch (err: any) {
-      setError(err?.message || "Failed to create product type");
-    } finally {
-      setCreating(false);
-    }
+    createMutation.mutate(
+      {
+        value: newTypeName.trim(),
+        description: newTypeDesc.trim() || null,
+      },
+      {
+        onSuccess: () => {
+          setCreateOpen(false);
+          setNewTypeName("");
+          setNewTypeDesc("");
+          toast.success("Product type created");
+        },
+        onError: (err) => {
+          setError(err?.message || "Failed to create product type");
+        },
+      }
+    );
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await apiFetch(`/admin/product-types/${id}`, { method: "DELETE" });
-      toast.success("Product type deleted");
-      fetchTypes();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to delete product type");
-    }
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Product type deleted"),
+      onError: (err) => toast.error(err?.message || "Failed to delete product type"),
+    });
   };
 
   return (
@@ -150,7 +120,7 @@ export default function ProductTypesSettingsPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
@@ -173,7 +143,7 @@ export default function ProductTypesSettingsPage() {
                   <TableRow key={type.id}>
                     <TableCell className="font-medium capitalize">{type.value}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {type.description || "—"}
+                      {type.description || "\u2014"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {type.productCount} products
@@ -236,11 +206,11 @@ export default function ProductTypesSettingsPage() {
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>
+            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={createMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={creating}>
-              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create
             </Button>
           </DialogFooter>

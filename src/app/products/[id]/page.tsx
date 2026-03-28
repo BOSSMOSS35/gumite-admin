@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -73,11 +73,6 @@ import {
 } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
-  getProduct,
-  updateProduct,
-  deleteProduct,
-  getCategories,
-  getCollections,
   createVariant,
   updateVariant,
   deleteVariant,
@@ -89,18 +84,23 @@ import {
   deleteProductImage,
   reorderProductImages,
   setProductThumbnail,
-  type Product,
   type ProductVariant,
   type ProductStatus,
-  type ProductCategory,
   type UpdateProductInput,
-  type ProductCollection,
   type CreateVariantInput,
   type UpdateVariantInput,
   type CreateOptionInput,
   type UpdateOptionInput,
 } from "@/lib/api";
-import { useRef } from "react";
+import {
+  useProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  useCategories,
+  productKeys,
+} from "@/hooks/use-products";
+import { useCollections } from "@/hooks/use-collections";
+import { useQueryClient } from "@tanstack/react-query";
 
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
@@ -121,12 +121,25 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const productId = params.id as string;
+  const queryClient = useQueryClient();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [collections, setCollections] = useState<ProductCollection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // Data fetching via React Query
+  const {
+    data: product,
+    isLoading: loading,
+    error: productError,
+  } = useProduct(productId === "new" ? undefined : productId);
+
+  const { data: categoriesData } = useCategories({ limit: 100 });
+  const categories = categoriesData?.categories ?? [];
+
+  const { data: collectionsData } = useCollections({ limit: 100 });
+  const collections = collectionsData?.collections ?? [];
+
+  // Mutations
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -191,59 +204,36 @@ export default function ProductDetailPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Redirect "new" to the add product flow
   useEffect(() => {
     if (productId === "new") {
       router.replace("/products?action=add");
-      return;
     }
-    fetchProduct();
-    fetchCategories();
-    fetchCollections();
   }, [productId, router]);
 
-  const fetchProduct = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getProduct(productId);
-      setProduct(data);
+  // Sync form data when product loads or changes
+  useEffect(() => {
+    if (product) {
       setFormData({
-        title: data.title || "",
-        handle: data.handle || "",
-        subtitle: data.subtitle || "",
-        description: data.description || "",
-        status: data.status,
-        material: data.material || "",
-        weight: data.weight || "",
-        originCountry: data.originCountry || "",
-        tags: data.tags || [],
-        categoryId: data.categories?.[0] || "",
-        collectionId: data.collectionId || "",
+        title: product.title || "",
+        handle: product.handle || "",
+        subtitle: product.subtitle || "",
+        description: product.description || "",
+        status: product.status,
+        material: product.material || "",
+        weight: product.weight || "",
+        originCountry: product.originCountry || "",
+        tags: product.tags || [],
+        categoryId: product.categories?.[0] || "",
+        collectionId: product.collectionId || "",
       });
       setHasChanges(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load product");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [product]);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await getCategories({ limit: 100 });
-      setCategories(response.categories || []);
-    } catch (err) {
-      toast.error("Failed to load categories");
-    }
-  };
-
-  const fetchCollections = async () => {
-    try {
-      const response = await getCollections({ limit: 100 });
-      setCollections(response.collections || []);
-    } catch (err) {
-      toast.error("Failed to load collections");
-    }
+  // Helper to refetch product after sub-resource mutations (variants, options, images)
+  const refetchProduct = () => {
+    queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
   };
 
   const updateField = <K extends keyof typeof formData>(
@@ -254,39 +244,40 @@ export default function ProductDetailPage() {
     setHasChanges(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!product) return;
-    setSaving(true);
     setError(null);
     setSuccess(null);
 
-    try {
-      const updateData: UpdateProductInput = {
-        title: formData.title,
-        handle: formData.handle,
-        subtitle: formData.subtitle || undefined,
-        description: formData.description || undefined,
-        status: formData.status,
-        material: formData.material || undefined,
-        originCountry: formData.originCountry || undefined,
-        tags: formData.tags.length > 0 ? formData.tags : undefined,
-        categories: formData.categoryId ? [formData.categoryId] : undefined,
-        collectionId: formData.collectionId || undefined,
-      };
+    const updateData: UpdateProductInput = {
+      title: formData.title,
+      handle: formData.handle,
+      subtitle: formData.subtitle || undefined,
+      description: formData.description || undefined,
+      status: formData.status,
+      material: formData.material || undefined,
+      originCountry: formData.originCountry || undefined,
+      tags: formData.tags.length > 0 ? formData.tags : undefined,
+      categories: formData.categoryId ? [formData.categoryId] : undefined,
+      collectionId: formData.collectionId || undefined,
+    };
 
-      await updateProduct(product.id, updateData);
-      setSuccess("Product saved successfully");
-      setHasChanges(false);
-      await fetchProduct(); // Refresh data
-
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save product");
-    } finally {
-      setSaving(false);
-    }
+    updateProductMutation.mutate(
+      { id: product.id, data: updateData },
+      {
+        onSuccess: () => {
+          setSuccess("Product saved successfully");
+          setHasChanges(false);
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to save product");
+        },
+      }
+    );
   };
+
+  const saving = updateProductMutation.isPending;
 
   const handleDelete = async () => {
     if (!product) return;
@@ -297,12 +288,14 @@ export default function ProductDetailPage() {
       variant: "destructive",
     });
     if (!confirmed) return;
-    try {
-      await deleteProduct(product.id);
-      router.push("/products");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete product");
-    }
+    deleteProductMutation.mutate(product.id, {
+      onSuccess: () => {
+        router.push("/products");
+      },
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : "Failed to delete product");
+      },
+    });
   };
 
   const addTag = () => {
@@ -388,7 +381,7 @@ export default function ProductDetailPage() {
       setShowAddVariantModal(false);
       resetVariantForm();
       setSuccess("Variant added successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setVariantError(err instanceof Error ? err.message : "Failed to add variant");
@@ -429,7 +422,7 @@ export default function ProductDetailPage() {
       setEditingVariant(null);
       resetVariantForm();
       setSuccess("Variant updated successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setVariantError(err instanceof Error ? err.message : "Failed to update variant");
@@ -450,7 +443,7 @@ export default function ProductDetailPage() {
     try {
       await deleteVariant(variantId);
       setSuccess("Variant deleted successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete variant");
@@ -501,7 +494,7 @@ export default function ProductDetailPage() {
       setShowAddOptionModal(false);
       resetOptionForm();
       setSuccess("Option added successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setOptionError(err instanceof Error ? err.message : "Failed to add option");
@@ -530,7 +523,7 @@ export default function ProductDetailPage() {
       setEditingOption(null);
       resetOptionForm();
       setSuccess("Option updated successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setOptionError(err instanceof Error ? err.message : "Failed to update option");
@@ -552,7 +545,7 @@ export default function ProductDetailPage() {
     try {
       await deleteOption(product.id, optionId);
       setSuccess("Option deleted successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete option");
@@ -592,7 +585,7 @@ export default function ProductDetailPage() {
       }
 
       setSuccess("Image uploaded successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload image");
@@ -619,7 +612,7 @@ export default function ProductDetailPage() {
       await deleteProductImage(product.id, imageId);
       setSuccess("Image deleted successfully");
       setSelectedImage(0); // Reset to first image
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete image");
@@ -653,7 +646,7 @@ export default function ProductDetailPage() {
       const imageIds = newImages.map((img) => img.id);
       await reorderProductImages(product.id, imageIds);
       setSuccess("Images reordered successfully");
-      await fetchProduct();
+      refetchProduct();
       setSelectedImage(0); // Reset to first image (new thumbnail)
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -676,7 +669,7 @@ export default function ProductDetailPage() {
     try {
       await setProductThumbnail(product.id, imageId);
       setSuccess("Thumbnail updated successfully");
-      await fetchProduct();
+      refetchProduct();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to set thumbnail");
@@ -717,17 +710,19 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (error && !product) {
+  const queryError = productError instanceof Error ? productError.message : productError ? "Failed to load product" : null;
+
+  if ((queryError || error) && !product) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-12">
         <AlertCircle className="h-12 w-12 text-red-500" />
         <h2 className="text-xl font-semibold">Failed to load product</h2>
-        <p className="text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground">{queryError || error}</p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.push("/products")}>
             Back to Products
           </Button>
-          <Button onClick={fetchProduct}>Retry</Button>
+          <Button onClick={() => refetchProduct()}>Retry</Button>
         </div>
       </div>
     );

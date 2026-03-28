@@ -62,14 +62,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
-  getOrder,
-  fulfillOrder,
-  shipOrder,
-  cancelOrder,
-  completeOrder,
   getShippingOptions,
   getShippingConfig,
-  Order,
   PaymentStatus,
   FulfillmentStatus,
   ShippingOption,
@@ -80,6 +74,13 @@ import {
   getFulfillmentStatusDisplay,
   getOrderStatusDisplay,
 } from "@/lib/api";
+import {
+  useOrder,
+  useFulfillOrder,
+  useShipOrder,
+  useCancelOrder,
+  useCompleteOrder,
+} from "@/hooks/use-orders";
 import { getImageUrl } from "@/lib/utils";
 
 const STATUS_BADGE_TONE_BY_DOT_COLOR: Record<string, string> = {
@@ -147,11 +148,21 @@ export default function OrderDetailsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const orderId = params.id as string;
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // Data fetching via React Query
+  const {
+    data: order,
+    isLoading: loading,
+    error: orderError,
+    refetch: refetchOrder,
+  } = useOrder(orderId, !!user && !authLoading);
 
+  // Mutations
+  const fulfillMutation = useFulfillOrder();
+  const shipMutation = useShipOrder();
+  const cancelMutation = useCancelOrder();
+  const completeMutation = useCompleteOrder();
+
+  // Local UI state
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [fulfillDialogOpen, setFulfillDialogOpen] = useState(false);
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
@@ -176,59 +187,46 @@ export default function OrderDetailsPage() {
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [labelUrl, setLabelUrl] = useState<string | null>(null);
 
-  const fetchOrder = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getOrder(orderId);
-      setOrder(data);
-      // Set default carrier based on order's shipping method
-      if (data.shippingMethodId) {
-        setCarrier(data.shippingMethodId);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load order");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchShippingOptions = async () => {
-    try {
-      const response = await getShippingOptions();
-      setShippingOptions(response.shippingOptions || []);
-    } catch (err) {
-      console.error("Failed to load shipping options:", err);
-    }
-  };
-
-  const fetchShippingConfig = async () => {
-    try {
-      const config = await getShippingConfig();
-      setShippingConfig(config);
-      if (config.shipEngineConfigured) {
-        setSelectedCarrier(config.defaultCarrierId);
-        setSelectedService(config.defaultServiceCode);
-      }
-    } catch (err) {
-      console.error("Failed to load shipping config:", err);
-    }
-  };
-
+  // Set default carrier when order data arrives
   useEffect(() => {
-    // Redirect to login if not authenticated
+    if (order?.shippingMethodId) {
+      setCarrier(order.shippingMethodId);
+    }
+  }, [order?.shippingMethodId]);
+
+  // Fetch shipping options & config (no dedicated hooks exist)
+  useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
       return;
     }
+    if (!user) return;
 
-    // Only fetch data when authenticated
-    if (user) {
-      fetchOrder();
-      fetchShippingOptions();
-      fetchShippingConfig();
-    }
-  }, [orderId, user, authLoading, router]);
+    getShippingOptions()
+      .then((response) => setShippingOptions(response.shippingOptions || []))
+      .catch((err) => console.error("Failed to load shipping options:", err));
+
+    getShippingConfig()
+      .then((config) => {
+        setShippingConfig(config);
+        if (config.shipEngineConfigured) {
+          setSelectedCarrier(config.defaultCarrierId);
+          setSelectedService(config.defaultServiceCode);
+        }
+      })
+      .catch((err) => console.error("Failed to load shipping config:", err));
+  }, [user, authLoading, router]);
+
+  // Derive actionLoading from mutation states
+  const actionLoading = fulfillMutation.isPending
+    ? "fulfill"
+    : shipMutation.isPending
+      ? "ship"
+      : cancelMutation.isPending
+        ? "cancel"
+        : completeMutation.isPending
+          ? "complete"
+          : null;
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -236,26 +234,27 @@ export default function OrderDetailsPage() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleFulfill = async () => {
+  const handleFulfill = () => {
     if (!order) return;
-    setActionLoading("fulfill");
-    try {
-      await fulfillOrder(order.id);
-      await fetchOrder();
-      setFulfillDialogOpen(false);
-      toast.success("Order fulfilled successfully");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to fulfill order");
-    } finally {
-      setActionLoading(null);
-    }
+    fulfillMutation.mutate(
+      { id: order.id },
+      {
+        onSuccess: () => {
+          setFulfillDialogOpen(false);
+          toast.success("Order fulfilled successfully");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to fulfill order");
+        },
+      }
+    );
   };
 
-  const handleShip = async () => {
+  const handleShip = () => {
     if (!order) return;
-    setActionLoading("ship");
-    try {
-      const result = await shipOrder(order.id, {
+    shipMutation.mutate(
+      {
+        id: order.id,
         trackingNumber: useShipEngine ? undefined : (trackingNumber || undefined),
         carrier: useShipEngine ? undefined : (carrier || undefined),
         useShipEngine,
@@ -269,63 +268,64 @@ export default function OrderDetailsPage() {
           ? parseFloat(packageDimensions.width) : undefined,
         packageHeight: useShipEngine && packageDimensions.height
           ? parseFloat(packageDimensions.height) : undefined,
-      });
-
-      await fetchOrder();
-
-      // If we got a label URL, show the label dialog
-      if (result.labelUrls && result.labelUrls.length > 0) {
-        setLabelUrl(result.labelUrls[0]);
-        setLabelDialogOpen(true);
-        setShipDialogOpen(false);
-        toast.success("Order shipped! Label ready for printing.");
-      } else {
-        setShipDialogOpen(false);
-        toast.success("Order marked as shipped");
+      },
+      {
+        onSuccess: (result) => {
+          if (result.labelUrls && result.labelUrls.length > 0) {
+            setLabelUrl(result.labelUrls[0]);
+            setLabelDialogOpen(true);
+            setShipDialogOpen(false);
+            toast.success("Order shipped! Label ready for printing.");
+          } else {
+            setShipDialogOpen(false);
+            toast.success("Order marked as shipped");
+          }
+          setTrackingNumber("");
+          setCarrier("");
+          setUseShipEngine(false);
+          setPackageDimensions({ weight: "", length: "", width: "", height: "" });
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to ship order");
+        },
       }
-
-      // Reset form
-      setTrackingNumber("");
-      setCarrier("");
-      setUseShipEngine(false);
-      setPackageDimensions({ weight: "", length: "", width: "", height: "" });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to ship order");
-    } finally {
-      setActionLoading(null);
-    }
+    );
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (!order) return;
-    setActionLoading("cancel");
-    try {
-      await cancelOrder(order.id, { reason: cancelReason || undefined });
-      await fetchOrder();
-      setCancelDialogOpen(false);
-      setCancelReason("");
-      toast.success("Order canceled");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to cancel order");
-    } finally {
-      setActionLoading(null);
-    }
+    cancelMutation.mutate(
+      { id: order.id, reason: cancelReason || undefined },
+      {
+        onSuccess: () => {
+          setCancelDialogOpen(false);
+          setCancelReason("");
+          toast.success("Order canceled");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to cancel order");
+        },
+      }
+    );
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     if (!order) return;
-    setActionLoading("complete");
-    try {
-      await completeOrder(order.id);
-      await fetchOrder();
-      setCompleteDialogOpen(false);
-      toast.success("Order completed");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to complete order");
-    } finally {
-      setActionLoading(null);
-    }
+    completeMutation.mutate(
+      { id: order.id },
+      {
+        onSuccess: () => {
+          setCompleteDialogOpen(false);
+          toast.success("Order completed");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to complete order");
+        },
+      }
+    );
   };
+
+  const error = orderError instanceof Error ? orderError.message : orderError ? "Failed to load order" : null;
 
   // Loading state (including auth loading)
   if (authLoading || loading) {
@@ -358,7 +358,7 @@ export default function OrderDetailsPage() {
           <Button variant="outline" onClick={() => router.push("/orders")}>
             Back to Orders
           </Button>
-          <Button onClick={fetchOrder}>
+          <Button onClick={() => refetchOrder()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
@@ -492,7 +492,7 @@ export default function OrderDetailsPage() {
                           Copy customer email
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem onClick={fetchOrder}>
+                      <DropdownMenuItem onClick={() => refetchOrder()}>
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Refresh order
                       </DropdownMenuItem>

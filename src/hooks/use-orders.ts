@@ -13,6 +13,7 @@ import {
   fulfillOrder,
   shipOrder,
   completeOrder,
+  getDraftOrders,
   type OrdersResponse,
   type Order,
   type FulfillOrderResponse,
@@ -124,5 +125,23 @@ export function useCompleteOrder() {
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
       queryClient.setQueryData(orderKeys.detail(variables.id), data.order);
     },
+  });
+}
+
+// ─── Draft Orders ───────────────────────────────────────────
+
+export const draftOrderKeys = {
+  all: ["draft-orders"] as const,
+  lists: () => [...draftOrderKeys.all, "list"] as const,
+  list: (params: Record<string, unknown>) =>
+    [...draftOrderKeys.lists(), params] as const,
+};
+
+export function useDraftOrders(params: { limit?: number; offset?: number } = {}) {
+  return useQuery<OrdersResponse>({
+    queryKey: draftOrderKeys.list(params as Record<string, unknown>),
+    queryFn: () => getDraftOrders(params),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }

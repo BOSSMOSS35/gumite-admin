@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -61,11 +61,6 @@ import {
   Lock,
 } from "lucide-react";
 import {
-  getCustomer,
-  getCustomerOrders,
-  getCustomerActivity,
-  updateCustomer,
-  activateCustomer,
   getTierDisplay,
   getCustomerStatusDisplay,
   getCustomerName,
@@ -73,13 +68,19 @@ import {
   getActivityTypeDisplay,
   formatPrice,
   formatDate,
-  type Customer,
-  type CustomerActivity,
-  type OrderSummary,
   type CustomerActivityType,
   type FulfillmentStatus,
   type PaymentStatus,
 } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useCustomer,
+  useCustomerOrders,
+  useCustomerActivity,
+  useUpdateCustomer,
+  useActivateCustomer,
+  customerKeys,
+} from "@/hooks/use-customers";
 import { SendEmailDialog } from "@/components/customers/SendEmailDialog";
 import { SendGiftCardDialog } from "@/components/customers/SendGiftCardDialog";
 import { SuspendCustomerDialog } from "@/components/customers/SuspendCustomerDialog";
@@ -200,95 +201,74 @@ export default function CustomerDetailPage() {
   const params = useParams();
   const customerId = params.id as string;
 
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [activities, setActivities] = useState<CustomerActivity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [newNote, setNewNote] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
+  // Data fetching via React Query
+  const {
+    data: customerData,
+    isLoading: loading,
+    error: customerError,
+  } = useCustomer(customerId);
+  const customer = customerData?.customer ?? null;
 
-  // Dialog state
+  const { data: ordersData } = useCustomerOrders(customerId, { limit: 20 });
+  const orders = ordersData?.orders ?? [];
+
+  const { data: activityData } = useCustomerActivity(customerId, { limit: 20 });
+  const activities = activityData?.activities ?? [];
+
+  // Mutations
+  const queryClient = useQueryClient();
+  const activateMutation = useActivateCustomer();
+  const updateMutation = useUpdateCustomer();
+
+  // Callback for child dialog components that bypass React Query
+  const handleActionSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: customerKeys.detail(customerId) });
+    queryClient.invalidateQueries({ queryKey: customerKeys.activity(customerId) });
+  };
+
+  // Local form / dialog state
+  const [newNote, setNewNote] = useState("");
+
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [giftCardDialogOpen, setGiftCardDialogOpen] = useState(false);
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [changeTierDialogOpen, setChangeTierDialogOpen] = useState(false);
 
-  const fetchCustomer = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await getCustomer(customerId);
-      setCustomer(response.customer);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load customer");
-    } finally {
-      setLoading(false);
-    }
-  }, [customerId]);
-
-  const fetchOrders = useCallback(async () => {
-    try {
-      const response = await getCustomerOrders(customerId, { limit: 20 });
-      setOrders(response.orders);
-    } catch (err) {
-      console.error("Failed to load orders:", err);
-    }
-  }, [customerId]);
-
-  const fetchActivity = useCallback(async () => {
-    try {
-      const response = await getCustomerActivity(customerId, { limit: 20 });
-      setActivities(response.activities);
-    } catch (err) {
-      console.error("Failed to load activity:", err);
-    }
-  }, [customerId]);
-
-  useEffect(() => {
-    fetchCustomer();
-    fetchOrders();
-    fetchActivity();
-  }, [fetchCustomer, fetchOrders, fetchActivity]);
-
-  const handleActionSuccess = () => {
-    fetchCustomer();
-    fetchActivity();
-  };
-
-  const handleActivate = async () => {
+  const handleActivate = () => {
     if (!customer) return;
-    try {
-      await activateCustomer(customer.id);
-      fetchCustomer();
-      fetchActivity();
-      toast.success(customer.status === "ACTIVE" ? "Customer deactivated" : "Customer activated");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to activate customer");
-    }
+    activateMutation.mutate(customer.id, {
+      onSuccess: () => {
+        toast.success(customer.status === "ACTIVE" ? "Customer deactivated" : "Customer activated");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to activate customer");
+      },
+    });
   };
 
-  const handleSaveNote = async () => {
+  const handleSaveNote = () => {
     if (!customer || !newNote.trim()) return;
-    try {
-      setSavingNote(true);
-      const existingNotes = customer.internalNotes || "";
-      const timestamp = new Date().toLocaleString("en-GB");
-      const updatedNotes = existingNotes
-        ? `${existingNotes}\n\n[${timestamp}]\n${newNote.trim()}`
-        : `[${timestamp}]\n${newNote.trim()}`;
+    const existingNotes = customer.internalNotes || "";
+    const timestamp = new Date().toLocaleString("en-GB");
+    const updatedNotes = existingNotes
+      ? `${existingNotes}\n\n[${timestamp}]\n${newNote.trim()}`
+      : `[${timestamp}]\n${newNote.trim()}`;
 
-      await updateCustomer(customer.id, { internalNotes: updatedNotes });
-      setNewNote("");
-      fetchCustomer();
-      fetchActivity();
-      toast.success("Note saved");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save note");
-    } finally {
-      setSavingNote(false);
-    }
+    updateMutation.mutate(
+      { id: customer.id, data: { internalNotes: updatedNotes } },
+      {
+        onSuccess: () => {
+          setNewNote("");
+          toast.success("Note saved");
+        },
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Failed to save note");
+        },
+      }
+    );
   };
+
+  const error = customerError instanceof Error ? customerError.message : customerError ? "Failed to load customer" : null;
 
   if (loading) {
     return (
@@ -795,10 +775,10 @@ export default function CustomerDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={!newNote.trim() || savingNote}
+                  disabled={!newNote.trim() || updateMutation.isPending}
                   onClick={handleSaveNote}
                 >
-                  {savingNote ? (
+                  {updateMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...

@@ -6,11 +6,14 @@ import {
   getStockLocations,
   adjustInventory,
   getInventoryMovements,
+  createStockLocation,
+  deleteStockLocation,
   type InventoryLevelsResponse,
   type StockLocationsResponse,
   type AdjustInventoryRequest,
   type AdjustInventoryResponse,
   type InventoryMovementsResponse,
+  type CreateStockLocationRequest,
 } from "@/lib/api";
 
 export const inventoryKeys = {
@@ -85,6 +88,34 @@ export function useAdjustInventory() {
 
   return useMutation<AdjustInventoryResponse, Error, AdjustInventoryRequest>({
     mutationFn: adjustInventory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    },
+  });
+}
+
+/**
+ * Mutation hook for creating a stock location
+ */
+export function useCreateStockLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, Error, CreateStockLocationRequest>({
+    mutationFn: createStockLocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+    },
+  });
+}
+
+/**
+ * Mutation hook for deleting a stock location
+ */
+export function useDeleteStockLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ message: string; id: string }, Error, string>({
+    mutationFn: deleteStockLocation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory"] });
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -26,15 +26,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  OrderSummary,
   PaymentStatus,
   FulfillmentStatus,
   formatPrice,
   formatDate,
   getPaymentStatusDisplay,
   getFulfillmentStatusDisplay,
-  getDraftOrders,
 } from "@/lib/api";
+import { useDraftOrders } from "@/hooks/use-orders";
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   const { label, color } = getPaymentStatusDisplay(status);
@@ -57,40 +56,21 @@ function FulfillmentStatusBadge({ status }: { status: FulfillmentStatus }) {
 }
 
 export default function DraftOrdersPage() {
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [pagination, setPagination] = useState({
     limit: 20,
     offset: 0,
-    count: 0,
   });
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getDraftOrders({
-        limit: pagination.limit,
-        offset: pagination.offset,
-      });
-      setOrders(response.orders);
-      setPagination((prev) => ({ ...prev, count: response.count }));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load draft orders";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading, error, refetch } = useDraftOrders({
+    limit: pagination.limit,
+    offset: pagination.offset,
+  });
 
-  useEffect(() => {
-    fetchOrders();
-  }, [pagination.limit, pagination.offset]);
+  const orders = data?.orders ?? [];
+  const count = data?.count ?? 0;
 
-  // Filter orders based on search query
+  // Filter orders based on search query (client-side)
   const filteredOrders = orders.filter((order) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -101,7 +81,7 @@ export default function DraftOrdersPage() {
     );
   });
 
-  const totalPages = Math.ceil(pagination.count / pagination.limit);
+  const totalPages = Math.ceil(count / pagination.limit);
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
 
   const goToPage = (page: number) => {
@@ -117,8 +97,8 @@ export default function DraftOrdersPage() {
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Draft Orders</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" aria-label="Refresh" onClick={fetchOrders} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => refetch()} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </CardHeader>
@@ -145,15 +125,15 @@ export default function DraftOrdersPage() {
           {error && (
             <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={fetchOrders} className="ml-auto">
+              <span>{error instanceof Error ? error.message : "Failed to load draft orders"}</span>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
                 Retry
               </Button>
             </div>
           )}
 
           {/* Loading State */}
-          {loading && orders.length === 0 ? (
+          {isLoading && orders.length === 0 ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
@@ -213,10 +193,10 @@ export default function DraftOrdersPage() {
               </Table>
 
               {/* Pagination */}
-              {pagination.count > 0 && (
+              {count > 0 && (
                 <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                   <span>
-                    {pagination.offset + 1} — {Math.min(pagination.offset + pagination.limit, pagination.count)} of {pagination.count} results
+                    {pagination.offset + 1} &mdash; {Math.min(pagination.offset + pagination.limit, count)} of {count} results
                   </span>
                   <div className="flex items-center gap-2">
                     <span>

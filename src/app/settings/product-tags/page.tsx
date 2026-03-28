@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -44,81 +44,50 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Plus, Loader2 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import {
+  useProductTags,
+  useCreateProductTag,
+  useDeleteProductTag,
+} from "@/hooks/use-settings";
 import { toast } from "sonner";
 
-interface ProductTag {
-  id: string;
-  value: string;
-  productCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ProductTagsResponse {
-  productTags: ProductTag[];
-  count: number;
-  offset: number;
-  limit: number;
-}
-
 export default function ProductTagsSettingsPage() {
-  const [productTags, setProductTags] = useState<ProductTag[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useProductTags();
+  const productTags = data?.productTags ?? [];
+
   const [createOpen, setCreateOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTags = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await apiFetch<ProductTagsResponse>("/admin/product-tags?limit=100");
-      setProductTags(data.productTags || []);
-    } catch (err) {
-      console.error("Failed to fetch product tags:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const createMutation = useCreateProductTag();
+  const deleteMutation = useDeleteProductTag();
 
-  useEffect(() => {
-    fetchTags();
-  }, [fetchTags]);
-
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!newTagName.trim()) {
       setError("Tag name is required");
       return;
     }
-    setCreating(true);
     setError(null);
-    try {
-      await apiFetch("/admin/product-tags", {
-        method: "POST",
-        body: JSON.stringify({
-          value: newTagName.trim(),
-        }),
-      });
-      setCreateOpen(false);
-      setNewTagName("");
-      toast.success("Product tag created");
-      fetchTags();
-    } catch (err: any) {
-      setError(err?.message || "Failed to create product tag");
-    } finally {
-      setCreating(false);
-    }
+    createMutation.mutate(
+      { value: newTagName.trim() },
+      {
+        onSuccess: () => {
+          setCreateOpen(false);
+          setNewTagName("");
+          toast.success("Product tag created");
+        },
+        onError: (err) => {
+          setError(err?.message || "Failed to create product tag");
+        },
+      }
+    );
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await apiFetch(`/admin/product-tags/${id}`, { method: "DELETE" });
-      toast.success("Product tag deleted");
-      fetchTags();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to delete product tag");
-    }
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Product tag deleted"),
+      onError: (err) => toast.error(err?.message || "Failed to delete product tag"),
+    });
   };
 
   return (
@@ -147,7 +116,7 @@ export default function ProductTagsSettingsPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
@@ -222,11 +191,11 @@ export default function ProductTagsSettingsPage() {
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>
+            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={createMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={creating}>
-              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleCreate} disabled={createMutation.isPending}>
+              {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create
             </Button>
           </DialogFooter>

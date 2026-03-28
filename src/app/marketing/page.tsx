@@ -41,12 +41,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 import {
-  getCampaigns,
-  Campaign,
   getCampaignStatusDisplay,
   formatDate,
   formatPrice,
 } from "@/lib/api";
+import { useCampaigns } from "@/hooks/use-marketing";
 
 function CampaignStatusBadge({ status }: { status: string }) {
   const { label, color } = getCampaignStatusDisplay(status);
@@ -73,51 +72,39 @@ const campaignStatuses = [
 ];
 
 export default function MarketingPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [pagination, setPagination] = useState({
     limit: 20,
     offset: 0,
-    count: 0,
   });
 
-  const fetchCampaigns = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const statusFilter = activeFilters.find((f) => f.id === "status");
-      const response = await getCampaigns({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        q: searchQuery || undefined,
-        status: statusFilter?.value,
-      });
-      setCampaigns(response.campaigns);
-      setPagination((prev) => ({ ...prev, count: response.count }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load campaigns");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, [pagination.offset, pagination.limit]);
-
+  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (pagination.offset === 0) {
-        fetchCampaigns();
-      } else {
-        setPagination((prev) => ({ ...prev, offset: 0 }));
-      }
+      setDebouncedSearch(searchQuery);
+      setPagination((prev) => ({ ...prev, offset: 0 }));
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, activeFilters]);
+  }, [searchQuery]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, offset: 0 }));
+  }, [activeFilters]);
+
+  const statusFilter = activeFilters.find((f) => f.id === "status");
+
+  const { data, isLoading, error, refetch } = useCampaigns({
+    limit: pagination.limit,
+    offset: pagination.offset,
+    q: debouncedSearch || undefined,
+    status: statusFilter?.value,
+  });
+
+  const campaigns = data?.campaigns ?? [];
+  const count = data?.count ?? 0;
 
   const addFilter = (filter: Filter) => {
     const newFilters = activeFilters.filter((f) => f.id !== filter.id);
@@ -128,7 +115,7 @@ export default function MarketingPage() {
     setActiveFilters(activeFilters.filter((f) => f.id !== filterId));
   };
 
-  const totalPages = Math.ceil(pagination.count / pagination.limit);
+  const totalPages = Math.ceil(count / pagination.limit);
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
 
   const goToPage = (page: number) => {
@@ -172,7 +159,7 @@ export default function MarketingPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pagination.count}</div>
+            <div className="text-2xl font-bold">{count}</div>
             <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
@@ -181,8 +168,8 @@ export default function MarketingPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Marketing Campaigns</CardTitle>
-          <Button variant="outline" size="icon" onClick={fetchCampaigns} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
         </CardHeader>
         <CardContent>
@@ -259,8 +246,8 @@ export default function MarketingPage() {
           {error && (
             <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
               <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={fetchCampaigns} className="ml-auto">
+              <span>{error instanceof Error ? error.message : "Failed to load campaigns"}</span>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
                 Retry
               </Button>
             </div>
@@ -279,7 +266,7 @@ export default function MarketingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: 6 }).map((_, j) => (
@@ -342,8 +329,8 @@ export default function MarketingPage() {
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
                 Showing {pagination.offset + 1} to{" "}
-                {Math.min(pagination.offset + pagination.limit, pagination.count)} of{" "}
-                {pagination.count} campaigns
+                {Math.min(pagination.offset + pagination.limit, count)} of{" "}
+                {count} campaigns
               </p>
               <div className="flex items-center gap-2">
                 <Button

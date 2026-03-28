@@ -132,12 +132,15 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       // Upload images to S3 first
       let imageUrls: string[] = [];
       if (store.images.length > 0) {
+        console.log(`Uploading ${store.images.length} image(s)...`);
         const uploadResults = await Promise.all(
           store.images.map((file) => uploadProductImage(file))
         );
         imageUrls = uploadResults.map((r) => r.url);
+        console.log("Images uploaded:", imageUrls);
       }
 
+      console.log("Creating product...");
       // Build the product input
       const productInput: CreateProductInput = {
         title: store.title,

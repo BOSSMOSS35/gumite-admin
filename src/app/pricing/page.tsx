@@ -50,26 +50,24 @@ import {
   Clock,
 } from "lucide-react";
 import {
-  getPricingWorkbench,
-  bulkUpdatePrices,
-  getPricingRules,
-  getPriceHistory,
-  getPricingActivity,
-  activatePricingRule,
-  deactivatePricingRule,
-  deletePricingRule,
   formatPrice,
   type WorkbenchItem,
-  type WorkbenchStats,
   type PricingRuleDto,
-  type PriceChangeLogDto,
-  type PricingActivityItem,
   getPricingRuleStatusDisplay,
   getPricingRuleTypeDisplay,
   getPriceChangeTypeDisplay,
   formatDateTime,
 } from "@/lib/api";
 import { usePricingEvents, type PricingEvent } from "@/hooks/use-pricing-events";
+import {
+  usePricingWorkbench,
+  usePricingRules,
+  usePriceHistory,
+  useBulkUpdatePrices,
+  useActivatePricingRule,
+  useDeactivatePricingRule,
+  useDeletePricingRule,
+} from "@/hooks/use-pricing";
 import { PricingRuleDialog } from "@/components/pricing/PricingRuleDialog";
 import {
   useRegisterShortcut,
@@ -85,6 +83,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2, Power, PowerOff } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PendingChange {
   variantId: string;
@@ -94,20 +93,17 @@ interface PendingChange {
 }
 
 export default function PricingPage() {
-  const [items, setItems] = useState<WorkbenchItem[]>([]);
-  const [stats, setStats] = useState<WorkbenchStats | null>(null);
-  const [rules, setRules] = useState<PricingRuleDto[]>([]);
-  const [history, setHistory] = useState<PriceChangeLogDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [pendingChanges, setPendingChanges] = useState<Map<string, PendingChange>>(new Map());
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     offset: 0,
     limit: 50,
-    count: 0,
   });
 
   // Rule dialog state
@@ -115,51 +111,49 @@ export default function PricingPage() {
   const [editingRule, setEditingRule] = useState<PricingRuleDto | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<PricingRuleDto | null>(null);
-  const [togglingRuleId, setTogglingRuleId] = useState<string | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPagination((prev) => ({ ...prev, offset: 0 }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // WebSocket for real-time updates
   const { isConnected, events } = usePricingEvents({
     onPriceChange: (event) => {
-      // Refresh the workbench when prices change externally
       if (event.variantId && !pendingChanges.has(event.variantId)) {
-        fetchWorkbench();
+        queryClient.invalidateQueries({ queryKey: ["pricing", "workbench"] });
       }
     },
     onBulkUpdate: () => {
-      fetchWorkbench();
+      queryClient.invalidateQueries({ queryKey: ["pricing", "workbench"] });
     },
   });
 
-  const fetchWorkbench = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getPricingWorkbench({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        q: searchQuery || undefined,
-      });
-      setItems(response.items);
-      setStats(response.stats);
-      setPagination((prev) => ({
-        ...prev,
-        count: response.count,
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load pricing data");
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.limit, pagination.offset, searchQuery]);
+  // React Query hooks for data fetching
+  const workbenchQuery = usePricingWorkbench({
+    limit: pagination.limit,
+    offset: pagination.offset,
+    q: debouncedSearch || undefined,
+  });
+  const rulesQuery = usePricingRules();
+  const historyQuery = usePriceHistory({ limit: 50 });
 
-  const fetchRules = async () => {
-    try {
-      const response = await getPricingRules();
-      setRules(response.rules);
-    } catch (err) {
-      console.error("Failed to load pricing rules:", err);
-    }
-  };
+  const items = workbenchQuery.data?.items ?? [];
+  const stats = workbenchQuery.data?.stats ?? null;
+  const rules = rulesQuery.data?.rules ?? [];
+  const history = historyQuery.data?.changes ?? [];
+  const loading = workbenchQuery.isLoading;
+  const count = workbenchQuery.data?.count ?? 0;
+
+  // Mutations
+  const bulkUpdateMutation = useBulkUpdatePrices();
+  const activateRuleMutation = useActivatePricingRule();
+  const deactivateRuleMutation = useDeactivatePricingRule();
+  const deleteRuleMutation = useDeletePricingRule();
 
   const handleCreateRule = () => {
     setEditingRule(null);
@@ -171,21 +165,16 @@ export default function PricingPage() {
     setRuleDialogOpen(true);
   };
 
-  const handleToggleRuleStatus = async (rule: PricingRuleDto) => {
-    setTogglingRuleId(rule.id);
-    try {
-      if (rule.isActive) {
-        await deactivatePricingRule(rule.id);
-      } else {
-        await activatePricingRule(rule.id);
-      }
-      await fetchRules();
-      toast.success(rule.isActive ? "Rule deactivated" : "Rule activated");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update rule");
-    } finally {
-      setTogglingRuleId(null);
-    }
+  const handleToggleRuleStatus = (rule: PricingRuleDto) => {
+    const mutation = rule.isActive ? deactivateRuleMutation : activateRuleMutation;
+    mutation.mutate(rule.id, {
+      onSuccess: () => {
+        toast.success(rule.isActive ? "Rule deactivated" : "Rule activated");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to update rule");
+      },
+    });
   };
 
   const handleDeleteRule = (rule: PricingRuleDto) => {
@@ -193,29 +182,28 @@ export default function PricingPage() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteRule = async () => {
+  const confirmDeleteRule = () => {
     if (!ruleToDelete) return;
-    try {
-      await deletePricingRule(ruleToDelete.id);
-      await fetchRules();
-      setDeleteDialogOpen(false);
-      setRuleToDelete(null);
-      toast.success("Rule deleted");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete rule");
-    }
+    deleteRuleMutation.mutate(ruleToDelete.id, {
+      onSuccess: () => {
+        setDeleteDialogOpen(false);
+        setRuleToDelete(null);
+        toast.success("Rule deleted");
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Failed to delete rule");
+      },
+    });
   };
 
   const handleRuleDialogSuccess = () => {
-    fetchRules();
-    fetchWorkbench();
+    queryClient.invalidateQueries({ queryKey: ["pricing"] });
   };
 
   // =========================================================================
   // Keyboard Shortcuts
   // =========================================================================
 
-  // Cmd+S - Save pending changes
   useRegisterShortcut(
     "pricing-save",
     pendingChanges.size > 0 ? { ...SHORTCUTS.SAVE, description: "Save price changes" } : null,
@@ -227,7 +215,6 @@ export default function PricingPage() {
     "pricing"
   );
 
-  // Cmd+N - Create new rule
   useRegisterShortcut(
     "pricing-new-rule",
     { ...SHORTCUTS.NEW, description: "Create new pricing rule" },
@@ -239,21 +226,17 @@ export default function PricingPage() {
     "pricing"
   );
 
-  // Cmd+Shift+R - Refresh
   useRegisterShortcut(
     "pricing-refresh",
     { ...SHORTCUTS.REFRESH, description: "Refresh pricing data" },
     () => {
       if (!loading) {
-        fetchWorkbench();
-        fetchRules();
-        fetchHistory();
+        queryClient.invalidateQueries({ queryKey: ["pricing"] });
       }
     },
     "pricing"
   );
 
-  // Escape - Discard changes (only when there are pending changes)
   useRegisterShortcut(
     "pricing-discard",
     pendingChanges.size > 0 ? { key: "Escape", description: "Discard pending changes" } : null,
@@ -265,28 +248,6 @@ export default function PricingPage() {
     "pricing"
   );
 
-  const fetchHistory = async () => {
-    try {
-      const response = await getPriceHistory({ limit: 50 });
-      setHistory(response.changes);
-    } catch (err) {
-      console.error("Failed to load price history:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchWorkbench();
-    fetchRules();
-    fetchHistory();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchWorkbench();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, pagination.offset]);
-
   const handlePriceChange = (variantId: string, originalPrice: number, newValue: string) => {
     const numericValue = parseFloat(newValue.replace(/[^0-9.]/g, ""));
     if (isNaN(numericValue)) return;
@@ -294,7 +255,6 @@ export default function PricingPage() {
     const newPriceCents = Math.round(numericValue * 100);
 
     if (newPriceCents === originalPrice) {
-      // Remove pending change if it's back to original
       const newChanges = new Map(pendingChanges);
       newChanges.delete(variantId);
       setPendingChanges(newChanges);
@@ -313,36 +273,36 @@ export default function PricingPage() {
     if (pendingChanges.size === 0) return;
 
     setSaving(true);
-    try {
-      const updates = Array.from(pendingChanges.values()).map((change) => ({
-        variantId: change.variantId,
-        amount: change.newPrice,
-        compareAtPrice: change.compareAtPrice,
-      }));
+    setError(null);
 
-      const result = await bulkUpdatePrices({ updates });
+    const updates = Array.from(pendingChanges.values()).map((change) => ({
+      variantId: change.variantId,
+      amount: change.newPrice,
+      compareAtPrice: change.compareAtPrice,
+    }));
 
-      if (result.successCount > 0) {
-        // Clear pending changes for successful updates
-        const newChanges = new Map(pendingChanges);
-        result.changes.forEach((change) => {
-          newChanges.delete(change.variantId);
-        });
-        setPendingChanges(newChanges);
-
-        // Refresh the workbench
-        await fetchWorkbench();
-        await fetchHistory();
+    bulkUpdateMutation.mutate(
+      { updates },
+      {
+        onSuccess: (result) => {
+          if (result.successCount > 0) {
+            const newChanges = new Map(pendingChanges);
+            result.changes.forEach((change) => {
+              newChanges.delete(change.variantId);
+            });
+            setPendingChanges(newChanges);
+          }
+          if (result.failureCount > 0) {
+            setError(`${result.failureCount} updates failed`);
+          }
+          setSaving(false);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to save changes");
+          setSaving(false);
+        },
       }
-
-      if (result.failureCount > 0) {
-        setError(`${result.failureCount} updates failed`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save changes");
-    } finally {
-      setSaving(false);
-    }
+    );
   };
 
   const handleDiscardChanges = () => {
@@ -376,6 +336,12 @@ export default function PricingPage() {
   };
 
   const hasPriceChanged = (variantId: string) => pendingChanges.has(variantId);
+
+  const togglingRuleId = activateRuleMutation.isPending
+    ? (activateRuleMutation.variables as string)
+    : deactivateRuleMutation.isPending
+    ? (deactivateRuleMutation.variables as string)
+    : null;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -506,7 +472,12 @@ export default function PricingPage() {
                           onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
-                      <Button variant="outline" size="icon" onClick={fetchWorkbench} disabled={loading}>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ["pricing", "workbench"] })}
+                        disabled={loading}
+                      >
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                       </Button>
                     </div>
@@ -517,7 +488,12 @@ export default function PricingPage() {
                     <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-300/60 bg-red-100/70 p-4 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
                       <AlertCircle className="h-5 w-5" />
                       <span>{error}</span>
-                      <Button variant="ghost" size="sm" onClick={fetchWorkbench} className="ml-auto">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ["pricing", "workbench"] })}
+                        className="ml-auto"
+                      >
                         Retry
                       </Button>
                     </div>
@@ -607,7 +583,7 @@ export default function PricingPage() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                  <span className="text-muted-foreground">£</span>
+                                  <span className="text-muted-foreground">&pound;</span>
                                   <Input
                                     type="text"
                                     className={`w-24 text-right ${
@@ -646,11 +622,11 @@ export default function PricingPage() {
                   )}
 
                   {/* Pagination */}
-                  {pagination.count > pagination.limit && (
+                  {count > pagination.limit && (
                     <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                       <span>
-                        {pagination.offset + 1} — {Math.min(pagination.offset + pagination.limit, pagination.count)}{" "}
-                        of {pagination.count} variants
+                        {pagination.offset + 1} &mdash; {Math.min(pagination.offset + pagination.limit, count)}{" "}
+                        of {count} variants
                       </span>
                       <div className="flex items-center gap-2">
                         <Button
@@ -669,7 +645,7 @@ export default function PricingPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={pagination.offset + pagination.limit >= pagination.count}
+                          disabled={pagination.offset + pagination.limit >= count}
                           onClick={() =>
                             setPagination((prev) => ({
                               ...prev,
