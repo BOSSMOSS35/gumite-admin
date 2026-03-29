@@ -58,6 +58,8 @@ import {
   CheckCircle,
   Loader2,
   Printer,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -193,6 +195,13 @@ export default function OrderDetailsPage() {
       setCarrier(order.shippingMethodId);
     }
   }, [order?.shippingMethodId]);
+
+  // Restore label URL from order metadata (persisted by backend after shipping)
+  useEffect(() => {
+    if (order?.metadata?.labelUrl && !labelUrl) {
+      setLabelUrl(order.metadata.labelUrl);
+    }
+  }, [order?.metadata?.labelUrl, labelUrl]);
 
   // Fetch shipping options & config (no dedicated hooks exist)
   useEffect(() => {
@@ -600,6 +609,118 @@ export default function OrderDetailsPage() {
             </CardContent>
           </Card>
 
+          {/* Shipping & Fulfillment Card */}
+          {(order.fulfillmentStatus === "SHIPPED" || order.fulfillmentStatus === "FULFILLED" || order.fulfillmentStatus === "PARTIALLY_SHIPPED") && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Shipping & Fulfillment</CardTitle>
+                <FulfillmentStatusBadge status={order.fulfillmentStatus} />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Tracking Number */}
+                {order.metadata?.trackingNumber && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Tracking Number</span>
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-muted-foreground" />
+                      {order.metadata.trackingUrl ? (
+                        <a
+                          href={order.metadata.trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
+                          {order.metadata.trackingNumber}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-sm font-mono">{order.metadata.trackingNumber}</span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        aria-label="Copy tracking number"
+                        onClick={() => copyToClipboard(order.metadata!.trackingNumber!, "tracking")}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      {copiedField === "tracking" && (
+                        <span className="text-xs text-green-700 dark:text-green-300">Copied!</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Carrier & Service */}
+                {order.metadata?.carrier && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Carrier</span>
+                    <span className="text-sm">{order.metadata.carrier}</span>
+                  </div>
+                )}
+                {order.metadata?.serviceCode && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Service</span>
+                    <span className="text-sm">{order.metadata.serviceCode.replace(/_/g, " ")}</span>
+                  </div>
+                )}
+
+                {/* Shipping Cost */}
+                {order.metadata?.shippingCost && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Label Cost</span>
+                    <span className="text-sm">{order.metadata.shippingCost}</span>
+                  </div>
+                )}
+
+                {/* Label Status */}
+                {order.metadata?.labelStatus && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Label Status</span>
+                    <Badge
+                      variant="outline"
+                      className={`gap-1 ${
+                        order.metadata.labelStatus === "PURCHASED"
+                          ? "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300"
+                          : order.metadata.labelStatus === "VOIDED"
+                            ? "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
+                            : "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300"
+                      }`}
+                    >
+                      {order.metadata.labelStatus}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* ShipEngine Label ID */}
+                {order.metadata?.shipEngineLabelId && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Label ID</span>
+                    <span className="text-sm font-mono text-muted-foreground">{order.metadata.shipEngineLabelId}</span>
+                  </div>
+                )}
+
+                {/* Download / Reprint Label Button */}
+                {(labelUrl || order.metadata?.labelUrl) && (
+                  <>
+                    <Separator />
+                    <Button asChild className="w-full">
+                      <a
+                        href={labelUrl || order.metadata?.labelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download / Reprint Label
+                      </a>
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Quick Actions Card */}
           {(canFulfill || canShip || canComplete) && (
             <Card>
@@ -1002,7 +1123,6 @@ export default function OrderDetailsPage() {
               variant="outline"
               onClick={() => {
                 setLabelDialogOpen(false);
-                setLabelUrl(null);
               }}
             >
               Done
