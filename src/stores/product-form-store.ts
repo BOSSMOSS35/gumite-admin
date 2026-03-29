@@ -127,7 +127,7 @@ function reconcileVariantPrices(
       return { ...positional, optionValues: combo };
 
     // 4. New empty entry
-    return { optionValues: combo, price: "", sku: "", quantity: "0" };
+    return { optionValues: combo, price: "", sku: "", quantity: "1" };
   });
 }
 
