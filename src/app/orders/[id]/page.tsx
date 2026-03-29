@@ -60,10 +60,12 @@ import {
   Printer,
   Download,
   ExternalLink,
+  DollarSign,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
+  apiFetch,
   getShippingOptions,
   getShippingConfig,
   PaymentStatus,
@@ -186,6 +188,10 @@ export default function OrderDetailsPage() {
     width: "",
     height: "",
   });
+  const [rates, setRates] = useState<any[]>([]);
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [carrierServices, setCarrierServices] = useState<{code: string, name: string}[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [labelUrl, setLabelUrl] = useState<string | null>(null);
 
@@ -225,6 +231,51 @@ export default function OrderDetailsPage() {
       })
       .catch((err) => console.error("Failed to load shipping config:", err));
   }, [user, authLoading, router]);
+
+  // Fetch carrier services when carrier changes
+  const fetchCarrierServices = async (carrierId: string) => {
+    setServicesLoading(true);
+    try {
+      const data = await apiFetch<{ services: { code: string; name: string }[] }>(
+        `/admin/orders/shipping/carriers/${carrierId}/services`
+      );
+      setCarrierServices(data.services || []);
+      if (data.services?.length > 0) setSelectedService(data.services[0].code);
+    } catch {
+      setCarrierServices([]);
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCarrier && useShipEngine) {
+      fetchCarrierServices(selectedCarrier);
+    }
+  }, [selectedCarrier, useShipEngine]);
+
+  // Fetch shipping rates for rate comparison
+  const fetchRates = async () => {
+    if (!order) return;
+    setRatesLoading(true);
+    try {
+      const data = await apiFetch<{ rates: any[] }>(`/admin/orders/${order.id}/rates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          packageWeight: packageDimensions.weight ? parseFloat(packageDimensions.weight) : undefined,
+          packageLength: packageDimensions.length ? parseFloat(packageDimensions.length) : undefined,
+          packageWidth: packageDimensions.width ? parseFloat(packageDimensions.width) : undefined,
+          packageHeight: packageDimensions.height ? parseFloat(packageDimensions.height) : undefined,
+        }),
+      });
+      setRates(data.rates || []);
+    } catch {
+      toast.error("Failed to fetch rates");
+    } finally {
+      setRatesLoading(false);
+    }
+  };
 
   // Derive actionLoading from mutation states
   const actionLoading = fulfillMutation.isPending
@@ -901,10 +952,10 @@ export default function OrderDetailsPage() {
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Mark as Shipped</DialogTitle>
+            <DialogTitle>Ship Order</DialogTitle>
             <DialogDescription>
               {shippingConfig?.shipEngineConfigured
-                ? "Generate a shipping label automatically or enter tracking manually."
+                ? "Compare rates, generate a label, or enter tracking manually."
                 : "Add tracking information for this order."}
             </DialogDescription>
           </DialogHeader>
@@ -949,23 +1000,18 @@ export default function OrderDetailsPage() {
                     <label className="text-sm font-medium">Service</label>
                     <Select value={selectedService} onValueChange={setSelectedService}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder={servicesLoading ? "Loading..." : "Select service"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* SANDBOX - UPS (se-358070) - Valid service codes */}
-                        <SelectItem value="ups_worldwide_expedited">UPS Worldwide Expedited</SelectItem>
-                        <SelectItem value="ups_worldwide_express">UPS Worldwide Express</SelectItem>
-                        <SelectItem value="ups_worldwide_saver">UPS Worldwide Saver</SelectItem>
-                        <SelectItem value="ups_standard">UPS Standard</SelectItem>
-                        <SelectItem value="ups_ground">UPS Ground (US only)</SelectItem>
-                        <SelectItem value="ups_next_day_air">UPS Next Day Air (US only)</SelectItem>
-                        {/* SANDBOX - FedEx (se-358071) */}
-                        <SelectItem value="fedex_international_economy">FedEx International Economy</SelectItem>
-                        <SelectItem value="fedex_international_priority">FedEx International Priority</SelectItem>
-                        <SelectItem value="fedex_ground">FedEx Ground (US only)</SelectItem>
-                        {/* SANDBOX - Stamps.com/USPS (se-358069) - US origin only */}
-                        <SelectItem value="usps_priority_mail_international">USPS Priority Mail Intl (US origin)</SelectItem>
-                        <SelectItem value="usps_priority_mail">USPS Priority Mail (US only)</SelectItem>
+                        {carrierServices.length > 0 ? (
+                          carrierServices.map((s) => (
+                            <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value={selectedService || "loading"} disabled>
+                            {servicesLoading ? "Loading services..." : "Select a carrier first"}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -980,7 +1026,7 @@ export default function OrderDetailsPage() {
                   </p>
                   <div className="grid grid-cols-4 gap-2">
                     <div>
-                      <label className="text-xs text-muted-foreground">Weight (oz)</label>
+                      <label className="text-xs text-muted-foreground">Weight (kg)</label>
                       <Input
                         type="number"
                         placeholder="16"
@@ -991,7 +1037,7 @@ export default function OrderDetailsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Length (in)</label>
+                      <label className="text-xs text-muted-foreground">Length (cm)</label>
                       <Input
                         type="number"
                         placeholder="10"
@@ -1002,7 +1048,7 @@ export default function OrderDetailsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Width (in)</label>
+                      <label className="text-xs text-muted-foreground">Width (cm)</label>
                       <Input
                         type="number"
                         placeholder="8"
@@ -1013,7 +1059,7 @@ export default function OrderDetailsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground">Height (in)</label>
+                      <label className="text-xs text-muted-foreground">Height (cm)</label>
                       <Input
                         type="number"
                         placeholder="4"
@@ -1024,6 +1070,51 @@ export default function OrderDetailsPage() {
                       />
                     </div>
                   </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Compare Rates</span>
+                    <Button size="sm" variant="outline" onClick={fetchRates} disabled={ratesLoading}>
+                      {ratesLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <DollarSign className="h-3 w-3 mr-1" />}
+                      {ratesLoading ? "Fetching..." : "Get Rates"}
+                    </Button>
+                  </div>
+                  {rates.length > 0 && (
+                    <div className="space-y-2 max-h-56 overflow-y-auto">
+                      {rates.sort((a: any, b: any) => a.shippingAmount.amount - b.shippingAmount.amount).map((rate: any, idx: number) => {
+                        const isSelected = selectedCarrier === rate.carrierId && selectedService === rate.serviceCode;
+                        const isCheapest = idx === 0;
+                        return (
+                          <button
+                            key={rate.rateId}
+                            className={`w-full text-left p-3 rounded-lg border transition-all ${isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"}`}
+                            onClick={() => { setSelectedCarrier(rate.carrierId); setSelectedService(rate.serviceCode); }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className={`h-3 w-3 rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"}`} />
+                                <span className="font-medium text-sm capitalize">{rate.carrierCode?.replace(/_/g, " ")}</span>
+                                <span className="text-muted-foreground text-sm">{rate.serviceType || rate.serviceCode?.replace(/_/g, " ")}</span>
+                                {isCheapest && <Badge variant="outline" className="text-emerald-600 border-emerald-200">Best price</Badge>}
+                              </div>
+                              <span className="font-semibold text-sm">
+                                {new Intl.NumberFormat("en-GB", { style: "currency", currency: rate.shippingAmount?.currency || "GBP" }).format(rate.shippingAmount?.amount || 0)}
+                              </span>
+                            </div>
+                            {rate.deliveryDays && (
+                              <p className="text-xs text-muted-foreground mt-1 ml-5">{rate.deliveryDays} business day{rate.deliveryDays > 1 ? "s" : ""}</p>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {rates.length === 0 && !ratesLoading && (
+                    <p className="text-xs text-muted-foreground text-center py-2">Click &quot;Get Rates&quot; to compare prices across carriers.</p>
+                  )}
                 </div>
               </>
             ) : (
