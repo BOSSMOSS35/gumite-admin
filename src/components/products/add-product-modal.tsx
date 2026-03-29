@@ -112,15 +112,62 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     onClose();
   };
 
+  const validateProduct = (): string | null => {
+    if (!store.title.trim()) return "Product title is required.";
+    if (!store.handle.trim()) return "Product handle is required.";
+
+    if (store.hasVariants) {
+      if (store.options.length === 0 || store.options.every(o => !o.name)) {
+        return "Add at least one option (e.g., Size, Color).";
+      }
+      if (store.variantPrices.length === 0) {
+        return "No variants generated. Add option values to create variants.";
+      }
+      for (let i = 0; i < store.variantPrices.length; i++) {
+        const vp = store.variantPrices[i];
+        const name = getVariantDisplayName(vp.optionValues);
+        if (!vp.price || parseFloat(vp.price) <= 0) {
+          return `Variant "${name}" needs a price greater than 0.`;
+        }
+        if (!vp.quantity || parseInt(vp.quantity) <= 0) {
+          return `Variant "${name}" needs a quantity greater than 0.`;
+        }
+      }
+    } else {
+      if (!store.price || parseFloat(store.price) <= 0) {
+        return "Product price is required and must be greater than 0.";
+      }
+      if (!store.quantity || parseInt(store.quantity) <= 0) {
+        return "Product quantity is required and must be greater than 0.";
+      }
+    }
+    return null;
+  };
+
   const handleContinue = async () => {
     if (store.currentStep < steps.length - 1) {
+      // Validate step 0 (Details)
+      if (store.currentStep === 0 && !store.title.trim()) {
+        store.setError("Product title is required.");
+        return;
+      }
       store.nextStep();
     } else {
+      // Final step — validate everything before creating
+      const error = validateProduct();
+      if (error) {
+        store.setError(error);
+        return;
+      }
       await saveProduct(false);
     }
   };
 
   const handleSaveAsDraft = async () => {
+    if (!store.title.trim()) {
+      store.setError("Product title is required even for drafts.");
+      return;
+    }
     await saveProduct(true);
   };
 
@@ -801,7 +848,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                                           <Input
                                             type="number"
                                             placeholder="0.00"
-                                            className="h-8 pl-5 text-sm"
+                                            className={`h-8 pl-5 text-sm ${!variant.price || parseFloat(variant.price) <= 0 ? "border-red-300 focus-visible:ring-red-400" : ""}`}
                                             value={variant.price}
                                             onChange={(e) => store.updateVariantPrice(idx, "price", e.target.value)}
                                           />
@@ -818,8 +865,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                                       <td className="px-4 py-2">
                                         <Input
                                           type="number"
-                                          placeholder="0"
-                                          className="h-8 text-sm"
+                                          min="1"
+                                          placeholder="1"
+                                          className={`h-8 text-sm ${!variant.quantity || parseInt(variant.quantity) <= 0 ? "border-red-300 focus-visible:ring-red-400" : ""}`}
                                           value={variant.quantity}
                                           onChange={(e) => store.updateVariantPrice(idx, "quantity", e.target.value)}
                                         />
