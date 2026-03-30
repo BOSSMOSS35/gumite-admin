@@ -19,7 +19,6 @@ import {
   Loader2,
   RotateCcw,
   Star,
-  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -144,11 +143,6 @@ const navItems: NavItem[] = [
       { title: "Pending", url: "/reviews?tab=pending" },
       { title: "Flagged", url: "/reviews?tab=flagged" },
     ],
-  },
-  {
-    title: "Marketing",
-    url: "/marketing",
-    icon: Megaphone,
   },
 ];
 
