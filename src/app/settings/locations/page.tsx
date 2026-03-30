@@ -67,6 +67,7 @@ interface ShipFromAddress {
   postal_code: string;
   country_code: string;
   phone: string | null;
+  email: string | null;
   is_default: boolean;
 }
 
@@ -81,6 +82,7 @@ const EMPTY_FORM = {
   postal_code: "",
   country_code: "GB",
   phone: "",
+  email: "",
 };
 
 export default function LocationsSettingsPage() {
@@ -128,6 +130,7 @@ export default function LocationsSettingsPage() {
       postal_code: addr.postal_code,
       country_code: addr.country_code,
       phone: addr.phone || "",
+      email: addr.email || "",
     });
     setDialogOpen(true);
   };
@@ -150,6 +153,7 @@ export default function LocationsSettingsPage() {
         postal_code: form.postal_code,
         country_code: form.country_code || "GB",
         phone: form.phone || null,
+        email: form.email || null,
         is_default: addresses.length === 0,
       };
       if (editingId) {
@@ -440,6 +444,16 @@ export default function LocationsSettingsPage() {
                   onChange={(e) => updateField("phone", e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                placeholder="warehouse@example.com"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+              />
             </div>
           </div>
 
