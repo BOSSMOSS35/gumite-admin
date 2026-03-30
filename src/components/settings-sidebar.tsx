@@ -33,9 +33,6 @@ const settingsNav: NavSection[] = [
       { title: "Users", href: "/settings/users" },
       { title: "Regions", href: "/settings/regions" },
       { title: "Tax Regions", href: "/settings/tax-regions" },
-      { title: "Return Reasons", href: "/settings/return-reasons" },
-      { title: "Refund Reasons", href: "/settings/refund-reasons" },
-      { title: "Sales Channels", href: "/settings/sales-channels" },
       { title: "Product Types", href: "/settings/product-types" },
       { title: "Product Tags", href: "/settings/product-tags" },
       { title: "Locations & Shipping", href: "/settings/locations" },
@@ -45,8 +42,6 @@ const settingsNav: NavSection[] = [
   {
     title: "Developer",
     items: [
-      { title: "Publishable API Keys", href: "/settings/publishable-api-keys" },
-      { title: "Secret API Keys", href: "/settings/secret-api-keys" },
       { title: "Workflows", href: "/settings/workflows" },
       { title: "Security", href: "/settings/security" },
     ],
