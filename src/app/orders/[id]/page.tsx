@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Card,
@@ -38,13 +39,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Copy,
   MoreHorizontal,
   ArrowRight,
@@ -52,26 +46,17 @@ import {
   Truck,
   CreditCard,
   ShoppingCart,
-  Send,
   AlertCircle,
   RefreshCw,
   CheckCircle,
   Loader2,
   Printer,
-  Download,
   ExternalLink,
-  DollarSign,
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
-  apiFetch,
-  getShippingOptions,
-  getShippingConfig,
   PaymentStatus,
   FulfillmentStatus,
-  ShippingOption,
-  ShippingConfig,
   formatPrice,
   formatDateTime,
   getPaymentStatusDisplay,
@@ -81,7 +66,6 @@ import {
 import {
   useOrder,
   useFulfillOrder,
-  useShipOrder,
   useCancelOrder,
   useCompleteOrder,
 } from "@/hooks/use-orders";
@@ -162,131 +146,31 @@ export default function OrderDetailsPage() {
 
   // Mutations
   const fulfillMutation = useFulfillOrder();
-  const shipMutation = useShipOrder();
   const cancelMutation = useCancelOrder();
   const completeMutation = useCompleteOrder();
 
   // Local UI state
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [fulfillDialogOpen, setFulfillDialogOpen] = useState(false);
-  const [shipDialogOpen, setShipDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [carrier, setCarrier] = useState("");
   const [cancelReason, setCancelReason] = useState("");
-  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
 
-  // ShipEngine state
-  const [shippingConfig, setShippingConfig] = useState<ShippingConfig | null>(null);
-  const [useShipEngine, setUseShipEngine] = useState(false);
-  const [selectedCarrier, setSelectedCarrier] = useState("se-358070");
-  const [selectedService, setSelectedService] = useState("ups_worldwide_expedited");
-  const [packageDimensions, setPackageDimensions] = useState({
-    weight: "",
-    length: "",
-    width: "",
-    height: "",
-  });
-  const [rates, setRates] = useState<any[]>([]);
-  const [ratesLoading, setRatesLoading] = useState(false);
-  const [carrierServices, setCarrierServices] = useState<{code: string, name: string}[]>([]);
-  const [servicesLoading, setServicesLoading] = useState(false);
-  const [labelDialogOpen, setLabelDialogOpen] = useState(false);
-  const [labelUrl, setLabelUrl] = useState<string | null>(null);
-
-  // Set default carrier when order data arrives
-  useEffect(() => {
-    if (order?.shippingMethodId) {
-      setCarrier(order.shippingMethodId);
-    }
-  }, [order?.shippingMethodId]);
-
-  // Restore label URL from order metadata (persisted by backend after shipping)
-  useEffect(() => {
-    if (order?.metadata?.labelUrl && !labelUrl) {
-      setLabelUrl(order.metadata.labelUrl);
-    }
-  }, [order?.metadata?.labelUrl, labelUrl]);
-
-  // Fetch shipping options & config (no dedicated hooks exist)
+  // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
-      return;
     }
-    if (!user) return;
-
-    getShippingOptions()
-      .then((response) => setShippingOptions(response.shippingOptions || []))
-      .catch((err) => console.error("Failed to load shipping options:", err));
-
-    getShippingConfig()
-      .then((config) => {
-        setShippingConfig(config);
-        if (config.shipEngineConfigured) {
-          setSelectedCarrier(config.defaultCarrierId);
-          setSelectedService(config.defaultServiceCode);
-        }
-      })
-      .catch((err) => console.error("Failed to load shipping config:", err));
   }, [user, authLoading, router]);
-
-  // Fetch carrier services when carrier changes
-  const fetchCarrierServices = async (carrierId: string) => {
-    setServicesLoading(true);
-    try {
-      const data = await apiFetch<{ services: { code: string; name: string }[] }>(
-        `/admin/orders/shipping/carriers/${carrierId}/services`
-      );
-      setCarrierServices(data.services || []);
-      if (data.services?.length > 0) setSelectedService(data.services[0].code);
-    } catch {
-      setCarrierServices([]);
-    } finally {
-      setServicesLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedCarrier && useShipEngine) {
-      fetchCarrierServices(selectedCarrier);
-    }
-  }, [selectedCarrier, useShipEngine]);
-
-  // Fetch shipping rates for rate comparison
-  const fetchRates = async () => {
-    if (!order) return;
-    setRatesLoading(true);
-    try {
-      const data = await apiFetch<{ rates: any[] }>(`/admin/orders/${order.id}/rates`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          packageWeight: packageDimensions.weight ? parseFloat(packageDimensions.weight) : undefined,
-          packageLength: packageDimensions.length ? parseFloat(packageDimensions.length) : undefined,
-          packageWidth: packageDimensions.width ? parseFloat(packageDimensions.width) : undefined,
-          packageHeight: packageDimensions.height ? parseFloat(packageDimensions.height) : undefined,
-        }),
-      });
-      setRates(data.rates || []);
-    } catch {
-      toast.error("Failed to fetch rates");
-    } finally {
-      setRatesLoading(false);
-    }
-  };
 
   // Derive actionLoading from mutation states
   const actionLoading = fulfillMutation.isPending
     ? "fulfill"
-    : shipMutation.isPending
-      ? "ship"
-      : cancelMutation.isPending
-        ? "cancel"
-        : completeMutation.isPending
-          ? "complete"
-          : null;
+    : cancelMutation.isPending
+      ? "cancel"
+      : completeMutation.isPending
+        ? "complete"
+        : null;
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -305,48 +189,6 @@ export default function OrderDetailsPage() {
         },
         onError: (err) => {
           toast.error(err instanceof Error ? err.message : "Failed to fulfill order");
-        },
-      }
-    );
-  };
-
-  const handleShip = () => {
-    if (!order) return;
-    shipMutation.mutate(
-      {
-        id: order.id,
-        trackingNumber: useShipEngine ? undefined : (trackingNumber || undefined),
-        carrier: useShipEngine ? undefined : (carrier || undefined),
-        useShipEngine,
-        carrierId: useShipEngine ? selectedCarrier : undefined,
-        serviceCode: useShipEngine ? selectedService : undefined,
-        packageWeight: useShipEngine && packageDimensions.weight
-          ? parseFloat(packageDimensions.weight) : undefined,
-        packageLength: useShipEngine && packageDimensions.length
-          ? parseFloat(packageDimensions.length) : undefined,
-        packageWidth: useShipEngine && packageDimensions.width
-          ? parseFloat(packageDimensions.width) : undefined,
-        packageHeight: useShipEngine && packageDimensions.height
-          ? parseFloat(packageDimensions.height) : undefined,
-      },
-      {
-        onSuccess: (result) => {
-          if (result.labelUrls && result.labelUrls.length > 0) {
-            setLabelUrl(result.labelUrls[0]);
-            setLabelDialogOpen(true);
-            setShipDialogOpen(false);
-            toast.success("Order shipped! Label ready for printing.");
-          } else {
-            setShipDialogOpen(false);
-            toast.success("Order marked as shipped");
-          }
-          setTrackingNumber("");
-          setCarrier("");
-          setUseShipEngine(false);
-          setPackageDimensions({ weight: "", length: "", width: "", height: "" });
-        },
-        onError: (err) => {
-          toast.error(err instanceof Error ? err.message : "Failed to ship order");
         },
       }
     );
@@ -567,8 +409,10 @@ export default function OrderDetailsPage() {
                         </DropdownMenuItem>
                       )}
                       {canShip && (
-                        <DropdownMenuItem onClick={() => setShipDialogOpen(true)}>
-                          Mark as Shipped
+                        <DropdownMenuItem asChild>
+                          <Link href={`/orders/${orderId}/ship`}>
+                            Mark as Shipped
+                          </Link>
                         </DropdownMenuItem>
                       )}
                       {canComplete && (
@@ -753,16 +597,16 @@ export default function OrderDetailsPage() {
                 )}
 
                 {/* Download / Reprint Label Button */}
-                {(labelUrl || order.metadata?.labelUrl) && (
+                {order.metadata?.labelUrl && (
                   <>
                     <Separator />
                     <Button asChild className="w-full">
                       <a
-                        href={labelUrl || order.metadata?.labelUrl}
+                        href={order.metadata.labelUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Download className="h-4 w-4 mr-2" />
+                        <Printer className="h-4 w-4 mr-2" />
                         Download / Reprint Label
                       </a>
                     </Button>
@@ -798,9 +642,11 @@ export default function OrderDetailsPage() {
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Order is ready to be shipped</span>
                     </div>
-                    <Button variant="outline" onClick={() => setShipDialogOpen(true)} disabled={actionLoading === "ship"}>
-                      {actionLoading === "ship" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Mark as Shipped
+                    <Button variant="outline" asChild>
+                      <Link href={`/orders/${orderId}/ship`}>
+                        <Truck className="h-4 w-4 mr-2" />
+                        Ship Order
+                      </Link>
                     </Button>
                   </div>
                 )}
@@ -943,280 +789,6 @@ export default function OrderDetailsPage() {
             <Button onClick={handleFulfill} disabled={actionLoading === "fulfill"}>
               {actionLoading === "fulfill" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Fulfill Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Ship Dialog */}
-      <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Ship Order</DialogTitle>
-            <DialogDescription>
-              {shippingConfig?.shipEngineConfigured
-                ? "Compare rates, generate a label, or enter tracking manually."
-                : "Add tracking information for this order."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* ShipEngine Toggle */}
-            {shippingConfig?.shipEngineConfigured && (
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  <div>
-                    <span className="text-sm font-medium">Auto-generate Label (ShipEngine)</span>
-                    {shippingConfig.sandboxMode && (
-                      <span className="ml-2 text-xs text-orange-500">(Sandbox Mode)</span>
-                    )}
-                  </div>
-                </div>
-                <Switch
-                  checked={useShipEngine}
-                  onCheckedChange={setUseShipEngine}
-                />
-              </div>
-            )}
-
-            {useShipEngine ? (
-              /* ShipEngine Options */
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Carrier</label>
-                    <Select value={selectedCarrier} onValueChange={setSelectedCarrier}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select carrier" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(shippingConfig?.availableCarriers || []).map((c) => (
-                          <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Service</label>
-                    <Select value={selectedService} onValueChange={setSelectedService}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={servicesLoading ? "Loading..." : "Select service"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {carrierServices.length > 0 ? (
-                          carrierServices.map((s) => (
-                            <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value={selectedService || "loading"} disabled>
-                            {servicesLoading ? "Loading services..." : "Select a carrier first"}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Package Dimensions (optional)</label>
-                  <p className="text-xs text-muted-foreground">
-                    Leave blank to auto-calculate from product data
-                  </p>
-                  <div className="grid grid-cols-4 gap-2">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Weight (kg)</label>
-                      <Input
-                        type="number"
-                        placeholder="16"
-                        value={packageDimensions.weight}
-                        onChange={(e) => setPackageDimensions(prev => ({
-                          ...prev, weight: e.target.value
-                        }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Length (cm)</label>
-                      <Input
-                        type="number"
-                        placeholder="10"
-                        value={packageDimensions.length}
-                        onChange={(e) => setPackageDimensions(prev => ({
-                          ...prev, length: e.target.value
-                        }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Width (cm)</label>
-                      <Input
-                        type="number"
-                        placeholder="8"
-                        value={packageDimensions.width}
-                        onChange={(e) => setPackageDimensions(prev => ({
-                          ...prev, width: e.target.value
-                        }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Height (cm)</label>
-                      <Input
-                        type="number"
-                        placeholder="4"
-                        value={packageDimensions.height}
-                        onChange={(e) => setPackageDimensions(prev => ({
-                          ...prev, height: e.target.value
-                        }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Compare Rates</span>
-                    <Button size="sm" variant="outline" onClick={fetchRates} disabled={ratesLoading}>
-                      {ratesLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <DollarSign className="h-3 w-3 mr-1" />}
-                      {ratesLoading ? "Fetching..." : "Get Rates"}
-                    </Button>
-                  </div>
-                  {rates.length > 0 && (
-                    <div className="space-y-2 max-h-56 overflow-y-auto">
-                      {rates.sort((a: any, b: any) => a.shippingAmount.amount - b.shippingAmount.amount).map((rate: any, idx: number) => {
-                        const isSelected = selectedCarrier === rate.carrierId && selectedService === rate.serviceCode;
-                        const isCheapest = idx === 0;
-                        return (
-                          <button
-                            key={rate.rateId}
-                            className={`w-full text-left p-3 rounded-lg border transition-all ${isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"}`}
-                            onClick={() => { setSelectedCarrier(rate.carrierId); setSelectedService(rate.serviceCode); }}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className={`h-3 w-3 rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"}`} />
-                                <span className="font-medium text-sm capitalize">{rate.carrierCode?.replace(/_/g, " ")}</span>
-                                <span className="text-muted-foreground text-sm">{rate.serviceType || rate.serviceCode?.replace(/_/g, " ")}</span>
-                                {isCheapest && <Badge variant="outline" className="text-emerald-600 border-emerald-200">Best price</Badge>}
-                              </div>
-                              <span className="font-semibold text-sm">
-                                {new Intl.NumberFormat("en-GB", { style: "currency", currency: rate.shippingAmount?.currency || "GBP" }).format(rate.shippingAmount?.amount || 0)}
-                              </span>
-                            </div>
-                            {rate.deliveryDays && (
-                              <p className="text-xs text-muted-foreground mt-1 ml-5">{rate.deliveryDays} business day{rate.deliveryDays > 1 ? "s" : ""}</p>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {rates.length === 0 && !ratesLoading && (
-                    <p className="text-xs text-muted-foreground text-center py-2">Click &quot;Get Rates&quot; to compare prices across carriers.</p>
-                  )}
-                </div>
-              </>
-            ) : (
-              /* Manual Tracking Entry */
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Shipping Method</label>
-                  <Select value={carrier} onValueChange={setCarrier}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select shipping method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shippingOptions.length > 0 ? (
-                        shippingOptions.map((option) => (
-                          <SelectItem key={option.id} value={option.id}>
-                            {option.name} ({formatPrice(option.amount / 100, order?.currencyCode || "GBP")})
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <>
-                          <SelectItem value="royal_mail">Royal Mail</SelectItem>
-                          <SelectItem value="dhl">DHL</SelectItem>
-                          <SelectItem value="ups">UPS</SelectItem>
-                          <SelectItem value="fedex">FedEx</SelectItem>
-                          <SelectItem value="dpd">DPD</SelectItem>
-                          <SelectItem value="evri">Evri (Hermes)</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {order?.shippingMethodId && (
-                    <p className="text-xs text-muted-foreground">
-                      Customer selected: {shippingOptions.find(o => o.id === order.shippingMethodId)?.name || order.shippingMethodId}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Tracking Number</label>
-                  <Input
-                    placeholder="Enter tracking number"
-                    value={trackingNumber}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShipDialogOpen(false);
-                setTrackingNumber("");
-                setUseShipEngine(false);
-                setPackageDimensions({ weight: "", length: "", width: "", height: "" });
-                setCarrier(order?.shippingMethodId || "");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleShip} disabled={actionLoading === "ship"}>
-              {actionLoading === "ship" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {useShipEngine ? "Generate Label & Ship" : "Mark as Shipped"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Label Print Dialog */}
-      <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Shipping Label Ready</DialogTitle>
-            <DialogDescription>
-              Your shipping label has been generated. Click below to download or print.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-6">
-            <div className="p-4 bg-green-100 rounded-full">
-              <CheckCircle className="h-12 w-12 text-green-600" />
-            </div>
-            <p className="text-sm text-muted-foreground text-center">
-              The tracking number has been added to the order automatically.
-            </p>
-            {labelUrl && (
-              <Button asChild>
-                <a href={labelUrl} target="_blank" rel="noopener noreferrer">
-                  <Printer className="h-4 w-4 mr-2" />
-                  Download/Print Label
-                </a>
-              </Button>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setLabelDialogOpen(false);
-              }}
-            >
-              Done
             </Button>
           </DialogFooter>
         </DialogContent>
