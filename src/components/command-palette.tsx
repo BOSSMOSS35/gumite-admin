@@ -389,13 +389,6 @@ export function CommandPalette() {
     heading: "Reports",
     items: [
       {
-        id: "sales-report",
-        label: "Sales Report",
-        icon: <BarChart3 className="h-4 w-4" />,
-        action: () => router.push("/analytics"),
-        keywords: ["revenue", "analytics"],
-      },
-      {
         id: "inventory-report",
         label: "Inventory Report",
         icon: <FileText className="h-4 w-4" />,
