@@ -6,6 +6,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate && pnpm install -
 
 COPY . .
 
+# Ensure no stale build artifacts from host
+RUN rm -rf .next
+
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_WS_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
