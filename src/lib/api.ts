@@ -4326,56 +4326,6 @@ export async function deleteAdminReview(
 }
 
 // =============================================================================
-// Marketing Campaigns (Admin)
-// =============================================================================
-
-export interface Campaign {
-  id: string;
-  name: string;
-  description: string | null;
-  type: string;
-  status: string;
-  startsAt: string | null;
-  endsAt: string | null;
-  budget: number | null;
-  currencyCode: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CampaignsResponse {
-  campaigns: Campaign[];
-  count: number;
-  offset: number;
-  limit: number;
-}
-
-export function getCampaignStatusDisplay(status: string): { label: string; color: string } {
-  const config: Record<string, { label: string; color: string }> = {
-    draft: { label: "Draft", color: "bg-gray-500" },
-    active: { label: "Active", color: "bg-green-500" },
-    paused: { label: "Paused", color: "bg-yellow-500" },
-    completed: { label: "Completed", color: "bg-blue-500" },
-    canceled: { label: "Canceled", color: "bg-red-500" },
-  };
-  return config[status] || { label: status, color: "bg-gray-500" };
-}
-
-export async function getCampaigns(params?: {
-  limit?: number;
-  offset?: number;
-  status?: string;
-  q?: string;
-}): Promise<CampaignsResponse> {
-  const query = new URLSearchParams();
-  if (params?.limit) query.set("limit", params.limit.toString());
-  if (params?.offset) query.set("offset", params.offset.toString());
-  if (params?.status) query.set("status", params.status);
-  if (params?.q) query.set("q", params.q);
-  return apiFetch<CampaignsResponse>(`/admin/marketing/campaigns${query.toString() ? `?${query}` : ""}`);
-}
-
-// =============================================================================
 // Admin Profile API
 // =============================================================================
 
