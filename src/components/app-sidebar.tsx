@@ -19,6 +19,7 @@ import {
   Loader2,
   RotateCcw,
   Star,
+  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -401,6 +402,14 @@ export function AppSidebar() {
               <Link href="/settings">
                 <Settings className="size-4" />
                 <span>Settings</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/help")}>
+              <Link href="/help">
+                <HelpCircle className="size-4" />
+                <span>Help &amp; Support</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
