@@ -210,14 +210,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
               sku: vp.sku || undefined,
               barcode: undefined,
               ean: undefined,
-              inventoryQuantity: parseInt(vp.quantity) || 0,
+              inventoryQuantity: parseInt(vp.quantity) || (isDraft ? 1 : 0),
               manageInventory: true,
               allowBackorder: false,
               options: vp.optionValues,
               prices: [
                 {
                   currencyCode: "GBP",
-                  amount: parseFloat(vp.price) || 0,
+                  amount: parseFloat(vp.price) || (isDraft ? 0.01 : 0),
                 },
               ],
             }))
@@ -227,14 +227,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                 sku: store.sku || undefined,
                 barcode: store.barcode || undefined,
                 ean: store.barcode || undefined,
-                inventoryQuantity: parseInt(store.quantity) || 0,
+                inventoryQuantity: parseInt(store.quantity) || (isDraft ? 1 : 0),
                 manageInventory: store.trackQuantity,
                 allowBackorder: false,
                 options: {},
                 prices: [
                   {
                     currencyCode: "GBP",
-                    amount: parseFloat(store.price) || 0,
+                    amount: parseFloat(store.price) || (isDraft ? 0.01 : 0),
                   },
                 ],
               },
