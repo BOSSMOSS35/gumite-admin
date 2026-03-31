@@ -1,36 +1,61 @@
-// Local store config — replaces @vernont/admin-ui/stores dependency
+// Re-export all stores from @vernont/admin-ui
+// The stores are configured via setStoreConfig in the app layout
 
-export interface StoreConfig {
-  apiBaseUrl: string;
-  wsEndpoint: string;
-  wsTokenEndpoint: string;
-}
+export {
+  // Configuration
+  setStoreConfig,
+  getStoreConfig,
+  getApiUrl,
+  getWsUrl,
 
-let config: StoreConfig = {
-  apiBaseUrl: "",
-  wsEndpoint: "/ws",
-  wsTokenEndpoint: "/api/v1/internal/auth/ws-token",
-};
+  // WebSocket store
+  useWebSocketStore,
+  WS_TOPICS,
 
-export function setStoreConfig(partial: Partial<StoreConfig>) {
-  config = { ...config, ...partial };
-}
+  // Domain stores
+  useOrdersStore,
+  useProductsStore,
+  useInventoryStore,
+  useCustomersStore,
+  useReturnsStore,
+  useWorkflowsStore,
+  useDashboardStore,
+} from "@vernont/admin-ui/stores";
 
-export function getStoreConfig(): StoreConfig {
-  return config;
-}
-
-export function getApiUrl(endpoint: string): string {
-  return `${config.apiBaseUrl}${endpoint}`;
-}
-
-export function getWsUrl(): string {
-  return `${config.apiBaseUrl}${config.wsEndpoint}`;
-}
-
-// Re-export local stores
-export { useProductStore } from "./product-store";
-export { useOrderStore } from "./order-store";
-export { useCustomerStore } from "./customer-store";
-export { useProductFormStore } from "./product-form-store";
-export { useAuthStore } from "./auth-store";
+// Re-export types
+export type {
+  StoreConfig,
+  OrderSummary,
+  Order,
+  OrderItem,
+  OrderAddress,
+  OrdersFilters,
+  ProductSummary,
+  Product,
+  ProductImage,
+  ProductVariant,
+  ProductPrice,
+  ProductOption,
+  ProductsFilters,
+  InventoryLevel,
+  StockLocation,
+  InventoryFilters,
+  CustomerSummary,
+  Customer,
+  CustomerAddress,
+  CustomerGroup,
+  CustomersFilters,
+  ReturnSummary,
+  Return,
+  ReturnItem,
+  ReturnStats,
+  ReturnsFilters,
+  WorkflowExecution,
+  WorkflowStep,
+  WorkflowExecutionEvent,
+  WorkflowEventType,
+  ExecutionStatus,
+  DashboardStats,
+  ActivityItem,
+  ConnectionStatus,
+} from "@vernont/admin-ui/stores";
