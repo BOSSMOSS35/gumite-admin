@@ -4344,8 +4344,15 @@ export async function updateAdminProfile(data: {
 // =============================================================================
 
 export async function resetPassword(token: string, newPassword: string): Promise<{ ok: boolean }> {
-  return apiFetch<{ ok: boolean }>("/reset-password", {
+  return apiFetch<{ ok: boolean }>("/api/reset-password", {
     method: "POST",
     body: JSON.stringify({ token, newPassword }),
+  });
+}
+
+export async function forgotPassword(email: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>("/api/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
