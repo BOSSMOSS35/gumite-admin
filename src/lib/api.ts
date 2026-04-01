@@ -875,6 +875,7 @@ export interface ProductVariant {
   ean?: string;
   allowBackorder: boolean;
   manageInventory: boolean;
+  inventoryQuantity?: number;
   weight?: string;
   length?: string;
   height?: string;
@@ -1375,6 +1376,7 @@ export interface CreateVariantInput {
   barcode?: string;
   allowBackorder?: boolean;
   manageInventory?: boolean;
+  inventoryQuantity?: number;
   weight?: string;
   length?: string;
   height?: string;
@@ -1389,6 +1391,7 @@ export interface UpdateVariantInput {
   barcode?: string;
   allowBackorder?: boolean;
   manageInventory?: boolean;
+  inventoryQuantity?: number;
   weight?: string;
   length?: string;
   height?: string;

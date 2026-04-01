@@ -164,6 +164,7 @@ export default function ProductDetailPage() {
     price: "",
     compareAtPrice: "",
     currencyCode: "GBP",
+    inventoryQuantity: "",
     manageInventory: true,
     allowBackorder: false,
     weight: "",
@@ -318,6 +319,7 @@ export default function ProductDetailPage() {
       price: "",
       compareAtPrice: "",
       currencyCode: "GBP",
+      inventoryQuantity: "",
       manageInventory: true,
       allowBackorder: false,
       weight: "",
@@ -340,6 +342,7 @@ export default function ProductDetailPage() {
       price: mainPrice?.amount?.toString() || "",
       compareAtPrice: mainPrice?.compareAtPrice?.toString() || "",
       currencyCode: mainPrice?.currencyCode || "GBP",
+      inventoryQuantity: variant.inventoryQuantity?.toString() || "",
       manageInventory: variant.manageInventory,
       allowBackorder: variant.allowBackorder,
       weight: variant.weight || "",
@@ -363,6 +366,9 @@ export default function ProductDetailPage() {
         barcode: variantForm.barcode || undefined,
         manageInventory: variantForm.manageInventory,
         allowBackorder: variantForm.allowBackorder,
+        inventoryQuantity: variantForm.inventoryQuantity
+          ? parseInt(variantForm.inventoryQuantity, 10)
+          : undefined,
         weight: variantForm.weight || undefined,
         prices: variantForm.price
           ? [
@@ -405,6 +411,9 @@ export default function ProductDetailPage() {
         barcode: variantForm.barcode || undefined,
         manageInventory: variantForm.manageInventory,
         allowBackorder: variantForm.allowBackorder,
+        inventoryQuantity: variantForm.inventoryQuantity
+          ? parseInt(variantForm.inventoryQuantity, 10)
+          : undefined,
         weight: variantForm.weight || undefined,
         prices: [
           {
@@ -1527,14 +1536,27 @@ export default function ProductDetailPage() {
               </div>
             </div>
             <Separator />
-            <div className="space-y-2">
-              <Label htmlFor="variant-weight">Weight</Label>
-              <Input
-                id="variant-weight"
-                value={variantForm.weight}
-                onChange={(e) => setVariantForm({ ...variantForm, weight: e.target.value })}
-                placeholder="e.g., 0.5 kg"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="variant-weight">Weight</Label>
+                <Input
+                  id="variant-weight"
+                  value={variantForm.weight}
+                  onChange={(e) => setVariantForm({ ...variantForm, weight: e.target.value })}
+                  placeholder="e.g., 0.5 kg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="variant-quantity">Quantity</Label>
+                <Input
+                  id="variant-quantity"
+                  type="number"
+                  min="0"
+                  value={variantForm.inventoryQuantity}
+                  onChange={(e) => setVariantForm({ ...variantForm, inventoryQuantity: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
             </div>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -1663,14 +1685,27 @@ export default function ProductDetailPage() {
               </div>
             </div>
             <Separator />
-            <div className="space-y-2">
-              <Label htmlFor="edit-variant-weight">Weight</Label>
-              <Input
-                id="edit-variant-weight"
-                value={variantForm.weight}
-                onChange={(e) => setVariantForm({ ...variantForm, weight: e.target.value })}
-                placeholder="e.g., 0.5 kg"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-variant-weight">Weight</Label>
+                <Input
+                  id="edit-variant-weight"
+                  value={variantForm.weight}
+                  onChange={(e) => setVariantForm({ ...variantForm, weight: e.target.value })}
+                  placeholder="e.g., 0.5 kg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-variant-quantity">Quantity</Label>
+                <Input
+                  id="edit-variant-quantity"
+                  type="number"
+                  min="0"
+                  value={variantForm.inventoryQuantity}
+                  onChange={(e) => setVariantForm({ ...variantForm, inventoryQuantity: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
             </div>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
