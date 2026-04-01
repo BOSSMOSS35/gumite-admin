@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 // Routes that don't show the sidebar/header
-const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
+const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password", "/set-password"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -81,8 +81,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.replace("/settings/regions?setup=required");
   }, [isPublicRoute, isAuthenticated, isSetupChecking, isSetupRequired, isSetupRoute, router]);
 
+  // Public routes: render immediately without sidebar — no auth checks needed
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
+
   // Show loading spinner while checking auth
-  if (isLoading && !isPublicRoute) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -93,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isPublicRoute && isAuthenticated && isSetupChecking && !isSetupRoute) {
+  if (isAuthenticated && isSetupChecking && !isSetupRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -102,11 +107,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  // Public routes: render without sidebar
-  if (isPublicRoute) {
-    return <>{children}</>;
   }
 
   // Not authenticated and not on public route: show nothing (redirect happens in auth-context)
