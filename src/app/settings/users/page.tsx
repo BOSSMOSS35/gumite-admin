@@ -64,10 +64,14 @@ import {
   Pencil,
   Trash2,
   Archive,
+  ArchiveRestore,
   AlertTriangle,
   UserPlus,
   Shield,
   AlertCircle,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   ApiError,
@@ -77,10 +81,12 @@ import {
 import { getRoleBadgeColor, getRoleDisplayName } from "@/lib/auth";
 import {
   useInternalUsers,
+  useCreateUser,
   useInviteUser,
   useUpdateUser,
   useArchiveUser,
   useHardDeleteUser,
+  useRestoreUser,
 } from "@/hooks/use-users";
 
 const AVAILABLE_ROLES: { value: InternalUserRole; label: string; description: string }[] = [
@@ -96,20 +102,32 @@ export default function UsersSettingsPage() {
 
   const users = usersData?.users || [];
 
+  const createMutation = useCreateUser();
   const inviteMutation = useInviteUser();
   const updateMutation = useUpdateUser();
   const archiveMutation = useArchiveUser();
   const hardDeleteMutation = useHardDeleteUser();
+  const restoreMutation = useRestoreUser();
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Invite modal state
+  // Add/Invite modal state
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [inviteMode, setInviteMode] = useState<"invite" | "create">("create");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePassword, setInvitePassword] = useState("");
+  const [showInvitePassword, setShowInvitePassword] = useState(false);
   const [inviteFirstName, setInviteFirstName] = useState("");
   const [inviteLastName, setInviteLastName] = useState("");
   const [inviteRoles, setInviteRoles] = useState<string[]>(["ADMIN"]);
   const [inviteError, setInviteError] = useState<string | null>(null);
+
+  // Reset password modal state
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<InternalUser | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
 
   // Edit modal state
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -152,21 +170,41 @@ export default function UsersSettingsPage() {
     );
   });
 
-  // Handle invite
+  // Handle add/invite
   const handleInvite = async () => {
     if (!inviteEmail || inviteRoles.length === 0) {
       setInviteError("Email and at least one role are required");
       return;
     }
 
+    if (inviteMode === "create" && !invitePassword) {
+      setInviteError("Password is required when creating a user directly");
+      return;
+    }
+
+    if (inviteMode === "create" && invitePassword.length < 8) {
+      setInviteError("Password must be at least 8 characters");
+      return;
+    }
+
     try {
       setInviteError(null);
-      await inviteMutation.mutateAsync({
-        email: inviteEmail,
-        firstName: inviteFirstName || undefined,
-        lastName: inviteLastName || undefined,
-        roles: inviteRoles,
-      });
+      if (inviteMode === "create") {
+        await createMutation.mutateAsync({
+          email: inviteEmail,
+          password: invitePassword,
+          firstName: inviteFirstName || undefined,
+          lastName: inviteLastName || undefined,
+          roles: inviteRoles,
+        });
+      } else {
+        await inviteMutation.mutateAsync({
+          email: inviteEmail,
+          firstName: inviteFirstName || undefined,
+          lastName: inviteLastName || undefined,
+          roles: inviteRoles,
+        });
+      }
       setIsInviteOpen(false);
       resetInviteForm();
     } catch (err) {
@@ -176,10 +214,53 @@ export default function UsersSettingsPage() {
 
   const resetInviteForm = () => {
     setInviteEmail("");
+    setInvitePassword("");
+    setShowInvitePassword(false);
     setInviteFirstName("");
     setInviteLastName("");
     setInviteRoles(["ADMIN"]);
+    setInviteMode("create");
     setInviteError(null);
+  };
+
+  // Handle reset password
+  const openResetPassword = (user: InternalUser) => {
+    setResetPasswordUser(user);
+    setNewPassword("");
+    setShowNewPassword(false);
+    setResetPasswordError(null);
+    setIsResetPasswordOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) {
+      setResetPasswordError("Password is required");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setResetPasswordError("Password must be at least 8 characters");
+      return;
+    }
+    try {
+      setResetPasswordError(null);
+      await updateMutation.mutateAsync({
+        userId: resetPasswordUser.id,
+        data: { password: newPassword },
+      });
+      setIsResetPasswordOpen(false);
+      setResetPasswordUser(null);
+    } catch (err) {
+      setResetPasswordError(getErrorMessage(err));
+    }
+  };
+
+  // Handle restore
+  const handleRestore = async (user: InternalUser) => {
+    try {
+      await restoreMutation.mutateAsync(user.id);
+    } catch (err) {
+      console.error("Failed to restore user:", err);
+    }
   };
 
   // Handle edit
@@ -308,10 +389,16 @@ export default function UsersSettingsPage() {
             <CardTitle>The Team</CardTitle>
             <CardDescription>Manage users of your Gumite Store</CardDescription>
           </div>
-          <Button className="gap-2" onClick={() => setIsInviteOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Invite Users
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => { setInviteMode("invite"); setIsInviteOpen(true); }}>
+              <Mail className="h-4 w-4" />
+              Invite via Email
+            </Button>
+            <Button className="gap-2" onClick={() => { setInviteMode("create"); setIsInviteOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              Add User
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Search */}
@@ -423,7 +510,20 @@ export default function UsersSettingsPage() {
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit User
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openResetPassword(user)}>
+                                <KeyRound className="h-4 w-4 mr-2" />
+                                Reset Password
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              {!user.isActive && (
+                                <DropdownMenuItem
+                                  onClick={() => handleRestore(user)}
+                                  className="text-green-600"
+                                >
+                                  <ArchiveRestore className="h-4 w-4 mr-2" />
+                                  Restore User
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() => openArchiveConfirm(user)}
                                 className="text-amber-600"
@@ -464,14 +564,32 @@ export default function UsersSettingsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Invite Team Member
+              {inviteMode === "create" ? "Add Team Member" : "Invite Team Member"}
             </DialogTitle>
             <DialogDescription>
-              Send an invitation email to add a new team member. They will receive a link to set up their account.
+              {inviteMode === "create"
+                ? "Create a new user with a password they can use to log in immediately."
+                : "Send an invitation email. They will receive a link to set up their account."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            {/* Mode toggle */}
+            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+              <button
+                className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${inviteMode === "create" ? "bg-background shadow font-medium" : "text-muted-foreground"}`}
+                onClick={() => setInviteMode("create")}
+              >
+                Create with Password
+              </button>
+              <button
+                className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${inviteMode === "invite" ? "bg-background shadow font-medium" : "text-muted-foreground"}`}
+                onClick={() => setInviteMode("invite")}
+              >
+                Send Invite Email
+              </button>
+            </div>
+
             {inviteError && (
               <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
                 <AlertCircle className="h-4 w-4" />
@@ -511,6 +629,29 @@ export default function UsersSettingsPage() {
               </div>
             </div>
 
+            {inviteMode === "create" && (
+              <div className="grid gap-2">
+                <Label htmlFor="invite-password">Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="invite-password"
+                    type={showInvitePassword ? "text" : "password"}
+                    placeholder="Minimum 8 characters"
+                    value={invitePassword}
+                    onChange={(e) => setInvitePassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowInvitePassword(!showInvitePassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showInvitePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-2">
               <Label className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
@@ -543,11 +684,16 @@ export default function UsersSettingsPage() {
             <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleInvite} disabled={inviteMutation.isPending}>
-              {inviteMutation.isPending ? (
+            <Button onClick={handleInvite} disabled={inviteMutation.isPending || createMutation.isPending}>
+              {(inviteMutation.isPending || createMutation.isPending) ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
+                  {inviteMode === "create" ? "Creating..." : "Sending..."}
+                </>
+              ) : inviteMode === "create" ? (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create User
                 </>
               ) : (
                 <>
@@ -705,6 +851,64 @@ export default function UsersSettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for <strong>{resetPasswordUser?.email}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {resetPasswordError && (
+              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+                <AlertCircle className="h-4 w-4" />
+                {resetPasswordError}
+              </div>
+            )}
+            <div className="grid gap-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Minimum 8 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResetPasswordOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Set Password"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Hard Delete Confirmation Dialog - with type-to-confirm */}
       <AlertDialog open={isHardDeleteOpen} onOpenChange={(open) => {
