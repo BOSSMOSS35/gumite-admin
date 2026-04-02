@@ -1037,7 +1037,14 @@ export async function getProducts(params?: {
   if (params?.q) searchParams.set("q", params.q);
   if (params?.status) searchParams.set("status", params.status);
 
-  return apiFetch<ProductsResponse>(`/admin/products?${searchParams.toString()}`);
+  const data = await apiFetch<{ content: Array<ProductSummary & { variants?: unknown[] }>; totalElements: number; totalPages: number; size: number; number: number }>(`/admin/products?${searchParams.toString()}`);
+  return {
+    ...data,
+    content: data.content.map((p) => ({
+      ...p,
+      variantCount: p.variantCount ?? p.variants?.length ?? 0,
+    })),
+  };
 }
 
 // Get single product
