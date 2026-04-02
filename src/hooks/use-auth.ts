@@ -11,7 +11,7 @@ import {
 } from "@/stores/auth-store";
 import type { LoginRequest, InternalUserInfo } from "@/lib/auth";
 
-const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
+const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password", "/set-password"];
 
 // Refetch session every 20 hours (cookie maxAge = 24h, JWT = 24h)
 const REFETCH_INTERVAL = 20 * 60 * 60 * 1000;

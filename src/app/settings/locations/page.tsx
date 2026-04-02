@@ -63,12 +63,12 @@ interface ShipFromAddress {
   street1: string;
   street2: string | null;
   city: string;
-  state_province: string | null;
-  postal_code: string;
-  country_code: string;
+  stateProvince: string | null;
+  postalCode: string;
+  countryCode: string;
   phone: string | null;
   email: string | null;
-  is_default: boolean;
+  isDefault: boolean;
 }
 
 const EMPTY_FORM = {
@@ -78,9 +78,9 @@ const EMPTY_FORM = {
   street1: "",
   street2: "",
   city: "",
-  state_province: "",
-  postal_code: "",
-  country_code: "GB",
+  stateProvince: "",
+  postalCode: "",
+  countryCode: "GB",
   phone: "",
   email: "",
 };
@@ -126,9 +126,9 @@ export default function LocationsSettingsPage() {
       street1: addr.street1,
       street2: addr.street2 || "",
       city: addr.city,
-      state_province: addr.state_province || "",
-      postal_code: addr.postal_code,
-      country_code: addr.country_code,
+      stateProvince: addr.stateProvince || "",
+      postalCode: addr.postalCode,
+      countryCode: addr.countryCode,
       phone: addr.phone || "",
       email: addr.email || "",
     });
@@ -136,7 +136,7 @@ export default function LocationsSettingsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.street1.trim() || !form.city.trim() || !form.postal_code.trim()) {
+    if (!form.name.trim() || !form.street1.trim() || !form.city.trim() || !form.postalCode.trim()) {
       toast.error("Name, street, city, and postal code are required");
       return;
     }
@@ -149,12 +149,12 @@ export default function LocationsSettingsPage() {
         street1: form.street1,
         street2: form.street2 || null,
         city: form.city,
-        state_province: form.state_province || null,
-        postal_code: form.postal_code,
-        country_code: form.country_code || "GB",
+        stateProvince: form.stateProvince || null,
+        postalCode: form.postalCode,
+        countryCode: form.countryCode || "GB",
         phone: form.phone || null,
         email: form.email || null,
-        is_default: addresses.length === 0,
+        isDefault: addresses.length === 0,
       };
       if (editingId) {
         await apiFetch(`/admin/shipping/from-addresses/${editingId}`, {
@@ -282,15 +282,15 @@ export default function LocationsSettingsPage() {
                       {addr.street2 && <div>{addr.street2}</div>}
                       <div>
                         {addr.city}
-                        {addr.state_province ? `, ${addr.state_province}` : ""}{" "}
-                        {addr.postal_code}
+                        {addr.stateProvince ? `, ${addr.stateProvince}` : ""}{" "}
+                        {addr.postalCode}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{addr.country_code}</Badge>
+                      <Badge variant="outline">{addr.countryCode}</Badge>
                     </TableCell>
                     <TableCell>
-                      {addr.is_default ? (
+                      {addr.isDefault ? (
                         <Badge className="gap-1">
                           <Star className="h-3 w-3" />
                           Default
@@ -311,7 +311,7 @@ export default function LocationsSettingsPage() {
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          {!addr.is_default && (
+                          {!addr.isDefault && (
                             <DropdownMenuItem
                               onClick={() => setDefault(addr.id)}
                             >
@@ -410,16 +410,16 @@ export default function LocationsSettingsPage() {
                 <Label>State / Province</Label>
                 <Input
                   placeholder="Greater London"
-                  value={form.state_province}
-                  onChange={(e) => updateField("state_province", e.target.value)}
+                  value={form.stateProvince}
+                  onChange={(e) => updateField("stateProvince", e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Postal Code *</Label>
                 <Input
                   placeholder="SW1A 1AA"
-                  value={form.postal_code}
-                  onChange={(e) => updateField("postal_code", e.target.value)}
+                  value={form.postalCode}
+                  onChange={(e) => updateField("postalCode", e.target.value)}
                 />
               </div>
             </div>
@@ -430,9 +430,9 @@ export default function LocationsSettingsPage() {
                 <Input
                   placeholder="GB"
                   maxLength={2}
-                  value={form.country_code}
+                  value={form.countryCode}
                   onChange={(e) =>
-                    updateField("country_code", e.target.value.toUpperCase())
+                    updateField("countryCode", e.target.value.toUpperCase())
                   }
                 />
               </div>

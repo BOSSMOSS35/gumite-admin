@@ -1,1 +1,5 @@
-export { default } from "../forgot-password/page";
+import { PasswordTokenPage } from "@/components/auth/password-token-page";
+
+export default function SetPasswordPage() {
+  return <PasswordTokenPage variant="invite" />;
+}
