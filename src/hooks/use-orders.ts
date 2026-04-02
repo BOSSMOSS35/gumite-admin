@@ -41,6 +41,8 @@ export interface UseOrdersParams {
   q?: string;
   payment_status?: string;
   fulfillment_status?: string;
+  created_after?: string;
+  created_before?: string;
 }
 
 export function useOrders(params: UseOrdersParams = {}) {

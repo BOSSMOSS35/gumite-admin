@@ -38,9 +38,20 @@ import {
   AlertCircle,
   RefreshCw,
   ShoppingCart,
+  Calendar,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   PaymentStatus,
   FulfillmentStatus,
@@ -48,6 +59,7 @@ import {
   formatDate,
   getPaymentStatusDisplay,
   getFulfillmentStatusDisplay,
+  createDraftOrder,
 } from "@/lib/api";
 import { useOrders } from "@/hooks/use-orders";
 import { useOrderStore } from "@/stores/order-store";
@@ -81,10 +93,25 @@ export default function OrdersPage() {
     addFilter,
     removeFilter,
     clearFilters,
+    dateFrom,
+    dateTo,
+    setDateRange,
     limit,
     offset,
     setOffset,
   } = useOrderStore();
+
+  // Create order state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createForm, setCreateForm] = useState({
+    email: "",
+    note: "",
+    itemTitle: "",
+    itemQty: 1,
+    itemPrice: 0,
+  });
 
   // Derive API filter params from active filter chips
   const paymentFilter = activeFilters.find((f) => f.id === "payment")?.value;
@@ -107,6 +134,8 @@ export default function OrdersPage() {
     q: debouncedSearch || undefined,
     payment_status: paymentFilter,
     fulfillment_status: fulfillmentFilter,
+    created_after: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    created_before: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
   });
 
   const orders = data?.orders ?? [];
@@ -145,6 +174,34 @@ export default function OrdersPage() {
     }
   };
 
+  const handleCreateOrder = async () => {
+    if (!createForm.email || !createForm.itemTitle || createForm.itemPrice <= 0) {
+      setCreateError("Email, item title, and price are required");
+      return;
+    }
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      await createDraftOrder({
+        email: createForm.email,
+        note: createForm.note || undefined,
+        items: [{
+          title: createForm.itemTitle,
+          quantity: createForm.itemQty,
+          unitPrice: Math.round(createForm.itemPrice * 100), // convert to minor units
+        }],
+      });
+      setIsCreateOpen(false);
+      setCreateForm({ email: "", note: "", itemTitle: "", itemQty: 1, itemPrice: 0 });
+      toast.success("Draft order created");
+      refetch();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create order");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <Card>
@@ -156,6 +213,10 @@ export default function OrdersPage() {
             </Button>
             <Button variant="outline" onClick={handleExport} disabled={orders.length === 0}>
               Export
+            </Button>
+            <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Create Order
             </Button>
           </div>
         </CardHeader>
@@ -222,6 +283,30 @@ export default function OrdersPage() {
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
+
+                    {/* Date Range Filter */}
+                    <div className="px-2 pt-2 border-t">
+                      <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        Date Range
+                      </p>
+                      <div className="grid gap-2">
+                        <Input
+                          type="date"
+                          className="h-8 text-xs"
+                          value={dateFrom || ""}
+                          onChange={(e) => setDateRange(e.target.value || null, dateTo)}
+                          placeholder="From"
+                        />
+                        <Input
+                          type="date"
+                          className="h-8 text-xs"
+                          value={dateTo || ""}
+                          onChange={(e) => setDateRange(dateFrom, e.target.value || null)}
+                          placeholder="To"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -242,8 +327,28 @@ export default function OrdersPage() {
                 </div>
               ))}
 
-              {activeFilters.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
+              {/* Date filter chip */}
+              {(dateFrom || dateTo) && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-sm">
+                  <Calendar className="h-3 w-3" />
+                  <span>
+                    {dateFrom && dateTo
+                      ? `${dateFrom} — ${dateTo}`
+                      : dateFrom
+                        ? `From ${dateFrom}`
+                        : `Until ${dateTo}`}
+                  </span>
+                  <button
+                    onClick={() => setDateRange(null, null)}
+                    className="ml-1 hover:bg-muted-foreground/20 rounded"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+
+              {(activeFilters.length > 0 || dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" onClick={() => { clearFilters(); setDateRange(null, null); }}>
                   Clear all
                 </Button>
               )}
@@ -385,6 +490,105 @@ export default function OrdersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Draft Order Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Create Draft Order
+            </DialogTitle>
+            <DialogDescription>
+              Manually create a draft order. You can fulfill and capture payment later.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {createError && (
+              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+                <AlertCircle className="h-4 w-4" />
+                {createError}
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="order-email">Customer Email *</Label>
+              <Input
+                id="order-email"
+                type="email"
+                placeholder="customer@example.com"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+
+            <div className="border rounded-lg p-3 space-y-3">
+              <p className="text-sm font-medium">Line Item</p>
+              <div className="grid gap-2">
+                <Label htmlFor="item-title">Item Title *</Label>
+                <Input
+                  id="item-title"
+                  placeholder="e.g. Custom alterations"
+                  value={createForm.itemTitle}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, itemTitle: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="item-qty">Quantity</Label>
+                  <Input
+                    id="item-qty"
+                    type="number"
+                    min={1}
+                    value={createForm.itemQty}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, itemQty: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="item-price">Unit Price (GBP) *</Label>
+                  <Input
+                    id="item-price"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    placeholder="0.00"
+                    value={createForm.itemPrice || ""}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, itemPrice: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="order-note">Note (optional)</Label>
+              <Textarea
+                id="order-note"
+                placeholder="Internal note about this order..."
+                value={createForm.note}
+                onChange={(e) => setCreateForm((f) => ({ ...f, note: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateOrder} disabled={createLoading}>
+              {createLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Draft Order"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

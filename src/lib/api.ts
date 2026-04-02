@@ -218,6 +218,8 @@ export async function getOrders(params?: {
   q?: string;
   payment_status?: string;
   fulfillment_status?: string;
+  created_after?: string;
+  created_before?: string;
 }): Promise<OrdersResponse> {
   const searchParams = new URLSearchParams();
   if (params?.limit) searchParams.set("limit", params.limit.toString());
@@ -225,9 +227,44 @@ export async function getOrders(params?: {
   if (params?.q) searchParams.set("q", params.q);
   if (params?.payment_status) searchParams.set("payment_status", params.payment_status);
   if (params?.fulfillment_status) searchParams.set("fulfillment_status", params.fulfillment_status);
+  if (params?.created_after) searchParams.set("created_after", params.created_after);
+  if (params?.created_before) searchParams.set("created_before", params.created_before);
 
   const query = searchParams.toString();
   return apiFetch<OrdersResponse>(`/admin/orders${query ? `?${query}` : ""}`);
+}
+
+export interface CreateDraftOrderRequest {
+  email: string;
+  customerId?: string;
+  regionId?: string;
+  currencyCode?: string;
+  note?: string;
+  shippingAddress?: {
+    firstName?: string;
+    lastName?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    countryCode?: string;
+    phone?: string;
+  };
+  items: {
+    variantId?: string;
+    title: string;
+    quantity: number;
+    unitPrice: number;
+  }[];
+}
+
+export async function createDraftOrder(data: CreateDraftOrderRequest): Promise<Order> {
+  const result = await apiFetch<{ order: Order }>("/admin/orders", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return result.order;
 }
 
 export async function getOrder(id: string): Promise<Order> {
