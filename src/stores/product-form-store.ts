@@ -133,7 +133,7 @@ function reconcileVariantPrices(
 
 // --- Store ---
 
-interface ProductFormActions {
+export interface ProductFormActions {
   // Field updates
   setField: <K extends keyof ProductFormState>(
     field: K,
@@ -166,6 +166,10 @@ interface ProductFormActions {
   ) => void;
   removeOptionValue: (optionIndex: number, valueIndex: number) => void;
 
+  // Bulk option helpers
+  addOptionWithValues: (name: string, values: string[]) => void;
+  replaceOptionValues: (optionIndex: number, values: string[]) => void;
+
   // Variant pricing
   updateVariantPrice: (
     index: number,
@@ -173,6 +177,7 @@ interface ProductFormActions {
     value: string
   ) => void;
   setAllVariantPrices: (price: string) => void;
+  setAllVariantQuantities: (quantity: string) => void;
 
   // Computed
   getVariantCombinations: () => Record<string, string>[];
@@ -324,6 +329,29 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         };
       }),
 
+    // --- Bulk option helpers ---
+    addOptionWithValues: (name, values) =>
+      set((s) => {
+        const newOptions = [...s.options, { name, values }];
+        const combinations = generateVariantCombinations(newOptions);
+        return {
+          options: newOptions,
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+        };
+      }),
+
+    replaceOptionValues: (optionIndex, values) =>
+      set((s) => {
+        const newOptions = s.options.map((o, i) =>
+          i === optionIndex ? { ...o, values } : o
+        );
+        const combinations = generateVariantCombinations(newOptions);
+        return {
+          options: newOptions,
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+        };
+      }),
+
     // --- Variant pricing ---
     updateVariantPrice: (index, field, value) =>
       set((s) => ({
@@ -335,6 +363,11 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
     setAllVariantPrices: (price) =>
       set((s) => ({
         variantPrices: s.variantPrices.map((vp) => ({ ...vp, price })),
+      })),
+
+    setAllVariantQuantities: (quantity) =>
+      set((s) => ({
+        variantPrices: s.variantPrices.map((vp) => ({ ...vp, quantity })),
       })),
 
     // --- Computed ---

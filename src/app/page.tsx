@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -282,12 +281,10 @@ export default function DashboardPage() {
                           className="relative h-10 w-10 rounded-md border-2 border-background overflow-hidden bg-muted"
                         >
                           {item.image ? (
-                            <Image
+                            <img
                               src={getImageUrl(item.image) || ""}
                               alt={item.name}
-                              fill
-                              className="object-cover"
-                              sizes="40px"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
                             <div className="flex items-center justify-center h-full w-full text-muted-foreground">

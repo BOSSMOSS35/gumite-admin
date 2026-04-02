@@ -23,6 +23,12 @@ import {
   GripVertical,
   ImageIcon,
   Loader2,
+  Ruler,
+  Palette,
+  Layers,
+  Pencil,
+  Shirt,
+  Footprints,
 } from "lucide-react";
 import {
   getCategories,
@@ -36,6 +42,8 @@ import {
 import {
   useProductFormStore,
   getVariantDisplayName,
+  type ProductFormState,
+  type ProductFormActions,
 } from "@/stores/product-form-store";
 
 type Step = {
@@ -49,6 +57,577 @@ type AddProductModalProps = {
   onClose: () => void;
   onSave?: (isDraft: boolean) => void;
 };
+
+// --- Size presets ---
+const SHOE_SIZES_EU = ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];
+const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+
+// --- Chip tag input for option values ---
+function ChipTagInput({
+  values,
+  onAdd,
+  onRemove,
+  placeholder,
+}: {
+  values: string[];
+  onAdd: (value: string) => void;
+  onRemove: (index: number) => void;
+  placeholder: string;
+}) {
+  const [inputValue, setInputValue] = React.useState("");
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const trimmed = inputValue.trim();
+      if (trimmed && !values.includes(trimmed)) {
+        onAdd(trimmed);
+      }
+      setInputValue("");
+    }
+    if (e.key === "Backspace" && !inputValue && values.length > 0) {
+      onRemove(values.length - 1);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 border rounded-md px-2 py-1.5 min-h-[38px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
+      {values.filter(Boolean).map((value, idx) => (
+        <Badge
+          key={`${value}-${idx}`}
+          variant="secondary"
+          className="gap-1 px-2 py-0.5 text-sm font-normal"
+        >
+          {value}
+          <button
+            type="button"
+            onClick={() => onRemove(idx)}
+            className="ml-0.5 hover:text-destructive"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={values.filter(Boolean).length === 0 ? placeholder : ""}
+        className="flex-1 min-w-[80px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      />
+    </div>
+  );
+}
+
+// --- Toggleable chip selector (for presets) ---
+function ToggleChips({
+  allValues,
+  selectedValues,
+  onToggle,
+}: {
+  allValues: string[];
+  selectedValues: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {allValues.map((value) => {
+        const isSelected = selectedValues.includes(value);
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onToggle(value)}
+            className={cn(
+              "inline-flex items-center rounded-full px-3 py-1 text-sm font-medium transition-colors border",
+              isSelected
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted"
+            )}
+          >
+            {value}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// --- Variant Step Component ---
+type VariantStepProps = {
+  store: ProductFormState & ProductFormActions;
+  variantCombinations: Record<string, string>[];
+};
+
+function VariantStep({ store, variantCombinations }: VariantStepProps) {
+  const [sizeSubType, setSizeSubType] = React.useState<"shoe" | "clothing" | null>(null);
+
+  const handlePresetClick = (preset: "size" | "color" | "material" | "custom") => {
+    if (preset === "size") {
+      // Don't add yet -- show sub-option picker
+      setSizeSubType(null);
+      // Temporarily add the option with empty values so user picks sub-type
+      store.addOptionWithValues("Size", []);
+    } else if (preset === "color") {
+      store.addOptionWithValues("Color", []);
+    } else if (preset === "material") {
+      store.addOptionWithValues("Material", []);
+    } else {
+      store.addOption();
+    }
+  };
+
+  const handleSizeSubType = (type: "shoe" | "clothing", optIdx: number) => {
+    setSizeSubType(type);
+    const values = type === "shoe" ? [...SHOE_SIZES_EU] : [...CLOTHING_SIZES];
+    store.replaceOptionValues(optIdx, values);
+  };
+
+  const handleToggleSizeValue = (value: string, optIdx: number) => {
+    const currentValues = store.options[optIdx]?.values || [];
+    if (currentValues.includes(value)) {
+      const newValues = currentValues.filter((v) => v !== value);
+      store.replaceOptionValues(optIdx, newValues);
+    } else {
+      store.replaceOptionValues(optIdx, [...currentValues, value]);
+    }
+  };
+
+  const handleChipAdd = (optionIndex: number, value: string) => {
+    const currentValues = store.options[optionIndex]?.values.filter(Boolean) || [];
+    if (!currentValues.includes(value)) {
+      store.replaceOptionValues(optionIndex, [...currentValues, value]);
+    }
+  };
+
+  const handleChipRemove = (optionIndex: number, valueIndex: number) => {
+    const currentValues = store.options[optionIndex]?.values.filter(Boolean) || [];
+    store.replaceOptionValues(
+      optionIndex,
+      currentValues.filter((_, i) => i !== valueIndex)
+    );
+  };
+
+  // Variant summary computation
+  const variantSummary = React.useMemo(() => {
+    const validOptions = store.options.filter(
+      (o) => o.name && o.values.some((v) => v)
+    );
+    if (validOptions.length === 0) return null;
+    const parts = validOptions.map(
+      (o) => `${o.values.filter((v) => v).length} ${o.name.toLowerCase()}${o.values.filter((v) => v).length !== 1 ? "s" : ""}`
+    );
+    return {
+      total: variantCombinations.length,
+      breakdown: parts.join(" x "),
+    };
+  }, [store.options, variantCombinations.length]);
+
+  // Group variants by first option for the pricing table
+  const groupedVariants = React.useMemo(() => {
+    if (store.variantPrices.length === 0) return [];
+    const firstOptionName = store.options.find(
+      (o) => o.name && o.values.some((v) => v)
+    )?.name;
+    if (!firstOptionName) return [{ header: null, variants: store.variantPrices.map((vp, i) => ({ ...vp, _idx: i })) }];
+
+    const groups: { header: string; variants: (typeof store.variantPrices[0] & { _idx: number })[] }[] = [];
+    const seen = new Set<string>();
+
+    store.variantPrices.forEach((vp, idx) => {
+      const groupKey = vp.optionValues[firstOptionName] || "";
+      if (!seen.has(groupKey)) {
+        seen.add(groupKey);
+        groups.push({ header: groupKey, variants: [] });
+      }
+      const group = groups.find((g) => g.header === groupKey);
+      if (group) group.variants.push({ ...vp, _idx: idx });
+    });
+
+    return groups;
+  }, [store.variantPrices, store.options]);
+
+  // Simple product -- no variants
+  if (!store.hasVariants) {
+    return (
+      <div className="text-center py-12">
+        <Check className="h-12 w-12 mx-auto text-green-500 mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Simple Product</h3>
+        <p className="text-muted-foreground">
+          This product doesn&apos;t have variants. A default variant will be created for
+          you with the pricing and inventory settings from the previous step.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Options section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Product Options</h2>
+          {store.options.length > 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={store.addOption}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add option
+            </Button>
+          )}
+        </div>
+
+        {/* Empty state with presets */}
+        {store.options.length === 0 && (
+          <div className="py-10 border rounded-lg text-center space-y-6">
+            <div>
+              <h3 className="text-base font-medium mb-1">What varies about this product?</h3>
+              <p className="text-sm text-muted-foreground">
+                Pick a common option type or create your own.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto py-3 px-5 flex-col gap-1.5"
+                onClick={() => handlePresetClick("size")}
+              >
+                <Ruler className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">Size</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto py-3 px-5 flex-col gap-1.5"
+                onClick={() => handlePresetClick("color")}
+              >
+                <Palette className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">Color</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto py-3 px-5 flex-col gap-1.5"
+                onClick={() => handlePresetClick("material")}
+              >
+                <Layers className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">Material</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto py-3 px-5 flex-col gap-1.5"
+                onClick={() => handlePresetClick("custom")}
+              >
+                <Pencil className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">Custom</span>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Existing options */}
+        {store.options.length > 0 && (
+          <div className="space-y-4">
+            {store.options.map((option, optionIndex) => {
+              const isSizeOption = option.name.toLowerCase() === "size";
+              const currentSizeType =
+                isSizeOption && sizeSubType
+                  ? sizeSubType
+                  : isSizeOption && option.values.some((v) => SHOE_SIZES_EU.includes(v))
+                  ? "shoe"
+                  : isSizeOption && option.values.some((v) => CLOTHING_SIZES.includes(v))
+                  ? "clothing"
+                  : null;
+
+              return (
+                <div key={optionIndex} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <GripVertical className="h-4 w-4 text-muted-foreground cursor-move shrink-0" />
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground">Option name</Label>
+                      <Input
+                        placeholder="Size, Color, Material..."
+                        value={option.name}
+                        onChange={(e) =>
+                          store.updateOptionName(optionIndex, e.target.value)
+                        }
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => store.removeOption(optionIndex)}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+
+                  {/* Size sub-type selector */}
+                  {isSizeOption && option.values.filter(Boolean).length === 0 && (
+                    <div className="ml-8 space-y-3">
+                      <Label className="text-xs text-muted-foreground">Choose a size type</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => handleSizeSubType("shoe", optionIndex)}
+                        >
+                          <Footprints className="h-4 w-4" />
+                          Shoe sizes (EU)
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => handleSizeSubType("clothing", optionIndex)}
+                        >
+                          <Shirt className="h-4 w-4" />
+                          Clothing sizes
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Toggle chips for size presets */}
+                  {isSizeOption && currentSizeType && (
+                    <div className="ml-8 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">
+                          {currentSizeType === "shoe" ? "EU shoe sizes" : "Clothing sizes"}
+                        </Label>
+                        <button
+                          type="button"
+                          className="text-xs text-primary hover:underline"
+                          onClick={() => {
+                            const otherType = currentSizeType === "shoe" ? "clothing" : "shoe";
+                            handleSizeSubType(otherType, optionIndex);
+                          }}
+                        >
+                          Switch to {currentSizeType === "shoe" ? "clothing" : "shoe"} sizes
+                        </button>
+                      </div>
+                      <ToggleChips
+                        allValues={currentSizeType === "shoe" ? SHOE_SIZES_EU : CLOTHING_SIZES}
+                        selectedValues={option.values}
+                        onToggle={(value) => handleToggleSizeValue(value, optionIndex)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Toggle sizes on/off. Only selected sizes will create variants.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Chip input for non-size options */}
+                  {!isSizeOption && (
+                    <div className="ml-8 space-y-2">
+                      <Label className="text-xs text-muted-foreground">Values</Label>
+                      <ChipTagInput
+                        values={option.values.filter(Boolean)}
+                        onAdd={(value) => handleChipAdd(optionIndex, value)}
+                        onRemove={(valueIndex) => handleChipRemove(optionIndex, valueIndex)}
+                        placeholder={
+                          option.name.toLowerCase() === "color"
+                            ? "Type a color and press Enter..."
+                            : option.name.toLowerCase() === "material"
+                            ? "Type a material and press Enter..."
+                            : "Type a value and press Enter..."
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Preset quick-add buttons below existing options */}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs text-muted-foreground">Quick add:</span>
+              {!store.options.some((o) => o.name.toLowerCase() === "size") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handlePresetClick("size")}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Size
+                </Button>
+              )}
+              {!store.options.some((o) => o.name.toLowerCase() === "color") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handlePresetClick("color")}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Color
+                </Button>
+              )}
+              {!store.options.some((o) => o.name.toLowerCase() === "material") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handlePresetClick("material")}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Material
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Variant summary */}
+      {variantSummary && variantSummary.total > 0 && (
+        <>
+          <Separator />
+
+          <div className="space-y-4">
+            {/* Summary banner */}
+            <div className="bg-muted/50 rounded-lg px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">
+                  {variantSummary.total} variant{variantSummary.total !== 1 ? "s" : ""} will be created
+                </p>
+                <p className="text-xs text-muted-foreground">{variantSummary.breakdown}</p>
+              </div>
+            </div>
+
+            {/* Bulk actions */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium whitespace-nowrap">Set all prices:</Label>
+                <div className="relative w-28">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    £
+                  </span>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    className="pl-7 h-8 text-sm"
+                    onChange={(e) => store.setAllVariantPrices(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium whitespace-nowrap">Set all quantities:</Label>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  className="h-8 text-sm w-20"
+                  onChange={(e) => store.setAllVariantQuantities(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Grouped pricing table */}
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-medium">Variant</th>
+                    <th className="text-left px-4 py-2 font-medium w-32">Price (£)</th>
+                    <th className="text-left px-4 py-2 font-medium w-32">SKU</th>
+                    <th className="text-left px-4 py-2 font-medium w-24">Qty</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {groupedVariants.map((group) => (
+                    <React.Fragment key={group.header ?? "__all"}>
+                      {group.header && groupedVariants.length > 1 && (
+                        <tr className="bg-muted/30">
+                          <td colSpan={4} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {group.header}
+                          </td>
+                        </tr>
+                      )}
+                      {group.variants.map((variant) => (
+                        <tr key={variant._idx} className="hover:bg-muted/20">
+                          <td className="px-4 py-2 font-medium">
+                            {getVariantDisplayName(variant.optionValues)}
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                                £
+                              </span>
+                              <Input
+                                type="number"
+                                placeholder="0.00"
+                                className={cn(
+                                  "h-8 pl-5 text-sm",
+                                  (!variant.price || parseFloat(variant.price) <= 0) && "border-red-400 focus-visible:ring-red-400"
+                                )}
+                                value={variant.price}
+                                onChange={(e) =>
+                                  store.updateVariantPrice(variant._idx, "price", e.target.value)
+                                }
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input
+                              placeholder="Auto"
+                              className="h-8 text-sm"
+                              value={variant.sku}
+                              onChange={(e) =>
+                                store.updateVariantPrice(variant._idx, "sku", e.target.value)
+                              }
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input
+                              type="number"
+                              min="1"
+                              placeholder="1"
+                              className={cn(
+                                "h-8 text-sm",
+                                (!variant.quantity || parseInt(variant.quantity) <= 0) && "border-red-400 focus-visible:ring-red-400"
+                              )}
+                              value={variant.quantity}
+                              onChange={(e) =>
+                                store.updateVariantPrice(variant._idx, "quantity", e.target.value)
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              SKU and barcodes will be auto-generated if left empty.
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* Hint when options exist but no values yet */}
+      {variantCombinations.length === 0 && store.options.length > 0 && store.options.some((o) => o.name) && (
+        <div className="bg-muted/50 rounded-lg p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Add option values above to generate variant combinations.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProps) {
   const [dragActive, setDragActive] = React.useState(false);
@@ -709,201 +1288,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
               {/* Step 3: Variants */}
               {store.currentStep === 2 && (
-                <div className="space-y-8">
-                  {store.hasVariants ? (
-                    <>
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                          <h2 className="text-lg font-semibold">Product Options</h2>
-                          <Button type="button" variant="outline" size="sm" onClick={store.addOption}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add option
-                          </Button>
-                        </div>
-
-                        {store.options.length === 0 ? (
-                          <div className="text-center py-12 border rounded-lg">
-                            <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-muted-foreground mb-4">
-                              No options defined yet
-                            </p>
-                            <Button type="button" variant="outline" onClick={store.addOption}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add your first option
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {store.options.map((option, optionIndex) => (
-                              <div key={optionIndex} className="border rounded-lg p-4 space-y-4">
-                                <div className="flex items-center gap-4">
-                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                                  <div className="flex-1">
-                                    <Label className="text-xs text-muted-foreground">Option name</Label>
-                                    <Input
-                                      placeholder="Size, Color, Material..."
-                                      value={option.name}
-                                      onChange={(e) =>
-                                        store.updateOptionName(optionIndex, e.target.value)
-                                      }
-                                    />
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => store.removeOption(optionIndex)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                  </Button>
-                                </div>
-
-                                <div className="ml-8 space-y-2">
-                                  <Label className="text-xs text-muted-foreground">Values</Label>
-                                  {option.values.map((value, valueIndex) => (
-                                    <div key={valueIndex} className="flex items-center gap-2">
-                                      <Input
-                                        placeholder="Value"
-                                        value={value}
-                                        onChange={(e) =>
-                                          store.updateOptionValue(optionIndex, valueIndex, e.target.value)
-                                        }
-                                      />
-                                      {option.values.length > 1 && (
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() => store.removeOptionValue(optionIndex, valueIndex)}
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                    </div>
-                                  ))}
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-primary"
-                                    onClick={() => store.addOptionValue(optionIndex)}
-                                  >
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    Add value
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Variant Pricing Table */}
-                      {variantCombinations.length > 0 && (
-                        <>
-                          <Separator />
-
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h2 className="text-lg font-semibold">
-                                Variant Pricing ({variantCombinations.length} variants)
-                              </h2>
-                              <div className="flex items-center gap-2">
-                                <Label className="text-sm text-muted-foreground">Set all prices:</Label>
-                                <div className="relative w-32">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                                    £
-                                  </span>
-                                  <Input
-                                    type="number"
-                                    placeholder="0.00"
-                                    className="pl-7 h-8 text-sm"
-                                    onChange={(e) => store.setAllVariantPrices(e.target.value)}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="border rounded-lg overflow-hidden">
-                              <table className="w-full text-sm">
-                                <thead className="bg-muted/50">
-                                  <tr>
-                                    <th className="text-left px-4 py-2 font-medium">Variant</th>
-                                    <th className="text-left px-4 py-2 font-medium w-32">Price (£)</th>
-                                    <th className="text-left px-4 py-2 font-medium w-32">SKU</th>
-                                    <th className="text-left px-4 py-2 font-medium w-24">Qty</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                  {store.variantPrices.map((variant, idx) => (
-                                    <tr key={idx} className="hover:bg-muted/30">
-                                      <td className="px-4 py-2 font-medium">
-                                        {getVariantDisplayName(variant.optionValues)}
-                                      </td>
-                                      <td className="px-4 py-2">
-                                        <div className="relative">
-                                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                                            £
-                                          </span>
-                                          <Input
-                                            type="number"
-                                            placeholder="0.00"
-                                            className={`h-8 pl-5 text-sm ${!variant.price || parseFloat(variant.price) <= 0 ? "border-red-300 focus-visible:ring-red-400" : ""}`}
-                                            value={variant.price}
-                                            onChange={(e) => store.updateVariantPrice(idx, "price", e.target.value)}
-                                          />
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-2">
-                                        <Input
-                                          placeholder="Auto"
-                                          className="h-8 text-sm"
-                                          value={variant.sku}
-                                          onChange={(e) => store.updateVariantPrice(idx, "sku", e.target.value)}
-                                        />
-                                      </td>
-                                      <td className="px-4 py-2">
-                                        <Input
-                                          type="number"
-                                          min="1"
-                                          placeholder="1"
-                                          className={`h-8 text-sm ${!variant.quantity || parseInt(variant.quantity) <= 0 ? "border-red-300 focus-visible:ring-red-400" : ""}`}
-                                          value={variant.quantity}
-                                          onChange={(e) => store.updateVariantPrice(idx, "quantity", e.target.value)}
-                                        />
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-
-                            <p className="text-xs text-muted-foreground">
-                              SKU and barcodes will be auto-generated if left empty.
-                            </p>
-                          </div>
-                        </>
-                      )}
-
-                      {variantCombinations.length === 0 && store.options.length > 0 && (
-                        <div className="bg-muted/50 rounded-lg p-6 text-center">
-                          <p className="text-sm text-muted-foreground">
-                            Add option values above to generate variant combinations.
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Check className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Simple Product</h3>
-                      <p className="text-muted-foreground">
-                        This product doesn't have variants. A default variant will be created for
-                        you with the pricing and inventory settings from the previous step.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <VariantStep store={store} variantCombinations={variantCombinations} />
               )}
             </div>
           </div>
