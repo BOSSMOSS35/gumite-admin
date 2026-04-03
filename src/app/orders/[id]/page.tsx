@@ -52,6 +52,8 @@ import {
   Loader2,
   Printer,
   ExternalLink,
+  Download,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -62,6 +64,8 @@ import {
   getPaymentStatusDisplay,
   getFulfillmentStatusDisplay,
   getOrderStatusDisplay,
+  resendOrderReceipt,
+  regenerateOrderReceipt,
 } from "@/lib/api";
 import {
   useOrder,
@@ -401,6 +405,27 @@ export default function OrderDetailsPage() {
                       <DropdownMenuItem onClick={() => window.print()}>
                         <Printer className="mr-2 h-4 w-4" />
                         Print order
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          window.open(`/api/admin/orders/${orderId}/receipt`, "_blank");
+                        }}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Receipt
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={async () => {
+                          try {
+                            await resendOrderReceipt(orderId);
+                            toast.success("Receipt sent to customer");
+                          } catch {
+                            toast.error("Failed to resend receipt");
+                          }
+                        }}
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        Resend Receipt
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {canFulfill && (

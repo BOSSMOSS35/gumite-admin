@@ -414,6 +414,33 @@ export function getOrderStatusDisplay(status: OrderStatus): { label: string; col
 }
 
 // =============================================================================
+// Receipts API
+// =============================================================================
+
+export async function getOrderReceiptUrl(orderId: string): Promise<string> {
+  return `/admin/orders/${orderId}/receipt`;
+}
+
+export async function regenerateOrderReceipt(orderId: string): Promise<{ receiptNumber: string; fileName: string; generatedAt: string }> {
+  return apiFetch(`/admin/orders/${orderId}/receipt/generate`, { method: "POST" });
+}
+
+export async function resendOrderReceipt(orderId: string, email?: string): Promise<{ status: string }> {
+  return apiFetch(`/admin/orders/${orderId}/receipt/resend`, {
+    method: "POST",
+    body: JSON.stringify(email ? { email } : {}),
+  });
+}
+
+export async function getOrderReceiptInfo(orderId: string): Promise<{ id: string; receiptNumber: string; fileName: string; fileSize: number; generatedAt: string } | null> {
+  try {
+    return await apiFetch(`/admin/orders/${orderId}/receipt/info`);
+  } catch {
+    return null;
+  }
+}
+
+// =============================================================================
 // Returns API
 // =============================================================================
 
@@ -2188,6 +2215,17 @@ export async function activateCustomer(
 ): Promise<{ success: boolean; activatedAt: string }> {
   return apiFetch<{ success: boolean; activatedAt: string }>(
     `/admin/customers/${customerId}/activate`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+export async function restoreCustomer(
+  customerId: string
+): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(
+    `/admin/customers/${customerId}/restore`,
     {
       method: "POST",
     }
