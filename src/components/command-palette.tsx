@@ -2,499 +2,236 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from "@/components/ui/command";
-import {
-  ShoppingCart,
-  Package,
-  Users,
-  Warehouse,
-  Settings,
-  LayoutDashboard,
-  Plus,
-  Download,
-  Upload,
-  Search,
-  FileText,
-  Tags,
-  Percent,
-  Gift,
-  CreditCard,
-  Truck,
-  Globe,
-  Key,
-  User,
-  LogOut,
-  Sun,
-  Moon,
-  Monitor,
-  RefreshCw,
-  Bell,
-  HelpCircle,
-  MessageSquare,
-  Zap,
-  BarChart3,
-  ArrowRight,
-  Clock,
-  Star,
-  Keyboard,
-} from "lucide-react";
-
-type CommandAction = {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  shortcut?: string;
-  action: () => void;
-  keywords?: string[];
-};
-
-type CommandGroup = {
-  heading: string;
-  items: CommandAction[];
-};
+import { getImageUrl } from "@/lib/utils";
+import { getProducts, type ProductSummary } from "@/lib/api";
+import { Search, Package, Loader2, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 export function CommandPalette() {
-  const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
+  const [query, setQuery] = React.useState("");
+  const [results, setResults] = React.useState<ProductSummary[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [selectedIndex, setSelectedIndex] = React.useState(-1);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(null);
   const router = useRouter();
 
-  // Handle keyboard shortcut
+  // Search products when query changes
   React.useEffect(() => {
-    const down = (e: KeyboardEvent) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!query.trim()) {
+      setResults([]);
+      setIsOpen(false);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await getProducts({ q: query.trim(), start: 0, end: 10 });
+        setResults(res.content);
+        setIsOpen(true);
+        setSelectedIndex(-1);
+      } catch {
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query]);
+
+  // Close dropdown on outside click
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Keyboard navigation
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!isOpen || results.length === 0) {
+      if (e.key === "Escape") {
+        setQuery("");
+        setIsOpen(false);
+        inputRef.current?.blur();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedIndex >= 0 && results[selectedIndex]) {
+          navigateToProduct(results[selectedIndex].id);
+        } else if (results.length === 1) {
+          navigateToProduct(results[0].id);
+        }
+        break;
+      case "Escape":
+        setIsOpen(false);
+        setQuery("");
+        inputRef.current?.blur();
+        break;
+    }
+  }
+
+  function navigateToProduct(id: string) {
+    setQuery("");
+    setResults([]);
+    setIsOpen(false);
+    router.push(`/products/${id}`);
+  }
+
+  // Global Cmd+K shortcut to focus search
+  React.useEffect(() => {
+    function handleGlobalKey(e: KeyboardEvent) {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        inputRef.current?.focus();
       }
-      // Also support Escape to close
-      if (e.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    }
+    document.addEventListener("keydown", handleGlobalKey);
+    return () => document.removeEventListener("keydown", handleGlobalKey);
   }, []);
-
-  const runCommand = React.useCallback((command: () => void) => {
-    setOpen(false);
-    setSearch("");
-    command();
-  }, []);
-
-  // Navigation commands
-  const navigationCommands: CommandGroup = {
-    heading: "Navigation",
-    items: [
-      {
-        id: "dashboard",
-        label: "Dashboard",
-        icon: <LayoutDashboard className="h-4 w-4" />,
-        shortcut: "G D",
-        action: () => router.push("/"),
-        keywords: ["home", "overview", "analytics"],
-      },
-      {
-        id: "orders",
-        label: "Orders",
-        icon: <ShoppingCart className="h-4 w-4" />,
-        shortcut: "G O",
-        action: () => router.push("/orders"),
-        keywords: ["sales", "purchases", "transactions"],
-      },
-      {
-        id: "products",
-        label: "Products",
-        icon: <Package className="h-4 w-4" />,
-        shortcut: "G P",
-        action: () => router.push("/products"),
-        keywords: ["items", "catalog", "merchandise"],
-      },
-      {
-        id: "customers",
-        label: "Customers",
-        icon: <Users className="h-4 w-4" />,
-        shortcut: "G C",
-        action: () => router.push("/customers"),
-        keywords: ["users", "clients", "buyers"],
-      },
-      {
-        id: "inventory",
-        label: "Inventory",
-        icon: <Warehouse className="h-4 w-4" />,
-        shortcut: "G I",
-        action: () => router.push("/inventory"),
-        keywords: ["stock", "warehouse", "levels"],
-      },
-      {
-        id: "discounts",
-        label: "Discounts",
-        icon: <Percent className="h-4 w-4" />,
-        action: () => router.push("/discounts"),
-        keywords: ["promotions", "coupons", "sales", "offers"],
-      },
-      {
-        id: "gift-cards",
-        label: "Gift Cards",
-        icon: <Gift className="h-4 w-4" />,
-        action: () => router.push("/gift-cards"),
-        keywords: ["vouchers", "certificates"],
-      },
-      {
-        id: "collections",
-        label: "Collections",
-        icon: <Tags className="h-4 w-4" />,
-        action: () => router.push("/products/collections"),
-        keywords: ["categories", "groups"],
-      },
-    ],
-  };
-
-  // Quick Actions
-  const quickActions: CommandGroup = {
-    heading: "Quick Actions",
-    items: [
-      {
-        id: "new-order",
-        label: "Create New Order",
-        icon: <Plus className="h-4 w-4" />,
-        shortcut: "N O",
-        action: () => router.push("/orders/new"),
-        keywords: ["add", "new", "create order"],
-      },
-      {
-        id: "new-product",
-        label: "Add New Product",
-        icon: <Plus className="h-4 w-4" />,
-        shortcut: "N P",
-        action: () => router.push("/products?action=add"),
-        keywords: ["add", "new", "create product"],
-      },
-      {
-        id: "new-customer",
-        label: "Add New Customer",
-        icon: <Plus className="h-4 w-4" />,
-        shortcut: "N C",
-        action: () => router.push("/customers/new"),
-        keywords: ["add", "new", "create customer"],
-      },
-      {
-        id: "new-discount",
-        label: "Create Discount",
-        icon: <Plus className="h-4 w-4" />,
-        action: () => router.push("/discounts"),
-        keywords: ["add", "new", "promotion", "coupon"],
-      },
-      {
-        id: "export-orders",
-        label: "Export Orders",
-        icon: <Download className="h-4 w-4" />,
-        action: () => {
-          // Trigger export
-          alert("Exporting orders...");
-        },
-        keywords: ["download", "csv", "excel"],
-      },
-      {
-        id: "import-products",
-        label: "Import Products",
-        icon: <Upload className="h-4 w-4" />,
-        action: () => {
-          alert("Opening product import...");
-        },
-        keywords: ["upload", "bulk", "csv"],
-      },
-      {
-        id: "sync-inventory",
-        label: "Sync Inventory",
-        icon: <RefreshCw className="h-4 w-4" />,
-        action: () => {
-          alert("Syncing inventory...");
-        },
-        keywords: ["refresh", "update", "stock"],
-      },
-    ],
-  };
-
-  // Settings commands
-  const settingsCommands: CommandGroup = {
-    heading: "Settings",
-    items: [
-      {
-        id: "settings",
-        label: "Settings",
-        icon: <Settings className="h-4 w-4" />,
-        shortcut: "G S",
-        action: () => router.push("/settings"),
-        keywords: ["preferences", "configuration"],
-      },
-      {
-        id: "store-settings",
-        label: "Store Settings",
-        icon: <Globe className="h-4 w-4" />,
-        action: () => router.push("/settings/store"),
-        keywords: ["shop", "details"],
-      },
-      {
-        id: "regions",
-        label: "Regions",
-        icon: <Globe className="h-4 w-4" />,
-        action: () => router.push("/settings/regions"),
-        keywords: ["markets", "countries", "zones"],
-      },
-      {
-        id: "shipping",
-        label: "Shipping & Locations",
-        icon: <Truck className="h-4 w-4" />,
-        action: () => router.push("/settings/locations"),
-        keywords: ["fulfillment", "delivery", "warehouses"],
-      },
-      {
-        id: "payments",
-        label: "Payment Providers",
-        icon: <CreditCard className="h-4 w-4" />,
-        action: () => router.push("/settings/regions"),
-        keywords: ["stripe", "paypal", "checkout"],
-      },
-      {
-        id: "api-keys",
-        label: "API Keys",
-        icon: <Key className="h-4 w-4" />,
-        action: () => router.push("/settings/publishable-api-keys"),
-        keywords: ["tokens", "integration", "developer"],
-      },
-      {
-        id: "users",
-        label: "Team Members",
-        icon: <Users className="h-4 w-4" />,
-        action: () => router.push("/settings/users"),
-        keywords: ["staff", "admin", "permissions"],
-      },
-    ],
-  };
-
-  // User actions
-  const userActions: CommandGroup = {
-    heading: "Account",
-    items: [
-      {
-        id: "profile",
-        label: "My Profile",
-        icon: <User className="h-4 w-4" />,
-        action: () => router.push("/settings/profile"),
-        keywords: ["account", "personal"],
-      },
-      {
-        id: "notifications",
-        label: "Notifications",
-        icon: <Bell className="h-4 w-4" />,
-        action: () => {
-          alert("Opening notifications...");
-        },
-        keywords: ["alerts", "updates"],
-      },
-      {
-        id: "keyboard-shortcuts",
-        label: "Keyboard Shortcuts",
-        icon: <Keyboard className="h-4 w-4" />,
-        shortcut: "?",
-        action: () => {
-          alert("Showing keyboard shortcuts...");
-        },
-        keywords: ["hotkeys", "keys"],
-      },
-      {
-        id: "help",
-        label: "Help & Documentation",
-        icon: <HelpCircle className="h-4 w-4" />,
-        action: () => {
-          window.open("https://docs.medusajs.com", "_blank");
-        },
-        keywords: ["support", "docs", "guide"],
-      },
-      {
-        id: "feedback",
-        label: "Send Feedback",
-        icon: <MessageSquare className="h-4 w-4" />,
-        action: () => {
-          alert("Opening feedback form...");
-        },
-        keywords: ["report", "suggest"],
-      },
-      {
-        id: "logout",
-        label: "Log Out",
-        icon: <LogOut className="h-4 w-4" />,
-        action: () => {
-          if (confirm("Are you sure you want to log out?")) {
-            router.push("/login");
-          }
-        },
-        keywords: ["sign out", "exit"],
-      },
-    ],
-  };
-
-  // Theme commands
-  const themeCommands: CommandGroup = {
-    heading: "Appearance",
-    items: [
-      {
-        id: "theme-light",
-        label: "Light Mode",
-        icon: <Sun className="h-4 w-4" />,
-        action: () => {
-          document.documentElement.classList.remove("dark");
-          localStorage.setItem("theme", "light");
-        },
-        keywords: ["bright", "day"],
-      },
-      {
-        id: "theme-dark",
-        label: "Dark Mode",
-        icon: <Moon className="h-4 w-4" />,
-        action: () => {
-          document.documentElement.classList.add("dark");
-          localStorage.setItem("theme", "dark");
-        },
-        keywords: ["night"],
-      },
-      {
-        id: "theme-system",
-        label: "System Theme",
-        icon: <Monitor className="h-4 w-4" />,
-        action: () => {
-          localStorage.removeItem("theme");
-          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            document.documentElement.classList.add("dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-          }
-        },
-        keywords: ["auto", "default"],
-      },
-    ],
-  };
-
-  // Reports & Analytics
-  const reportsCommands: CommandGroup = {
-    heading: "Reports",
-    items: [
-      {
-        id: "inventory-report",
-        label: "Inventory Report",
-        icon: <FileText className="h-4 w-4" />,
-        action: () => router.push("/inventory"),
-        keywords: ["stock", "levels"],
-      },
-      {
-        id: "customer-report",
-        label: "Customer Report",
-        icon: <Users className="h-4 w-4" />,
-        action: () => router.push("/customers"),
-        keywords: ["users", "analytics"],
-      },
-    ],
-  };
-
-  const allGroups = [
-    navigationCommands,
-    quickActions,
-    settingsCommands,
-    reportsCommands,
-    themeCommands,
-    userActions,
-  ];
 
   return (
-    <>
-      {/* Trigger button for mobile / visual indicator */}
-      <button
-        onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-      >
-        <Search className="h-4 w-4" />
-        <span>Search...</span>
-        <kbd className="pointer-events-none ml-auto hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-          <span className="text-xs">⌘</span>K
-        </kbd>
-      </button>
-
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput
-          placeholder="Type a command or search..."
-          value={search}
-          onValueChange={setSearch}
+    <div ref={containerRef} className="relative hidden md:block">
+      {/* Inline search input */}
+      <div className="relative flex items-center">
+        <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Search products..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            if (query.trim() && results.length > 0) setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+          className="h-9 w-64 rounded-md border bg-background pl-9 pr-8 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all focus:w-80"
         />
-        <CommandList className="max-h-[400px]">
-          <CommandEmpty>
-            <div className="flex flex-col items-center gap-2 py-4">
-              <Search className="h-10 w-10 text-muted-foreground/50" />
-              <p>No results found.</p>
-              <p className="text-xs text-muted-foreground">
-                Try searching for something else
-              </p>
+        {isLoading && (
+          <Loader2 className="absolute right-8 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+        )}
+        {query && !isLoading && (
+          <button
+            onClick={() => {
+              setQuery("");
+              setResults([]);
+              setIsOpen(false);
+              inputRef.current?.focus();
+            }}
+            className="absolute right-8 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+        <kbd className="pointer-events-none absolute right-2 hidden h-5 select-none items-center rounded border bg-muted px-1 font-mono text-[10px] font-medium sm:flex">
+          ⌘K
+        </kbd>
+      </div>
+
+      {/* Dropdown results */}
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-1 w-96 max-h-[420px] overflow-auto rounded-md border bg-popover shadow-lg z-50">
+          {results.length === 0 && !isLoading ? (
+            <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
+              <Search className="h-8 w-8 opacity-40" />
+              <p className="text-sm">No products found for &quot;{query}&quot;</p>
             </div>
-          </CommandEmpty>
-
-          {allGroups.map((group, groupIndex) => (
-            <React.Fragment key={group.heading}>
-              <CommandGroup heading={group.heading}>
-                {group.items.map((item) => (
-                  <CommandItem
-                    key={item.id}
-                    value={`${item.label} ${item.keywords?.join(" ") || ""}`}
-                    onSelect={() => runCommand(item.action)}
-                    className="flex items-center gap-3"
+          ) : (
+            <div className="py-1">
+              <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                {results.length} product{results.length !== 1 ? "s" : ""} found
+              </div>
+              {results.map((product, index) => {
+                const thumb = getImageUrl(product.thumbnail);
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => navigateToProduct(product.id)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
+                      index === selectedIndex
+                        ? "bg-accent text-accent-foreground"
+                        : "hover:bg-accent/50"
+                    }`}
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md border bg-background">
-                      {item.icon}
+                    {/* Product thumbnail */}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted overflow-hidden">
+                      {thumb ? (
+                        <Image
+                          src={thumb}
+                          alt={product.title}
+                          width={40}
+                          height={40}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
-                    <div className="flex flex-col">
-                      <span>{item.label}</span>
-                    </div>
-                    {item.shortcut && (
-                      <CommandShortcut>{item.shortcut}</CommandShortcut>
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              {groupIndex < allGroups.length - 1 && <CommandSeparator />}
-            </React.Fragment>
-          ))}
-        </CommandList>
 
-        {/* Footer with keyboard hints */}
-        <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-muted px-1">↑</kbd>
-              <kbd className="rounded border bg-muted px-1">↓</kbd>
-              to navigate
+                    {/* Product info */}
+                    <div className="flex flex-1 flex-col min-w-0">
+                      <span className="truncate font-medium">{product.title}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {product.brandName && `${product.brandName} · `}
+                        {product.handle}
+                      </span>
+                    </div>
+
+                    {/* Status badge */}
+                    <StatusBadge status={product.status} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer hint */}
+          <div className="flex items-center justify-between border-t px-3 py-1.5 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <kbd className="rounded border bg-muted px-1">↑↓</kbd> navigate
+              <kbd className="rounded border bg-muted px-1">↵</kbd> open
+              <kbd className="rounded border bg-muted px-1">esc</kbd> close
             </span>
-            <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-muted px-1">↵</kbd>
-              to select
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-muted px-1">esc</kbd>
-              to close
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Zap className="h-3 w-3" />
-            <span>Powered by Gumite</span>
           </div>
         </div>
-      </CommandDialog>
-    </>
+      )}
+    </div>
   );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "published":
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300 text-[10px] px-1.5 py-0">Published</Badge>;
+    case "draft":
+      return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300 text-[10px] px-1.5 py-0">Draft</Badge>;
+    default:
+      return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{status}</Badge>;
+  }
 }
