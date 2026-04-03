@@ -408,7 +408,7 @@ export default function OrderDetailsPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
-                          window.open(`/api/admin/orders/${orderId}/receipt`, "_blank");
+                          window.open(`/admin/orders/${orderId}/receipt`, "_blank");
                         }}
                       >
                         <Download className="mr-2 h-4 w-4" />
