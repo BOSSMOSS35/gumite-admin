@@ -87,6 +87,9 @@ import {
   type ProductVariant,
   type ProductStatus,
   type UpdateProductInput,
+  type Brand,
+  getBrands,
+  createBrand,
   type CreateVariantInput,
   type UpdateVariantInput,
   type CreateOptionInput,
@@ -135,6 +138,11 @@ export default function ProductDetailPage() {
 
   const { data: collectionsData } = useCollections({ limit: 100 });
   const collections = collectionsData?.collections ?? [];
+
+  const [brands, setBrands] = useState<Brand[]>([]);
+  useEffect(() => {
+    getBrands().then(setBrands).catch(() => {});
+  }, []);
 
   // Mutations
   const updateProductMutation = useUpdateProduct();
@@ -196,6 +204,7 @@ export default function ProductDetailPage() {
     tags: [] as string[],
     categoryId: "",
     collectionId: "",
+    brandId: "",
   });
 
   // New tag input
@@ -227,6 +236,7 @@ export default function ProductDetailPage() {
         tags: product.tags || [],
         categoryId: product.categories?.[0] || "",
         collectionId: product.collectionId || "",
+        brandId: product.brandId || "",
       });
       setHasChanges(false);
     }
@@ -261,6 +271,7 @@ export default function ProductDetailPage() {
       tags: formData.tags.length > 0 ? formData.tags : undefined,
       categories: formData.categoryId ? [formData.categoryId] : undefined,
       collectionId: formData.collectionId || undefined,
+      brandId: formData.brandId || undefined,
     };
 
     updateProductMutation.mutate(
@@ -898,8 +909,19 @@ export default function ProductDetailPage() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <Label htmlFor="brand">Brand</Label>
-                  <Input id="brand" value={product.brandName || ""} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">Brand is set at product creation</p>
+                  <Select
+                    value={formData.brandId}
+                    onValueChange={(value) => updateField("brandId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
@@ -1369,10 +1391,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="vendor">Vendor</Label>
-                <Input id="vendor" value={product.brandName || ""} disabled className="bg-muted" />
-              </div>
             </CardContent>
           </Card>
 

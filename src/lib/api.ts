@@ -1166,6 +1166,36 @@ export async function getDraftOrders(params?: {
 }
 
 // =============================================================================
+// Brands API
+// =============================================================================
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  active: boolean;
+  tier: string;
+}
+
+export async function getBrands(q?: string): Promise<Brand[]> {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  const data = await apiFetch<{ brands: Brand[] }>(`/admin/brands?${params.toString()}`);
+  return data.brands;
+}
+
+export async function createBrand(name: string): Promise<Brand> {
+  const data = await apiFetch<{ brand: Brand }>("/admin/brands", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  return data.brand;
+}
+
+// =============================================================================
 // Products API
 // =============================================================================
 
@@ -1338,6 +1368,7 @@ export interface CreateProductInput {
   variants?: CreateProductVariantInput[];
   categoryIds?: string[];
   salesChannelIds?: string[];
+  brandId?: string;
 }
 
 // Get products list
@@ -1399,6 +1430,7 @@ export interface UpdateProductInput {
   categories?: string[];  // category IDs
   shippingProfileId?: string;
   metadata?: Record<string, unknown>;
+  brandId?: string;
 }
 
 // Update product

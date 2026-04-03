@@ -31,6 +31,7 @@ export interface ProductFormState {
   // Organize
   category: string;
   collection: string;
+  brandId: string;
   tags: string[];
 
   // Variants
@@ -200,6 +201,7 @@ const initialState: ProductFormState = {
   images: [],
   category: "",
   collection: "",
+  brandId: "",
   tags: [],
   options: [],
   variantPrices: [],

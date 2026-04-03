@@ -33,10 +33,13 @@ import {
 import {
   getCategories,
   getCollections,
+  getBrands,
+  createBrand,
   createProduct,
   uploadProductImage,
   type ProductCategory,
   type ProductCollection,
+  type Brand,
   type CreateProductInput,
 } from "@/lib/api";
 import {
@@ -637,6 +640,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   // Backend data (kept local — not form state)
   const [categories, setCategories] = React.useState<ProductCategory[]>([]);
   const [collections, setCollections] = React.useState<ProductCollection[]>([]);
+  const [brands, setBrands] = React.useState<Brand[]>([]);
   const [loadingData, setLoadingData] = React.useState(false);
 
   // --- Zustand store ---
@@ -662,9 +666,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     setLoadingData(true);
     store.setError(null);
     try {
-      const [categoriesRes, collectionsRes] = await Promise.allSettled([
+      const [categoriesRes, collectionsRes, brandsRes] = await Promise.allSettled([
         getCategories({ limit: 100 }),
         getCollections({ limit: 100 }),
+        getBrands(),
       ]);
 
       if (categoriesRes.status === "fulfilled") {
@@ -677,6 +682,12 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
         setCollections(collectionsRes.value.collections || []);
       } else {
         console.error("Failed to fetch collections:", collectionsRes.reason);
+      }
+
+      if (brandsRes.status === "fulfilled") {
+        setBrands(brandsRes.value || []);
+      } else {
+        console.error("Failed to fetch brands:", brandsRes.reason);
       }
     } catch (err) {
       console.error("Failed to fetch data:", err);
@@ -777,6 +788,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
         thumbnail: imageUrls.length > 0 ? imageUrls[0] : undefined,
         shippingProfileId: "default",
         categoryIds: store.category ? [store.category] : [],
+        brandId: store.brandId || undefined,
         options: store.hasVariants
           ? store.options.filter(o => o.name && o.values.some(v => v)).map(o => ({
               title: o.name,
@@ -1134,6 +1146,40 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                           disabled={loadingData}
                           loading={loadingData}
                         />
+                      </div>
+
+                      <div className="space-y-2 col-span-2 sm:col-span-1">
+                        <Label>Brand</Label>
+                        <Autocomplete
+                          options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                          value={store.brandId}
+                          onValueChange={(value) => store.setField("brandId", value)}
+                          placeholder="Select a brand"
+                          searchPlaceholder="Search brands..."
+                          emptyMessage="No brands found."
+                          disabled={loadingData}
+                          loading={loadingData}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground"
+                          onClick={async () => {
+                            const name = prompt("Enter brand name:");
+                            if (!name?.trim()) return;
+                            try {
+                              const brand = await createBrand(name.trim());
+                              setBrands((prev) => [...prev, brand]);
+                              store.setField("brandId", brand.id);
+                            } catch {
+                              store.setError("Failed to create brand");
+                            }
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add new brand
+                        </Button>
                       </div>
                     </div>
                   </div>
