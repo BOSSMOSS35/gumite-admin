@@ -10,6 +10,7 @@ import {
   logoutApi,
 } from "@/stores/auth-store";
 import type { LoginRequest, InternalUserInfo } from "@/lib/auth";
+import { isAdminUser } from "@/lib/auth";
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password", "/set-password"];
 
@@ -51,6 +52,8 @@ export function useAuth() {
   useEffect(() => {
     if (isLoading || isPublicRoute) return;
     if (isError || (data === null && !isAuthenticated)) {
+      logoutApi().then(() => router.push("/login"));
+    } else if (data && !isAdminUser(data)) {
       logoutApi().then(() => router.push("/login"));
     }
   }, [isLoading, isPublicRoute, isError, data, isAuthenticated, router]);

@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Star,
   HelpCircle,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -134,6 +135,11 @@ const navItems: NavItem[] = [
     title: "Pricing",
     url: "/pricing",
     icon: CreditCard,
+  },
+  {
+    title: "Support",
+    url: "/support",
+    icon: MessageSquare,
   },
   {
     title: "Reviews",

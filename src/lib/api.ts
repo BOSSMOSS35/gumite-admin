@@ -4693,3 +4693,102 @@ export async function forgotPassword(email: string): Promise<{ ok: boolean }> {
     body: JSON.stringify({ email }),
   });
 }
+
+// =============================================================================
+// Support Tickets API
+// =============================================================================
+
+export interface AdminSupportTicket {
+  id: string;
+  subject: string;
+  category: string;
+  status: string;
+  priority: string;
+  orderId: string | null;
+  orderDisplayId: number | null;
+  returnId: string | null;
+  productId: string | null;
+  productTitle: string | null;
+  customerEmail: string;
+  customerName: string;
+  assignedTo: { id: string; name: string; email: string } | null;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageAt: string | null;
+  messageCount: number;
+}
+
+export interface SupportMessage {
+  id: string;
+  senderType: string;
+  senderName: string | null;
+  body: string;
+  createdAt: string;
+}
+
+export interface AdminSupportTicketDetail extends AdminSupportTicket {
+  messages: SupportMessage[];
+}
+
+export interface SupportTicketListResponse {
+  tickets: AdminSupportTicket[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export interface SupportStatsResponse {
+  open: number;
+  awaitingCustomer: number;
+  awaitingAgent: number;
+  resolved: number;
+  closed: number;
+  unassigned: number;
+}
+
+export async function getSupportTickets(params?: {
+  status?: string;
+  category?: string;
+  assignedTo?: string;
+  q?: string;
+  offset?: number;
+  limit?: number;
+}): Promise<SupportTicketListResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.category) searchParams.set("category", params.category);
+  if (params?.assignedTo) searchParams.set("assignedTo", params.assignedTo);
+  if (params?.q) searchParams.set("q", params.q);
+  searchParams.set("offset", String(params?.offset ?? 0));
+  searchParams.set("limit", String(params?.limit ?? 20));
+  return apiFetch<SupportTicketListResponse>(`/admin/support/tickets?${searchParams}`);
+}
+
+export async function getSupportTicket(id: string): Promise<AdminSupportTicketDetail> {
+  return apiFetch<AdminSupportTicketDetail>(`/admin/support/tickets/${id}`);
+}
+
+export async function replySupportTicket(ticketId: string, body: string): Promise<SupportMessage> {
+  return apiFetch<SupportMessage>(`/admin/support/tickets/${ticketId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+}
+
+export async function assignSupportTicket(ticketId: string, agentId: string): Promise<void> {
+  return apiFetch<void>(`/admin/support/tickets/${ticketId}/assign`, {
+    method: "POST",
+    body: JSON.stringify({ agentId }),
+  });
+}
+
+export async function updateSupportTicketStatus(ticketId: string, status: string): Promise<void> {
+  return apiFetch<void>(`/admin/support/tickets/${ticketId}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function getSupportStats(): Promise<SupportStatsResponse> {
+  return apiFetch<SupportStatsResponse>(`/admin/support/stats`);
+}

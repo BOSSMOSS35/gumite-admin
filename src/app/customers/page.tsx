@@ -70,7 +70,7 @@ import { ChangeTierDialog } from "@/components/customers/ChangeTierDialog";
 import { CreateCustomerDialog } from "@/components/customers/CreateCustomerDialog";
 import { toast } from "sonner";
 import { useCustomerStore } from "@/stores/customer-store";
-import { useCustomers, useCustomerStats } from "@/hooks/use-customers";
+import { useCustomers, useCustomerStats, useActivateCustomer } from "@/hooks/use-customers";
 
 function getTierBadge(tier: CustomerTier) {
   const display = getTierDisplay(tier);
@@ -140,6 +140,8 @@ export default function CustomersPage() {
   } = useCustomers(queryParams);
 
   const { data: stats } = useCustomerStats();
+
+  const activateMutation = useActivateCustomer();
 
   const customers = customersData?.customers ?? [];
   const total = customersData?.count ?? 0;
@@ -379,7 +381,18 @@ export default function CustomersPage() {
                             <DropdownMenuItem
                               className="text-green-600"
                               onClick={() => {
-                                // TODO: Activate customer
+                                activateMutation.mutate(customer.id, {
+                                  onSuccess: () => {
+                                    toast.success("Customer account activated");
+                                  },
+                                  onError: (err) => {
+                                    toast.error(
+                                      err instanceof Error
+                                        ? err.message
+                                        : "Failed to activate customer"
+                                    );
+                                  },
+                                });
                               }}
                             >
                               <CheckCircle className="mr-2 h-4 w-4" />

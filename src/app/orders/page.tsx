@@ -60,6 +60,9 @@ import {
   getPaymentStatusDisplay,
   getFulfillmentStatusDisplay,
   createDraftOrder,
+  getProducts,
+  getProduct,
+  type Product,
 } from "@/lib/api";
 import { useOrders } from "@/hooks/use-orders";
 import { useOrderStore } from "@/stores/order-store";
@@ -105,13 +108,16 @@ export default function OrdersPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createForm, setCreateForm] = useState({
-    email: "",
-    note: "",
-    itemTitle: "",
-    itemQty: 1,
-    itemPrice: 0,
-  });
+  const [createEmail, setCreateEmail] = useState("");
+  const [createNote, setCreateNote] = useState("");
+
+  // Product search for order creation
+  const [productSearch, setProductSearch] = useState("");
+  const [productResults, setProductResults] = useState<{ id: string; title: string; thumbnail?: string }[]>([]);
+  const [productSearching, setProductSearching] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<import("@/lib/api").Product | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>("");
+  const [orderQty, setOrderQty] = useState(1);
 
   // Derive API filter params from active filter chips
   const paymentFilter = activeFilters.find((f) => f.id === "payment")?.value;
@@ -174,25 +180,77 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateOrder = async () => {
-    if (!createForm.email || !createForm.itemTitle || createForm.itemPrice <= 0) {
-      setCreateError("Email, item title, and price are required");
+  // Debounced product search
+  useEffect(() => {
+    if (!productSearch || productSearch.length < 2) {
+      setProductResults([]);
       return;
     }
+    const timer = setTimeout(async () => {
+      setProductSearching(true);
+      try {
+        const res = await getProducts({ q: productSearch, end: 8 });
+        setProductResults(res.content.map((p) => ({ id: p.id, title: p.title, thumbnail: p.thumbnail })));
+      } catch { setProductResults([]); }
+      finally { setProductSearching(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [productSearch]);
+
+  const handleSelectProduct = async (productId: string) => {
+    try {
+      const product = await getProduct(productId);
+      setSelectedProduct(product);
+      setSelectedVariantId(product.variants[0]?.id || "");
+      setProductSearch("");
+      setProductResults([]);
+    } catch { toast.error("Failed to load product"); }
+  };
+
+  const getSelectedVariant = () => selectedProduct?.variants.find((v) => v.id === selectedVariantId);
+
+  const getVariantPrice = () => {
+    const v = getSelectedVariant();
+    if (!v) return 0;
+    if (v.calculatedPrice) return v.calculatedPrice.calculatedAmount;
+    if (v.prices?.length) return v.prices[0].amount;
+    return 0;
+  };
+
+  const resetCreateForm = () => {
+    setCreateEmail("");
+    setCreateNote("");
+    setProductSearch("");
+    setProductResults([]);
+    setSelectedProduct(null);
+    setSelectedVariantId("");
+    setOrderQty(1);
+    setCreateError(null);
+  };
+
+  const handleCreateOrder = async () => {
+    if (!createEmail) { setCreateError("Customer email is required"); return; }
+    if (!selectedProduct || !selectedVariantId) { setCreateError("Select a product and variant"); return; }
+
+    const variant = getSelectedVariant();
+    if (!variant) { setCreateError("Select a variant"); return; }
+
+    const price = getVariantPrice();
     setCreateLoading(true);
     setCreateError(null);
     try {
       await createDraftOrder({
-        email: createForm.email,
-        note: createForm.note || undefined,
+        email: createEmail,
+        note: createNote || undefined,
         items: [{
-          title: createForm.itemTitle,
-          quantity: createForm.itemQty,
-          unitPrice: Math.round(createForm.itemPrice * 100), // convert to minor units
+          variantId: variant.id,
+          title: `${selectedProduct.title} — ${variant.title}`,
+          quantity: orderQty,
+          unitPrice: price,
         }],
       });
       setIsCreateOpen(false);
-      setCreateForm({ email: "", note: "", itemTitle: "", itemQty: 1, itemPrice: 0 });
+      resetCreateForm();
       toast.success("Draft order created");
       refetch();
     } catch (err) {
@@ -492,15 +550,15 @@ export default function OrdersPage() {
       </Card>
 
       {/* Create Draft Order Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetCreateForm(); }}>
+        <DialogContent className="sm:max-w-[540px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
               Create Draft Order
             </DialogTitle>
             <DialogDescription>
-              Manually create a draft order. You can fulfill and capture payment later.
+              Select a product, choose a variant, and create a draft order.
             </DialogDescription>
           </DialogHeader>
 
@@ -513,70 +571,126 @@ export default function OrdersPage() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="order-email">Customer Email *</Label>
+              <Label>Customer Email *</Label>
               <Input
-                id="order-email"
                 type="email"
                 placeholder="customer@example.com"
-                value={createForm.email}
-                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                value={createEmail}
+                onChange={(e) => setCreateEmail(e.target.value)}
               />
             </div>
 
+            {/* Product Search */}
             <div className="border rounded-lg p-3 space-y-3">
-              <p className="text-sm font-medium">Line Item</p>
-              <div className="grid gap-2">
-                <Label htmlFor="item-title">Item Title *</Label>
-                <Input
-                  id="item-title"
-                  placeholder="e.g. Custom alterations"
-                  value={createForm.itemTitle}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, itemTitle: e.target.value }))}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-2">
-                  <Label htmlFor="item-qty">Quantity</Label>
-                  <Input
-                    id="item-qty"
-                    type="number"
-                    min={1}
-                    value={createForm.itemQty}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, itemQty: parseInt(e.target.value) || 1 }))}
-                  />
+              <p className="text-sm font-medium">Product</p>
+
+              {selectedProduct ? (
+                <div className="flex items-center gap-3 p-2 bg-muted rounded-md">
+                  {selectedProduct.thumbnail && (
+                    <img src={selectedProduct.thumbnail} alt="" className="w-10 h-10 object-cover rounded" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{selectedProduct.title}</p>
+                    <p className="text-xs text-muted-foreground">{selectedProduct.variants.length} variant(s)</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedProduct(null); setSelectedVariantId(""); }}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="item-price">Unit Price (GBP) *</Label>
+              ) : (
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="item-price"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="0.00"
-                    value={createForm.itemPrice || ""}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, itemPrice: parseFloat(e.target.value) || 0 }))}
+                    placeholder="Search products..."
+                    className="pl-8"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
                   />
+                  {/* Search results dropdown */}
+                  {(productResults.length > 0 || productSearching) && (
+                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {productSearching ? (
+                        <div className="flex items-center justify-center py-4">
+                          <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : (
+                        productResults.map((p) => (
+                          <button
+                            key={p.id}
+                            className="flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-muted transition-colors"
+                            onClick={() => handleSelectProduct(p.id)}
+                          >
+                            {p.thumbnail && (
+                              <img src={p.thumbnail} alt="" className="w-8 h-8 object-cover rounded" />
+                            )}
+                            <span className="text-sm truncate">{p.title}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
+
+              {/* Variant selector */}
+              {selectedProduct && selectedProduct.variants.length > 0 && (
+                <div className="grid gap-2">
+                  <Label>Variant</Label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                    value={selectedVariantId}
+                    onChange={(e) => setSelectedVariantId(e.target.value)}
+                  >
+                    {selectedProduct.variants.map((v) => {
+                      const price = v.calculatedPrice?.calculatedAmount ?? v.prices?.[0]?.amount ?? 0;
+                      return (
+                        <option key={v.id} value={v.id}>
+                          {v.title} {v.sku ? `(${v.sku})` : ""} — {formatPrice(price, "GBP")}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              {/* Quantity + price display */}
+              {selectedProduct && selectedVariantId && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-2">
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={orderQty}
+                      onChange={(e) => setOrderQty(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Unit Price</Label>
+                    <div className="flex items-center h-9 px-3 rounded-md border bg-muted text-sm font-medium">
+                      {formatPrice(getVariantPrice(), "GBP")}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="order-note">Note (optional)</Label>
+              <Label>Note (optional)</Label>
               <Textarea
-                id="order-note"
                 placeholder="Internal note about this order..."
-                value={createForm.note}
-                onChange={(e) => setCreateForm((f) => ({ ...f, note: e.target.value }))}
+                value={createNote}
+                onChange={(e) => setCreateNote(e.target.value)}
                 rows={2}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+            <Button variant="outline" onClick={() => { setIsCreateOpen(false); resetCreateForm(); }}>
               Cancel
             </Button>
-            <Button onClick={handleCreateOrder} disabled={createLoading}>
+            <Button onClick={handleCreateOrder} disabled={createLoading || !selectedProduct || !selectedVariantId}>
               {createLoading ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

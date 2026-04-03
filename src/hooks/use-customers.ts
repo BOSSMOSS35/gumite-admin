@@ -15,6 +15,7 @@ import {
   changeCustomerTier,
   suspendCustomer,
   activateCustomer,
+  restoreCustomer,
   resetCustomerPassword,
   getCustomerGroups,
   createCustomerGroup,
@@ -263,6 +264,22 @@ export function useActivateCustomer() {
 
   return useMutation({
     mutationFn: (customerId: string) => activateCustomer(customerId),
+    onSuccess: (_data, customerId) => {
+      queryClient.invalidateQueries({
+        queryKey: customerKeys.detail(customerId),
+      });
+      queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: customerKeys.stats() });
+    },
+  });
+}
+
+/** Restore a soft-deleted customer. Invalidates detail + list + stats. */
+export function useRestoreCustomer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (customerId: string) => restoreCustomer(customerId),
     onSuccess: (_data, customerId) => {
       queryClient.invalidateQueries({
         queryKey: customerKeys.detail(customerId),
