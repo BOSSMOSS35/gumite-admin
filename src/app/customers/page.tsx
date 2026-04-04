@@ -51,6 +51,7 @@ import {
   Gift,
   CheckCircle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -62,6 +63,7 @@ import {
   formatDate,
   type CustomerTier,
   type CustomerStatus,
+  apiFetch,
 } from "@/lib/api";
 import { SendEmailDialog } from "@/components/customers/SendEmailDialog";
 import { SendGiftCardDialog } from "@/components/customers/SendGiftCardDialog";
@@ -189,6 +191,22 @@ export default function CustomersPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={async () => {
+              try {
+                const result = await apiFetch<{ updated: number; total: number }>("/admin/customers/recalculate-stats", { method: "POST" });
+                toast.success(`Updated ${result.updated} of ${result.total} customers`);
+                refetch();
+              } catch {
+                toast.error("Failed to recalculate stats");
+              }
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync Stats
+          </Button>
           <Button variant="outline" className="gap-2">
             <Download className="h-4 w-4" />
             Export
