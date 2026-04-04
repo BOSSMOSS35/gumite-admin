@@ -5,6 +5,7 @@ import {
   getReturns,
   getReturn,
   getReturnStats,
+  approveReturn,
   receiveReturn,
   processReturnRefund,
   rejectReturn,
@@ -75,6 +76,22 @@ export function useReturn(id: string) {
 // ============================================================================
 // Mutation Hooks
 // ============================================================================
+
+/**
+ * Hook for approving a return
+ */
+export function useApproveReturn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => approveReturn(id),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: returnKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: returnKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: returnKeys.stats() });
+    },
+  });
+}
 
 /**
  * Hook for marking a return as received

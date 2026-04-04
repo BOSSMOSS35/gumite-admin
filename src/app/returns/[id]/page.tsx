@@ -46,6 +46,7 @@ import {
 import { getImageUrl } from "@/lib/utils";
 import {
   useReturn,
+  useApproveReturn,
   useReceiveReturn,
   useProcessReturnRefund,
   useRejectReturn,
@@ -80,9 +81,27 @@ export default function ReturnDetailPage() {
     refetch,
   } = useReturn(returnId);
 
+  const approveMutation = useApproveReturn();
   const receiveMutation = useReceiveReturn();
   const refundMutation = useProcessReturnRefund();
   const rejectMutation = useRejectReturn();
+
+  const handleApprove = () => {
+    setActionError(null);
+    approveMutation.mutate(
+      { id: returnId },
+      {
+        onSuccess: () => {
+          toast.success("Return approved — customer has been notified");
+        },
+        onError: (err) => {
+          const message = err instanceof Error ? err.message : "Failed to approve return";
+          setActionError(message);
+          toast.error(message);
+        },
+      }
+    );
+  };
 
   const error = queryError?.message ?? null;
 
@@ -206,6 +225,13 @@ export default function ReturnDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          {returnData.canApprove && (
+            <Button onClick={handleApprove} disabled={approveMutation.isPending}>
+              {approveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Check className="h-4 w-4 mr-2" />
+              Approve
+            </Button>
+          )}
           {returnData.canReceive && (
             <Dialog
               open={receiveDialogOpen}

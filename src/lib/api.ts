@@ -479,6 +479,7 @@ export interface Return {
   returnDeadline: string;
   daysRemaining: number;
   refundId?: string;
+  canApprove: boolean;
   canReceive: boolean;
   canRefund: boolean;
   canReject: boolean;
@@ -541,6 +542,16 @@ export async function getReturn(id: string): Promise<{ returnRequest: Return }> 
 // Get return stats
 export async function getReturnStats(): Promise<ReturnStats> {
   return apiFetch<ReturnStats>("/admin/returns/stats");
+}
+
+// Approve a return
+export async function approveReturn(
+  id: string
+): Promise<{ returnRequest: Return; message: string }> {
+  return apiFetch<{ returnRequest: Return; message: string }>(`/admin/returns/${id}/approve`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
 }
 
 // Mark return as received
