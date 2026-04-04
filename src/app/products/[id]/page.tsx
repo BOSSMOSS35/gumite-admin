@@ -784,7 +784,7 @@ export default function ProductDetailPage() {
             variant="outline"
             size="sm"
             onClick={() => {
-              const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://gumite-storefront-apu1.runixcloud.dev";
+              const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://gumite.com";
               const handle = product?.handle || formData.handle;
               if (handle) {
                 window.open(`${storefrontUrl}/products/${handle}`, "_blank");
