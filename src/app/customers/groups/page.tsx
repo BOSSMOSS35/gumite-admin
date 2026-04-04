@@ -64,6 +64,7 @@ import {
 import {
   type CustomerGroup,
   type Customer,
+  type CustomerSummary,
   getCustomerName,
   getCustomerInitials,
 } from "@/lib/api";
@@ -426,7 +427,7 @@ function GroupDetailView({
 
   const members = membersData?.customers ?? [];
 
-  const handleRemove = async (customer: Customer) => {
+  const handleRemove = async (customer: CustomerSummary) => {
     try {
       await removeMutation.mutateAsync({
         customerId: customer.id,
@@ -583,7 +584,7 @@ function AddMembersDialog({
     (c) => !existingMemberIds.includes(c.id)
   );
 
-  const handleAdd = async (customer: Customer) => {
+  const handleAdd = async (customer: CustomerSummary) => {
     try {
       await addMutation.mutateAsync({
         customerId: customer.id,
