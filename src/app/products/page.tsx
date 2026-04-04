@@ -124,6 +124,7 @@ export default function ProductsPage() {
     end: pagination.end,
     q: filters.searchQuery || undefined,
     status: filters.status !== "all" ? filters.status : undefined,
+    categoryId: filters.categoryId !== "all" ? filters.categoryId : undefined,
   });
 
   const { data: categoriesData } = useCategories({ limit: 100 });

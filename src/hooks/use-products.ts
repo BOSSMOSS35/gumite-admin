@@ -38,6 +38,7 @@ interface UseProductsParams {
   end?: number;
   q?: string;
   status?: ProductStatus;
+  categoryId?: string;
 }
 
 export function useProducts(params?: UseProductsParams) {

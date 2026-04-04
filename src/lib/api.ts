@@ -1377,12 +1377,14 @@ export async function getProducts(params?: {
   end?: number;
   q?: string;
   status?: ProductStatus;
+  categoryId?: string;
 }): Promise<ProductsResponse> {
   const searchParams = new URLSearchParams();
   searchParams.set("_start", (params?.start ?? 0).toString());
   searchParams.set("_end", (params?.end ?? 20).toString());
   if (params?.q) searchParams.set("q", params.q);
   if (params?.status) searchParams.set("status", params.status);
+  if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
 
   const data = await apiFetch<{ content: Array<ProductSummary & { variants?: unknown[] }>; totalElements: number; totalPages: number; size: number; number: number }>(`/admin/products?${searchParams.toString()}`);
   return {

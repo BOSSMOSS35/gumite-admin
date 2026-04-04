@@ -6,7 +6,7 @@ import { getImageUrl } from "@/lib/utils";
 import { getProducts, type ProductSummary } from "@/lib/api";
 import { Search, Package, Loader2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
+
 
 export function CommandPalette() {
   const [query, setQuery] = React.useState("");
@@ -182,16 +182,19 @@ export function CommandPalette() {
                     {/* Product thumbnail */}
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted overflow-hidden">
                       {thumb ? (
-                        <Image
+                        <img
                           src={thumb}
                           alt={product.title}
                           width={40}
                           height={40}
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                          }}
                         />
-                      ) : (
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      )}
+                      ) : null}
+                      <Package className={`h-5 w-5 text-muted-foreground ${thumb ? "hidden" : ""}`} />
                     </div>
 
                     {/* Product info */}
