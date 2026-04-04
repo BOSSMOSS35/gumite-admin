@@ -253,8 +253,9 @@ export default function PricingPage() {
     if (isNaN(numericValue)) return;
 
     const newPriceCents = Math.round(numericValue * 100);
+    const existing = pendingChanges.get(variantId);
 
-    if (newPriceCents === originalPrice) {
+    if (newPriceCents === originalPrice && !existing?.compareAtPrice) {
       const newChanges = new Map(pendingChanges);
       newChanges.delete(variantId);
       setPendingChanges(newChanges);
@@ -264,9 +265,25 @@ export default function PricingPage() {
           variantId,
           originalPrice,
           newPrice: newPriceCents,
+          compareAtPrice: existing?.compareAtPrice,
         })
       );
     }
+  };
+
+  const handleCompareAtChange = (variantId: string, originalPrice: number, newValue: string) => {
+    const numericValue = newValue ? parseFloat(newValue.replace(/[^0-9.]/g, "")) : 0;
+    const compareAtCents = isNaN(numericValue) ? undefined : Math.round(numericValue * 100);
+    const existing = pendingChanges.get(variantId);
+
+    setPendingChanges(
+      new Map(pendingChanges).set(variantId, {
+        variantId,
+        originalPrice,
+        newPrice: existing?.newPrice ?? originalPrice,
+        compareAtPrice: compareAtCents || undefined,
+      })
+    );
   };
 
   const handleSaveChanges = async () => {
@@ -576,10 +593,29 @@ export default function PricingPage() {
                               <TableCell className="text-right font-medium">
                                 {formatPrice(item.currentPrice / 100, item.currencyCode)}
                               </TableCell>
-                              <TableCell className="text-right text-muted-foreground">
-                                {item.compareAtPrice
-                                  ? formatPrice(item.compareAtPrice / 100, item.currencyCode)
-                                  : "-"}
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <span className="text-muted-foreground">&pound;</span>
+                                  <Input
+                                    type="text"
+                                    className={`w-24 text-right ${
+                                      pendingChanges.get(item.variantId)?.compareAtPrice
+                                        ? "border-amber-400 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/20"
+                                        : ""
+                                    }`}
+                                    placeholder="-"
+                                    value={
+                                      pendingChanges.get(item.variantId)?.compareAtPrice
+                                        ? (pendingChanges.get(item.variantId)!.compareAtPrice! / 100).toFixed(2)
+                                        : item.compareAtPrice
+                                          ? (item.compareAtPrice / 100).toFixed(2)
+                                          : ""
+                                    }
+                                    onChange={(e) =>
+                                      handleCompareAtChange(item.variantId, item.currentPrice, e.target.value)
+                                    }
+                                  />
+                                </div>
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1">
