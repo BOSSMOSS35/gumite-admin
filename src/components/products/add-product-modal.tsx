@@ -685,7 +685,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       }
 
       if (brandsRes.status === "fulfilled") {
-        setBrands(brandsRes.value || []);
+        setBrands(brandsRes.value.brands || []);
       } else {
         console.error("Failed to fetch brands:", brandsRes.reason);
       }
@@ -1169,7 +1169,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                             const name = prompt("Enter brand name:");
                             if (!name?.trim()) return;
                             try {
-                              const brand = await createBrand(name.trim());
+                              const { brand } = await createBrand({ name: name.trim() });
                               setBrands((prev) => [...prev, brand]);
                               store.setField("brandId", brand.id);
                             } catch {

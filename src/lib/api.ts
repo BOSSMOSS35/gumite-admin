@@ -1178,21 +1178,68 @@ export interface Brand {
   websiteUrl?: string;
   active: boolean;
   tier: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export async function getBrands(q?: string): Promise<Brand[]> {
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  const data = await apiFetch<{ brands: Brand[] }>(`/admin/brands?${params.toString()}`);
-  return data.brands;
+export interface AdminBrandsResponse {
+  brands: Brand[];
+  count: number;
+  offset: number;
+  limit: number;
 }
 
-export async function createBrand(name: string): Promise<Brand> {
-  const data = await apiFetch<{ brand: Brand }>("/admin/brands", {
+export interface CreateBrandInput {
+  name: string;
+  description?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  tier?: string;
+}
+
+export interface UpdateBrandInput {
+  name?: string;
+  description?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  active?: boolean;
+  tier?: string;
+}
+
+export async function getBrands(params?: {
+  offset?: number;
+  limit?: number;
+  q?: string;
+}): Promise<AdminBrandsResponse> {
+  const query = new URLSearchParams();
+  if (params?.q) query.set("q", params.q);
+  if (params?.offset) query.set("offset", String(params.offset));
+  if (params?.limit) query.set("limit", String(params.limit));
+  return apiFetch<AdminBrandsResponse>(`/admin/brands?${query.toString()}`);
+}
+
+export async function getBrand(id: string): Promise<{ brand: Brand }> {
+  return apiFetch<{ brand: Brand }>(`/admin/brands/${id}`);
+}
+
+export async function createBrand(data: CreateBrandInput): Promise<{ brand: Brand }> {
+  return apiFetch<{ brand: Brand }>("/admin/brands", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(data),
   });
-  return data.brand;
+}
+
+export async function updateBrand(id: string, data: UpdateBrandInput): Promise<{ brand: Brand }> {
+  return apiFetch<{ brand: Brand }>(`/admin/brands/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteBrand(id: string): Promise<{ id: string; deleted: boolean }> {
+  return apiFetch<{ id: string; deleted: boolean }>(`/admin/brands/${id}`, {
+    method: "DELETE",
+  });
 }
 
 // =============================================================================

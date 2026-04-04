@@ -141,7 +141,7 @@ export default function ProductDetailPage() {
 
   const [brands, setBrands] = useState<Brand[]>([]);
   useEffect(() => {
-    getBrands().then(setBrands).catch(() => {});
+    getBrands().then((res) => setBrands(res.brands)).catch(() => {});
   }, []);
 
   // Mutations

@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   Store,
+  Stamp,
   Percent,
   Gift,
   CreditCard,
@@ -102,6 +103,11 @@ const navItems: NavItem[] = [
     title: "Categories",
     url: "/categories",
     icon: Tag,
+  },
+  {
+    title: "Brands",
+    url: "/brands",
+    icon: Stamp,
   },
   {
     title: "Inventory",
