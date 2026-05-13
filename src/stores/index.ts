@@ -1,4 +1,4 @@
-// Re-export all stores from @vernont/admin-ui
+// Re-export all stores from @bumahkib7/admin-ui
 // The stores are configured via setStoreConfig in the app layout
 
 export {
@@ -20,7 +20,7 @@ export {
   useReturnsStore,
   useWorkflowsStore,
   useDashboardStore,
-} from "@vernont/admin-ui/stores";
+} from "@bumahkib7/admin-ui/stores";
 
 // Re-export types
 export type {
@@ -58,4 +58,4 @@ export type {
   DashboardStats,
   ActivityItem,
   ConnectionStatus,
-} from "@vernont/admin-ui/stores";
+} from "@bumahkib7/admin-ui/stores";
