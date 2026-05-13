@@ -176,6 +176,7 @@ export default function ProductDetailPage() {
     manageInventory: true,
     allowBackorder: false,
     weight: "",
+    options: {} as Record<string, string>,
   });
 
   // Option modal state
@@ -334,12 +335,32 @@ export default function ProductDetailPage() {
       manageInventory: true,
       allowBackorder: false,
       weight: "",
+      options: {},
     });
     setVariantError(null);
   };
 
   const openAddVariantModal = () => {
-    resetVariantForm();
+    const defaultOptions =
+      product?.options.reduce<Record<string, string>>((acc, option) => {
+        acc[option.title] = option.values[0] || "";
+        return acc;
+      }, {}) ?? {};
+
+    setVariantForm({
+      title: "",
+      sku: "",
+      barcode: "",
+      price: "",
+      compareAtPrice: "",
+      currencyCode: "GBP",
+      inventoryQuantity: "",
+      manageInventory: true,
+      allowBackorder: false,
+      weight: "",
+      options: defaultOptions,
+    });
+    setVariantError(null);
     setShowAddVariantModal(true);
   };
 
@@ -357,6 +378,7 @@ export default function ProductDetailPage() {
       manageInventory: variant.manageInventory,
       allowBackorder: variant.allowBackorder,
       weight: variant.weight || "",
+      options: variant.options || {},
     });
     setVariantError(null);
     setShowEditVariantModal(true);
@@ -367,6 +389,18 @@ export default function ProductDetailPage() {
       setVariantError("Title is required");
       return;
     }
+
+    const optionValues = product.options.reduce<Record<string, string>>((acc, option) => {
+      const value = variantForm.options[option.title]?.trim();
+      if (value) acc[option.title] = value;
+      return acc;
+    }, {});
+
+    if (product.options.length > 0 && Object.keys(optionValues).length !== product.options.length) {
+      setVariantError("Select a value for every product option");
+      return;
+    }
+
     setVariantSaving(true);
     setVariantError(null);
 
@@ -392,6 +426,7 @@ export default function ProductDetailPage() {
               },
             ]
           : undefined,
+        options: Object.keys(optionValues).length > 0 ? optionValues : undefined,
       };
 
       await createVariant(product.id, input);
@@ -752,6 +787,10 @@ export default function ProductDetailPage() {
 
   const mainPrice = getMainPrice();
   const thumbnailUrl = getImageUrl(product.thumbnail) || getImageUrl(product.images[0]?.url);
+  const hasOptionVariantMismatch =
+    product.options.length > 1 &&
+    product.variants.length === 1 &&
+    Object.keys(product.variants[0]?.options || {}).length < product.options.length;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -1197,6 +1236,11 @@ export default function ProductDetailPage() {
               </Button>
             </CardHeader>
             <CardContent>
+              {hasOptionVariantMismatch && (
+                <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  This product has option values but only one linked variant. The storefront shows choices from variants, so these options will not appear as separate sizes until variants are generated.
+                </div>
+              )}
               <Tabs defaultValue="variants">
                 <TabsList>
                   <TabsTrigger value="variants">Variants ({product.variants.length})</TabsTrigger>
@@ -1484,6 +1528,56 @@ export default function ProductDetailPage() {
                 placeholder="e.g., Small / Black"
               />
             </div>
+            {product.options.length > 0 && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div>
+                  <Label>Option values *</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    These values connect this variant to the product options used by the storefront.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {product.options.map((option) => (
+                    <div key={option.id} className="space-y-2">
+                      <Label>{option.title}</Label>
+                      {option.values.length > 0 ? (
+                        <Select
+                          value={variantForm.options[option.title] || ""}
+                          onValueChange={(value) =>
+                            setVariantForm({
+                              ...variantForm,
+                              options: { ...variantForm.options, [option.title]: value },
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${option.title}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {option.values.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={variantForm.options[option.title] || ""}
+                          onChange={(e) =>
+                            setVariantForm({
+                              ...variantForm,
+                              options: { ...variantForm.options, [option.title]: e.target.value },
+                            })
+                          }
+                          placeholder={`Enter ${option.title}`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="variant-sku">SKU</Label>
