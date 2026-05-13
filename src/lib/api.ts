@@ -1815,6 +1815,16 @@ export interface UpdateVariantInput {
   options?: Record<string, string>;
 }
 
+export interface VariantOptionValidationResponse {
+  valid: boolean;
+  status: "VALID" | "DUPLICATE" | "INCOMPLETE" | "INVALID" | "NOT_FOUND" | string;
+  message?: string;
+  duplicateVariantId?: string;
+  duplicateVariantTitle?: string;
+  missingOptions?: string[];
+  invalidValues?: Record<string, string>;
+}
+
 // Create variant for a product
 export async function createVariant(
   productId: string,
@@ -1823,6 +1833,22 @@ export async function createVariant(
   return apiFetch<ProductVariant>(`/admin/variants?productId=${productId}`, {
     method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+export async function validateVariantOptions(
+  productId: string,
+  options: Record<string, string>,
+  variantId?: string,
+  signal?: AbortSignal
+): Promise<VariantOptionValidationResponse> {
+  const params = new URLSearchParams({ productId });
+  if (variantId) params.set("variantId", variantId);
+
+  return apiFetch<VariantOptionValidationResponse>(`/admin/variants/validate-options?${params.toString()}`, {
+    method: "POST",
+    body: JSON.stringify({ options }),
+    signal,
   });
 }
 

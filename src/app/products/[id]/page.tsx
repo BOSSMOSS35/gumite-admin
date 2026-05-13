@@ -74,6 +74,7 @@ import {
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   createVariant,
+  validateVariantOptions,
   generateProductVariants,
   updateVariant,
   deleteVariant,
@@ -93,6 +94,7 @@ import {
   createBrand,
   type CreateVariantInput,
   type UpdateVariantInput,
+  type VariantOptionValidationResponse,
   type CreateOptionInput,
   type UpdateOptionInput,
 } from "@/lib/api";
@@ -120,6 +122,14 @@ function getStatusBadge(status: ProductStatus) {
       return <Badge variant="secondary">{status}</Badge>;
   }
 }
+
+type VariantOptionValidationState =
+  | { status: "idle"; message?: string }
+  | { status: "checking"; message?: string }
+  | { status: "valid"; message?: string }
+  | { status: "incomplete"; message: string }
+  | { status: "duplicate"; message: string; duplicateVariantId?: string; duplicateVariantTitle?: string }
+  | { status: "invalid"; message: string };
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -165,6 +175,9 @@ export default function ProductDetailPage() {
   const [variantSaving, setVariantSaving] = useState(false);
   const [variantGenerating, setVariantGenerating] = useState(false);
   const [variantError, setVariantError] = useState<string | null>(null);
+  const [variantOptionValidation, setVariantOptionValidation] = useState<VariantOptionValidationState>({
+    status: "idle",
+  });
 
   // New variant form state
   const [variantForm, setVariantForm] = useState({
@@ -249,6 +262,128 @@ export default function ProductDetailPage() {
   const refetchProduct = () => {
     queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
   };
+
+  const currentVariantOptionValues = () => {
+    if (!product) return {};
+
+    return product.options.reduce<Record<string, string>>((acc, option) => {
+      const value = variantForm.options[option.title]?.trim();
+      if (value) acc[option.title] = value;
+      return acc;
+    }, {});
+  };
+
+  const localVariantOptionValidation = (
+    optionValues: Record<string, string>,
+    variantId?: string
+  ): VariantOptionValidationState => {
+    if (!product || product.options.length === 0) return { status: "idle" };
+
+    const missingOptions = product.options
+      .filter((option) => !optionValues[option.title]?.trim())
+      .map((option) => option.title);
+
+    if (missingOptions.length > 0) {
+      return {
+        status: "incomplete",
+        message: `Select a value for ${missingOptions.join(", ")}`,
+      };
+    }
+
+    const invalidOption = product.options.find((option) => {
+      const value = optionValues[option.title]?.trim();
+      return value && option.values.length > 0 && !option.values.includes(value);
+    });
+
+    if (invalidOption) {
+      return {
+        status: "invalid",
+        message: `${invalidOption.title} value is not configured for this product`,
+      };
+    }
+
+    const normalize = (value: string | undefined) => value?.trim().toLowerCase() || "";
+    const duplicate = product.variants.find((variant) => {
+      if (variant.id === variantId) return false;
+      return product.options.every(
+        (option) => normalize(variant.options?.[option.title]) === normalize(optionValues[option.title])
+      );
+    });
+
+    if (duplicate) {
+      return {
+        status: "duplicate",
+        message: `This combination already exists as variant "${duplicate.title}"`,
+        duplicateVariantId: duplicate.id,
+        duplicateVariantTitle: duplicate.title,
+      };
+    }
+
+    return { status: "valid", message: "Combination is available" };
+  };
+
+  const applyBackendVariantOptionValidation = (result: VariantOptionValidationResponse) => {
+    if (result.valid) {
+      setVariantOptionValidation({ status: "valid", message: "Combination is available" });
+      return;
+    }
+
+    if (result.status === "DUPLICATE") {
+      setVariantOptionValidation({
+        status: "duplicate",
+        message: result.message || "This option combination already exists",
+        duplicateVariantId: result.duplicateVariantId,
+        duplicateVariantTitle: result.duplicateVariantTitle,
+      });
+      return;
+    }
+
+    setVariantOptionValidation({
+      status: result.status === "INCOMPLETE" ? "incomplete" : "invalid",
+      message: result.message || "This option combination is not valid",
+    });
+  };
+
+  useEffect(() => {
+    const modalOpen = showAddVariantModal || showEditVariantModal;
+
+    if (!modalOpen || !product || product.options.length === 0) {
+      setVariantOptionValidation({ status: "idle" });
+      return;
+    }
+
+    const optionValues = currentVariantOptionValues();
+    const variantId = showEditVariantModal ? editingVariant?.id : undefined;
+    const localResult = localVariantOptionValidation(optionValues, variantId);
+    setVariantOptionValidation(localResult);
+
+    if (localResult.status !== "valid") return;
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      setVariantOptionValidation({ status: "checking", message: "Checking combination..." });
+      validateVariantOptions(product.id, optionValues, variantId, controller.signal)
+        .then(applyBackendVariantOptionValidation)
+        .catch((err) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setVariantOptionValidation({
+            status: "invalid",
+            message: "Could not validate this combination. Saving will run the final check.",
+          });
+        });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [
+    showAddVariantModal,
+    showEditVariantModal,
+    product,
+    editingVariant?.id,
+    variantForm.options,
+  ]);
 
   const updateField = <K extends keyof typeof formData>(
     field: K,
@@ -340,6 +475,7 @@ export default function ProductDetailPage() {
       options: {},
     });
     setVariantError(null);
+    setVariantOptionValidation({ status: "idle" });
   };
 
   const openAddVariantModal = () => {
@@ -363,6 +499,7 @@ export default function ProductDetailPage() {
       options: defaultOptions,
     });
     setVariantError(null);
+    setVariantOptionValidation({ status: "idle" });
     setShowAddVariantModal(true);
   };
 
@@ -383,6 +520,7 @@ export default function ProductDetailPage() {
       options: variant.options || {},
     });
     setVariantError(null);
+    setVariantOptionValidation({ status: "idle" });
     setShowEditVariantModal(true);
   };
 
@@ -773,6 +911,47 @@ export default function ProductDetailPage() {
   const getMainPrice = () => {
     if (!product?.variants?.[0]?.prices?.[0]) return null;
     return product.variants[0].prices[0];
+  };
+
+  const renderVariantOptionValidation = () => {
+    if (variantOptionValidation.status === "idle") return null;
+
+    const tone =
+      variantOptionValidation.status === "valid"
+        ? "border-green-200 bg-green-50 text-green-700"
+        : variantOptionValidation.status === "checking"
+          ? "border-blue-200 bg-blue-50 text-blue-700"
+          : "border-red-200 bg-red-50 text-red-700";
+
+    const icon =
+      variantOptionValidation.status === "valid" ? (
+        <Check className="mt-0.5 h-4 w-4 shrink-0" />
+      ) : variantOptionValidation.status === "checking" ? (
+        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+      ) : (
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+      );
+
+    return (
+      <div className={`flex gap-2 rounded-md border px-3 py-2 text-xs ${tone}`}>
+        {icon}
+        <div>
+          <p>{variantOptionValidation.message}</p>
+          {variantOptionValidation.status === "duplicate" && variantOptionValidation.duplicateVariantId && (
+            <button
+              type="button"
+              className="mt-1 underline"
+              onClick={() => {
+                const duplicate = product?.variants.find((variant) => variant.id === variantOptionValidation.duplicateVariantId);
+                if (duplicate) openEditVariantModal(duplicate);
+              }}
+            >
+              Open existing variant
+            </button>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Defined in @/lib/utils — imported at top
@@ -1660,6 +1839,7 @@ export default function ProductDetailPage() {
                     </div>
                   ))}
                 </div>
+                {renderVariantOptionValidation()}
               </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1859,6 +2039,7 @@ export default function ProductDetailPage() {
                     </div>
                   ))}
                 </div>
+                {renderVariantOptionValidation()}
               </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
