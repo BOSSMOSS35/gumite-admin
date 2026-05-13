@@ -74,6 +74,7 @@ import {
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   createVariant,
+  generateProductVariants,
   updateVariant,
   deleteVariant,
   addOption,
@@ -162,6 +163,7 @@ export default function ProductDetailPage() {
   const [showEditVariantModal, setShowEditVariantModal] = useState(false);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [variantSaving, setVariantSaving] = useState(false);
+  const [variantGenerating, setVariantGenerating] = useState(false);
   const [variantError, setVariantError] = useState<string | null>(null);
 
   // New variant form state
@@ -515,6 +517,27 @@ export default function ProductDetailPage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete variant");
+    }
+  };
+
+  const handleGenerateVariants = async () => {
+    if (!product) return;
+    setVariantGenerating(true);
+    setError(null);
+
+    try {
+      const result = await generateProductVariants(product.id);
+      setSuccess(
+        result.generated > 0
+          ? `Generated ${result.generated} missing variant${result.generated === 1 ? "" : "s"}`
+          : "All option combinations already have variants"
+      );
+      refetchProduct();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate variants");
+    } finally {
+      setVariantGenerating(false);
     }
   };
 
@@ -1243,10 +1266,27 @@ export default function ProductDetailPage() {
                   Manage product options and variants
                 </CardDescription>
               </div>
-              <Button size="sm" onClick={openAddVariantModal}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Variant
-              </Button>
+              <div className="flex gap-2">
+                {product.options.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateVariants}
+                    disabled={variantGenerating}
+                  >
+                    {variantGenerating ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="mr-2 h-4 w-4" />
+                    )}
+                    Generate Variants
+                  </Button>
+                )}
+                <Button size="sm" onClick={openAddVariantModal}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Variant
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {hasOptionVariantMismatch && (

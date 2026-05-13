@@ -1826,6 +1826,14 @@ export async function createVariant(
   });
 }
 
+export async function generateProductVariants(
+  productId: string
+): Promise<{ generated: number; product: Product }> {
+  return apiFetch<{ generated: number; product: Product }>(`/admin/products/${productId}/variants/generate`, {
+    method: "POST",
+  });
+}
+
 // Update variant
 export async function updateVariant(
   variantId: string,
