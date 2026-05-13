@@ -1260,10 +1260,10 @@ export default function ProductDetailPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="h-5 w-5" />
-                  Variants
+                  Options & Variants
                 </CardTitle>
                 <CardDescription>
-                  Manage product options and variants
+                  Options are customer choices. Variants are the purchasable rows with SKU, price, and inventory.
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -1279,7 +1279,7 @@ export default function ProductDetailPage() {
                     ) : (
                       <Copy className="mr-2 h-4 w-4" />
                     )}
-                    Generate Variants
+                    Generate missing variants
                   </Button>
                 )}
                 <Button size="sm" onClick={openAddVariantModal}>
@@ -1289,15 +1289,29 @@ export default function ProductDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 grid gap-3 rounded-md border bg-muted/30 p-4 text-sm md:grid-cols-3">
+                <div>
+                  <p className="font-medium">1. Define options</p>
+                  <p className="text-muted-foreground">Create choice groups like Size or Color.</p>
+                </div>
+                <div>
+                  <p className="font-medium">2. Generate variants</p>
+                  <p className="text-muted-foreground">Each option combination becomes one sellable variant.</p>
+                </div>
+                <div>
+                  <p className="font-medium">3. Edit each variant</p>
+                  <p className="text-muted-foreground">Set SKU, price, inventory, and assignments per row.</p>
+                </div>
+              </div>
               {hasOptionVariantMismatch && (
                 <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  This product has option values but only one linked variant. The storefront shows choices from variants, so these options will not appear as separate sizes until variants are generated.
+                  This product has option categories but only one linked variant. Use Generate missing variants so the storefront can show each choice separately.
                 </div>
               )}
               <Tabs defaultValue="variants">
                 <TabsList>
-                  <TabsTrigger value="variants">Variants ({product.variants.length})</TabsTrigger>
-                  <TabsTrigger value="options">Options ({product.options.length})</TabsTrigger>
+                  <TabsTrigger value="variants">Sellable variants ({product.variants.length})</TabsTrigger>
+                  <TabsTrigger value="options">Option categories ({product.options.length})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="variants" className="mt-4">
                   <Table>
@@ -1313,7 +1327,24 @@ export default function ProductDetailPage() {
                     <TableBody>
                       {product.variants.map((variant) => (
                         <TableRow key={variant.id}>
-                          <TableCell className="font-medium">{variant.title}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <p className="font-medium">{variant.title}</p>
+                              {Object.keys(variant.options || {}).length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {Object.entries(variant.options).map(([name, value]) => (
+                                    <Badge key={`${variant.id}-${name}`} variant="outline" className="font-normal">
+                                      {name}: {value}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : (
+                                product.options.length > 0 && (
+                                  <p className="text-xs text-amber-700">No option assignment</p>
+                                )
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-muted-foreground font-mono text-sm">
                             {variant.sku || "-"}
                           </TableCell>

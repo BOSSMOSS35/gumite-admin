@@ -165,6 +165,9 @@ type VariantStepProps = {
 
 function VariantStep({ store, variantCombinations }: VariantStepProps) {
   const [sizeSubType, setSizeSubType] = React.useState<"shoe" | "clothing" | null>(null);
+  const validOptionCount = store.options.filter((o) => o.name && o.values.some((v) => v)).length;
+  const canAddOption = store.options.length < 3;
+  const variantLimitExceeded = variantCombinations.length > 100;
 
   const handlePresetClick = (preset: "size" | "color" | "material" | "custom") => {
     if (preset === "size") {
@@ -269,14 +272,41 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
     <div className="space-y-8">
       {/* Options section */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Product Options</h2>
-          {store.options.length > 0 && (
-            <Button type="button" variant="outline" size="sm" onClick={store.addOption}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add option
-            </Button>
-          )}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Option categories</h2>
+              <p className="text-sm text-muted-foreground">
+                Add customer choice groups first. The system creates sellable variants from every combination.
+              </p>
+            </div>
+            {store.options.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={store.addOption}
+                disabled={!canAddOption}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add option
+              </Button>
+            )}
+          </div>
+          <div className="grid gap-3 rounded-md border bg-muted/30 p-3 text-sm md:grid-cols-3">
+            <div>
+              <p className="font-medium">Options</p>
+              <p className="text-muted-foreground">Examples: Size, Color, Material. No SKU or inventory lives here.</p>
+            </div>
+            <div>
+              <p className="font-medium">Values</p>
+              <p className="text-muted-foreground">Examples: S, M, L or Blue, Black. These are choices shoppers see.</p>
+            </div>
+            <div>
+              <p className="font-medium">Variants</p>
+              <p className="text-muted-foreground">Each combination gets its own price, SKU, and inventory row.</p>
+            </div>
+          </div>
         </div>
 
         {/* Empty state with presets */}
@@ -285,7 +315,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
             <div>
               <h3 className="text-base font-medium mb-1">What varies about this product?</h3>
               <p className="text-sm text-muted-foreground">
-                Pick a common option type or create your own.
+                Start with the choice group customers select from. Variants will be generated after values are added.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
@@ -458,6 +488,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                   size="sm"
                   className="h-7 text-xs"
                   onClick={() => handlePresetClick("size")}
+                  disabled={!canAddOption}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Size
@@ -470,6 +501,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                   size="sm"
                   className="h-7 text-xs"
                   onClick={() => handlePresetClick("color")}
+                  disabled={!canAddOption}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Color
@@ -482,12 +514,18 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                   size="sm"
                   className="h-7 text-xs"
                   onClick={() => handlePresetClick("material")}
+                  disabled={!canAddOption}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Material
                 </Button>
               )}
             </div>
+            {!canAddOption && (
+              <p className="text-xs text-muted-foreground">
+                Products can have up to 3 option categories.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -499,14 +537,25 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
 
           <div className="space-y-4">
             {/* Summary banner */}
-            <div className="bg-muted/50 rounded-lg px-4 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">
-                  {variantSummary.total} variant{variantSummary.total !== 1 ? "s" : ""} will be created
-                </p>
-                <p className="text-xs text-muted-foreground">{variantSummary.breakdown}</p>
-              </div>
-            </div>
+	            <div className={cn(
+	              "rounded-lg px-4 py-3 flex items-center justify-between",
+	              variantLimitExceeded ? "border border-red-200 bg-red-50" : "bg-muted/50"
+	            )}>
+	              <div>
+	                <p className={cn("text-sm font-medium", variantLimitExceeded && "text-red-900")}>
+	                  {variantSummary.total} variant{variantSummary.total !== 1 ? "s" : ""} will be created
+	                </p>
+	                <p className={cn("text-xs", variantLimitExceeded ? "text-red-700" : "text-muted-foreground")}>
+	                  {variantSummary.breakdown}
+	                  {validOptionCount > 0 && " from option values"}
+	                </p>
+	                {variantLimitExceeded && (
+	                  <p className="mt-1 text-xs text-red-700">
+	                    Reduce option values. A product can generate at most 100 variants.
+	                  </p>
+	                )}
+	              </div>
+	            </div>
 
             {/* Bulk actions */}
             <div className="flex items-center gap-3">
@@ -540,7 +589,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left px-4 py-2 font-medium">Variant</th>
+	                    <th className="text-left px-4 py-2 font-medium">Sellable variant</th>
                     <th className="text-left px-4 py-2 font-medium w-32">Price (£)</th>
                     <th className="text-left px-4 py-2 font-medium w-32">SKU</th>
                     <th className="text-left px-4 py-2 font-medium w-24">Qty</th>
@@ -710,8 +759,15 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       if (store.options.length === 0 || store.options.every(o => !o.name)) {
         return "Add at least one option (e.g., Size, Color).";
       }
+      const validOptions = store.options.filter(o => o.name && o.values.some(v => v));
+      if (validOptions.length > 3) {
+        return "Products can have at most 3 option categories.";
+      }
       if (store.variantPrices.length === 0) {
         return "No variants generated. Add option values to create variants.";
+      }
+      if (store.variantPrices.length > 100) {
+        return "Too many variants. Reduce option values to 100 variants or fewer.";
       }
       for (let i = 0; i < store.variantPrices.length; i++) {
         const vp = store.variantPrices[i];
