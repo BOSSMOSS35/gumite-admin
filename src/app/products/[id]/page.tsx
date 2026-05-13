@@ -443,10 +443,22 @@ export default function ProductDetailPage() {
   };
 
   const handleUpdateVariant = async () => {
-    if (!editingVariant || !variantForm.title.trim()) {
+    if (!product || !editingVariant || !variantForm.title.trim()) {
       setVariantError("Title is required");
       return;
     }
+
+    const optionValues = product.options.reduce<Record<string, string>>((acc, option) => {
+      const value = variantForm.options[option.title]?.trim();
+      if (value) acc[option.title] = value;
+      return acc;
+    }, {});
+
+    if (product.options.length > 0 && Object.keys(optionValues).length !== product.options.length) {
+      setVariantError("Select a value for every product option");
+      return;
+    }
+
     setVariantSaving(true);
     setVariantError(null);
 
@@ -470,6 +482,7 @@ export default function ProductDetailPage() {
               : undefined,
           },
         ],
+        options: Object.keys(optionValues).length > 0 ? optionValues : undefined,
       };
 
       await updateVariant(editingVariant.id, input);
@@ -1727,6 +1740,56 @@ export default function ProductDetailPage() {
                 placeholder="e.g., Small / Black"
               />
             </div>
+            {product.options.length > 0 && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div>
+                  <Label>Option values *</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    These values assign this variant to the storefront option choices.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {product.options.map((option) => (
+                    <div key={option.id} className="space-y-2">
+                      <Label>{option.title}</Label>
+                      {option.values.length > 0 ? (
+                        <Select
+                          value={variantForm.options[option.title] || ""}
+                          onValueChange={(value) =>
+                            setVariantForm({
+                              ...variantForm,
+                              options: { ...variantForm.options, [option.title]: value },
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${option.title}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {option.values.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={variantForm.options[option.title] || ""}
+                          onChange={(e) =>
+                            setVariantForm({
+                              ...variantForm,
+                              options: { ...variantForm.options, [option.title]: e.target.value },
+                            })
+                          }
+                          placeholder={`Enter ${option.title}`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-variant-sku">SKU</Label>

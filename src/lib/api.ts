@@ -1812,6 +1812,7 @@ export interface UpdateVariantInput {
   height?: string;
   width?: string;
   prices?: { currencyCode: string; amount: number; compareAtPrice?: number }[];
+  options?: Record<string, string>;
 }
 
 // Create variant for a product
