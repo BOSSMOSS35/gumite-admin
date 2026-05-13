@@ -56,10 +56,30 @@ export interface ProductFormState {
 
 // --- Helpers ---
 
+function splitOptionValue(value: string): string[] {
+  return value
+    .split(/[,;\r\n]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function normalizeOptionValues(values: string[]): string[] {
+  const normalized = values.flatMap(splitOptionValue);
+  const seen = new Set<string>();
+  return normalized.filter((value) => {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function generateVariantCombinations(
   options: ProductOption[]
 ): Record<string, string>[] {
-  const validOptions = options.filter((o) => o.name && o.values.some((v) => v));
+  const validOptions = options
+    .map((o) => ({ ...o, values: normalizeOptionValues(o.values) }))
+    .filter((o) => o.name && o.values.length > 0);
   if (validOptions.length === 0) return [];
 
   const cartesian = (arrays: string[][]): string[][] => {
@@ -72,7 +92,7 @@ function generateVariantCombinations(
   };
 
   const optionNames = validOptions.map((o) => o.name);
-  const optionValues = validOptions.map((o) => o.values.filter((v) => v));
+  const optionValues = validOptions.map((o) => o.values);
   const combinations = cartesian(optionValues);
 
   return combinations.map((combo) => {
@@ -302,11 +322,19 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
 
     updateOptionValue: (optionIndex, valueIndex, value) =>
       set((s) => {
+        const values = splitOptionValue(value);
         const newOptions = s.options.map((o, i) =>
           i === optionIndex
             ? {
                 ...o,
-                values: o.values.map((v, vi) => (vi === valueIndex ? value : v)),
+                values:
+                  values.length > 1
+                    ? [
+                        ...o.values.slice(0, valueIndex),
+                        ...values,
+                        ...o.values.slice(valueIndex + 1),
+                      ]
+                    : o.values.map((v, vi) => (vi === valueIndex ? value : v)),
               }
             : o
         );
@@ -334,7 +362,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
     // --- Bulk option helpers ---
     addOptionWithValues: (name, values) =>
       set((s) => {
-        const newOptions = [...s.options, { name, values }];
+        const newOptions = [...s.options, { name, values: normalizeOptionValues(values) }];
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
@@ -345,7 +373,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
     replaceOptionValues: (optionIndex, values) =>
       set((s) => {
         const newOptions = s.options.map((o, i) =>
-          i === optionIndex ? { ...o, values } : o
+          i === optionIndex ? { ...o, values: normalizeOptionValues(values) } : o
         );
         const combinations = generateVariantCombinations(newOptions);
         return {
