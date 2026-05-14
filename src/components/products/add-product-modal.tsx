@@ -35,13 +35,13 @@ import {
   getCollections,
   getBrands,
   createBrand,
-  createProduct,
   uploadProductImage,
   type ProductCategory,
   type ProductCollection,
   type Brand,
   type CreateProductInput,
 } from "@/lib/api";
+import { useCreateProduct } from "@/hooks/use-products";
 import {
   useProductFormStore,
   getVariantDisplayName,
@@ -695,6 +695,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   // --- Zustand store ---
   const store = useProductFormStore();
 
+  // --- React Query mutation for cache invalidation ---
+  const createProductMutation = useCreateProduct();
+
   const steps: Step[] = [
     { id: "details", label: "Details", status: store.currentStep === 0 ? "current" : store.currentStep > 0 ? "complete" : "upcoming" },
     { id: "organize", label: "Organize", status: store.currentStep === 1 ? "current" : store.currentStep > 1 ? "complete" : "upcoming" },
@@ -888,7 +891,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
             ],
       };
 
-      await createProduct(productInput);
+      await createProductMutation.mutateAsync(productInput);
       onSave?.(isDraft);
       handleClose();
     } catch (err) {

@@ -77,6 +77,7 @@ import {
   validateVariantOptions,
   generateProductVariants,
   uploadProductImage,
+  type Product,
   type ProductVariant,
   type ProductStatus,
   type UpdateProductInput,
@@ -108,6 +109,8 @@ import {
 } from "@/hooks/use-products";
 import { useCollections } from "@/hooks/use-collections";
 import { useQueryClient } from "@tanstack/react-query";
+import { OptionWizard } from "@/components/products/OptionWizard";
+import { ContextualHelpSidebar } from "@/components/products/ContextualHelpSidebar";
 
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
@@ -143,6 +146,7 @@ export default function ProductDetailPage() {
     data: product,
     isLoading: loading,
     error: productError,
+    refetch: refetchProduct,
   } = useProduct(productId === "new" ? undefined : productId);
 
   const { data: categoriesData } = useCategories({ limit: 100 });
@@ -212,6 +216,7 @@ export default function ProductDetailPage() {
   // Option modal state
   const [showAddOptionModal, setShowAddOptionModal] = useState(false);
   const [showEditOptionModal, setShowEditOptionModal] = useState(false);
+  const [useWizard, setUseWizard] = useState(true); // Use wizard by default
   const [editingOption, setEditingOption] = useState<{ id: string; title: string; values: string[] } | null>(null);
   const [optionError, setOptionError] = useState<string | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -822,6 +827,39 @@ export default function ProductDetailPage() {
         },
       }
     );
+  };
+
+  // Wizard completion handler
+  const handleWizardComplete = (options: Array<{ title: string; values: string[] }>) => {
+    if (!product) return;
+
+    // Add all options sequentially
+    let successCount = 0;
+    const totalOptions = options.length;
+
+    options.forEach((option, index) => {
+      const input: CreateOptionInput = {
+        title: option.title.trim(),
+        values: option.values,
+      };
+
+      addOptionMutation.mutate(
+        { productId: product.id, data: input },
+        {
+          onSuccess: () => {
+            successCount++;
+            if (successCount === totalOptions) {
+              setShowAddOptionModal(false);
+              setSuccess(`${totalOptions} option${totalOptions > 1 ? 's' : ''} added successfully`);
+              setTimeout(() => setSuccess(null), 3000);
+            }
+          },
+          onError: (err) => {
+            setOptionError(err instanceof Error ? err.message : `Failed to add option: ${option.title}`);
+          },
+        }
+      );
+    });
   };
 
   // Image handlers
@@ -2239,74 +2277,95 @@ export default function ProductDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Option Modal */}
-      <Dialog open={showAddOptionModal} onOpenChange={setShowAddOptionModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Option</DialogTitle>
-            <DialogDescription>
-              Options define product variations. Each option can have multiple values.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Guidance Card */}
-            <div className="rounded-lg border bg-blue-50 p-3 space-y-2">
-              <div className="flex items-start gap-2">
-                <div className="text-blue-600 mt-0.5">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+      {/* Add Option Modal - Wizard or Advanced */}
+      <Dialog open={showAddOptionModal} onOpenChange={(open) => {
+        setShowAddOptionModal(open);
+        if (!open) {
+          // Reset wizard mode when closing
+          setUseWizard(true);
+          resetOptionForm();
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {useWizard ? (
+            <OptionWizard
+              onComplete={handleWizardComplete}
+              onCancel={() => {
+                setShowAddOptionModal(false);
+                setUseWizard(true);
+                resetOptionForm();
+              }}
+              existingOptions={product?.options?.map(opt => ({ title: opt.title, values: opt.values })) || []}
+            />
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Add Option (Advanced Mode)</DialogTitle>
+                <DialogDescription>
+                  Options define product variations. Each option can have multiple values.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {/* Guidance Card */}
+                <div className="rounded-lg border bg-blue-50 p-3 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <div className="text-blue-600 mt-0.5">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 text-xs text-blue-900 space-y-1">
+                      <p className="font-medium">How options work:</p>
+                      <ul className="list-disc list-inside space-y-0.5 text-blue-800">
+                        <li><strong>Option Name</strong> is the category (e.g., "Size", "Color")</li>
+                        <li><strong>Values</strong> are ALL the choices for that category</li>
+                        <li>Example: Option "Size" with values "S, M, L, XL"</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 text-xs text-blue-900 space-y-1">
-                  <p className="font-medium">How options work:</p>
-                  <ul className="list-disc list-inside space-y-0.5 text-blue-800">
-                    <li><strong>Option Name</strong> is the category (e.g., "Size", "Color")</li>
-                    <li><strong>Values</strong> are ALL the choices for that category</li>
-                    <li>Example: Option "Size" with values "S, M, L, XL"</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
 
-            {optionError && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {optionError}
+                {optionError && (
+                  <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                    {optionError}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="option-title">Option Name *</Label>
+                  <Input
+                    id="option-title"
+                    value={optionForm.title}
+                    onChange={(e) => setOptionForm({ ...optionForm, title: e.target.value })}
+                    placeholder="Size"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Common names: Size, Color, Material, Style
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="option-values">Values * (comma-separated)</Label>
+                  <Input
+                    id="option-values"
+                    value={optionForm.values}
+                    onChange={(e) => setOptionForm({ ...optionForm, values: e.target.value })}
+                    placeholder="S, M, L, XL"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    List ALL values for this option. For sizes: "54, 56, 58, 60, S, M, L, XL"
+                  </p>
+                </div>
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="option-title">Option Name *</Label>
-              <Input
-                id="option-title"
-                value={optionForm.title}
-                onChange={(e) => setOptionForm({ ...optionForm, title: e.target.value })}
-                placeholder="Size"
-              />
-              <p className="text-xs text-muted-foreground">
-                Common names: Size, Color, Material, Style
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="option-values">Values * (comma-separated)</Label>
-              <Input
-                id="option-values"
-                value={optionForm.values}
-                onChange={(e) => setOptionForm({ ...optionForm, values: e.target.value })}
-                placeholder="S, M, L, XL"
-              />
-              <p className="text-xs text-muted-foreground">
-                List ALL values for this option. For sizes: "54, 56, 58, 60, S, M, L, XL"
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddOptionModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddOption} disabled={optionSaving}>
-              {optionSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add Option
-            </Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddOptionModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddOption} disabled={optionSaving}>
+                  {optionSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Add Option
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
