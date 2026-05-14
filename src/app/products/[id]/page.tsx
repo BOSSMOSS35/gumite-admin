@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -202,6 +203,7 @@ export default function ProductDetailPage() {
   const [variantBulkPrice, setVariantBulkPrice] = useState("");
   const [variantBulkQuantity, setVariantBulkQuantity] = useState("");
   const [variantTableDrafts, setVariantTableDrafts] = useState<Record<string, VariantTableDraft>>({});
+  const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, boolean>>({});
   const [savingVariantIds, setSavingVariantIds] = useState<Record<string, boolean>>({});
   const [bulkVariantSaving, setBulkVariantSaving] = useState<"price" | "quantity" | null>(null);
   const [variantError, setVariantError] = useState<string | null>(null);
@@ -309,7 +311,18 @@ export default function ProductDetailPage() {
 
       return next;
     });
+
+    setSelectedVariantIds((current) => {
+      const activeVariantIds = new Set(product.variants.map((variant) => variant.id));
+      return Object.fromEntries(
+        Object.entries(current).filter(([variantId, selected]) => selected && activeVariantIds.has(variantId))
+      );
+    });
   }, [product]);
+
+  const selectedVariantCount = product?.variants.filter((variant) => selectedVariantIds[variant.id]).length ?? 0;
+  const allVariantsSelected =
+    !!product?.variants.length && selectedVariantCount === product.variants.length;
 
   // Calculate total possible variant combinations
   const calculatePossibleVariants = (product: Product) => {
@@ -572,6 +585,23 @@ export default function ProductDetailPage() {
     }));
   };
 
+  const toggleVariantSelection = (variantId: string, selected: boolean) => {
+    setSelectedVariantIds((current) => ({
+      ...current,
+      [variantId]: selected,
+    }));
+  };
+
+  const toggleAllVariantSelection = (selected: boolean) => {
+    if (!product) return;
+
+    setSelectedVariantIds(
+      selected
+        ? Object.fromEntries(product.variants.map((variant) => [variant.id, true]))
+        : {}
+    );
+  };
+
   const hasVariantTableChanges = (variant: ProductVariant) => {
     const draft = getVariantTableDraft(variant);
     return (
@@ -661,8 +691,15 @@ export default function ProductDetailPage() {
     setError(null);
 
     try {
+      const targetVariants = product.variants.filter((variant) => selectedVariantIds[variant.id]);
+
+      if (targetVariants.length === 0) {
+        setError("Select at least one variant to bulk edit");
+        return;
+      }
+
       await Promise.all(
-        product.variants.map((variant) => {
+        targetVariants.map((variant) => {
           const draft = {
             ...getVariantTableDraft(variant),
             [field === "price" ? "price" : "inventoryQuantity"]: rawValue,
@@ -678,7 +715,7 @@ export default function ProductDetailPage() {
 
       setVariantTableDrafts((current) => {
         const next = { ...current };
-        product.variants.forEach((variant) => {
+        targetVariants.forEach((variant) => {
           next[variant.id] = {
             ...getVariantTableDraft(variant),
             [field === "price" ? "price" : "inventoryQuantity"]: rawValue,
@@ -688,7 +725,7 @@ export default function ProductDetailPage() {
       });
       if (field === "price") setVariantBulkPrice("");
       if (field === "quantity") setVariantBulkQuantity("");
-      setSuccess(`Updated ${field === "price" ? "prices" : "available quantities"} for ${product.variants.length} variants`);
+      setSuccess(`Updated ${field === "price" ? "prices" : "available quantities"} for ${targetVariants.length} variants`);
       setTimeout(() => setSuccess(null), 3000);
       refetchProduct();
     } catch (err) {
@@ -1861,7 +1898,23 @@ export default function ProductDetailPage() {
 
                   {product.variants.length > 0 && (
                     <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 md:grid-cols-2">
-                      <div className="flex flex-col gap-2 sm:flex-row">
+                      <div className="flex flex-col gap-2">
+                        <div className="text-xs text-muted-foreground">
+                          {selectedVariantCount > 0
+                            ? `${selectedVariantCount} variant${selectedVariantCount === 1 ? "" : "s"} selected for bulk edits`
+                            : "Select variants below before applying bulk edits"}
+                          {selectedVariantCount > 0 && (
+                            <Button
+                              type="button"
+                              variant="link"
+                              className="ml-2 h-auto p-0 text-xs"
+                              onClick={() => toggleAllVariantSelection(false)}
+                            >
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row">
                         <Input
                           type="number"
                           min="0"
@@ -1874,11 +1927,12 @@ export default function ProductDetailPage() {
                         <Button
                           variant="outline"
                           onClick={() => applyBulkVariantField("price")}
-                          disabled={bulkVariantSaving !== null || product.variants.length === 0}
+                          disabled={bulkVariantSaving !== null || selectedVariantCount === 0}
                         >
                           {bulkVariantSaving === "price" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Apply price to all
+                          Apply price to selected
                         </Button>
+                        </div>
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row md:justify-end">
                         <Input
@@ -1893,10 +1947,10 @@ export default function ProductDetailPage() {
                         <Button
                           variant="outline"
                           onClick={() => applyBulkVariantField("quantity")}
-                          disabled={bulkVariantSaving !== null || product.variants.length === 0}
+                          disabled={bulkVariantSaving !== null || selectedVariantCount === 0}
                         >
                           {bulkVariantSaving === "quantity" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Apply quantity to all
+                          Apply quantity to selected
                         </Button>
                       </div>
                     </div>
@@ -1906,6 +1960,13 @@ export default function ProductDetailPage() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/30">
+                          <TableHead className="w-[44px]">
+                            <Checkbox
+                              checked={allVariantsSelected}
+                              onCheckedChange={(checked) => toggleAllVariantSelection(checked === true)}
+                              aria-label="Select all variants"
+                            />
+                          </TableHead>
                           <TableHead>Variant</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Available</TableHead>
@@ -1916,7 +1977,7 @@ export default function ProductDetailPage() {
                       <TableBody>
                         {product.variants.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={5} className="py-8 text-center">
+                            <TableCell colSpan={6} className="py-8 text-center">
                               <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-sm text-muted-foreground">
                                 <Package className="h-8 w-8" />
                                 <div>
@@ -1945,9 +2006,17 @@ export default function ProductDetailPage() {
                           const draft = getVariantTableDraft(variant);
                           const hasChanges = hasVariantTableChanges(variant);
                           const isSaving = savingVariantIds[variant.id] || false;
+                          const isSelected = selectedVariantIds[variant.id] || false;
 
                           return (
                             <TableRow key={variant.id}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) => toggleVariantSelection(variant.id, checked === true)}
+                                  aria-label={`Select ${variant.title}`}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div className="font-medium">{variant.title}</div>
                               </TableCell>
