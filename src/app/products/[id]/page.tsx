@@ -2286,7 +2286,7 @@ export default function ProductDetailPage() {
           resetOptionForm();
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
           {useWizard ? (
             <OptionWizard
               onComplete={handleWizardComplete}

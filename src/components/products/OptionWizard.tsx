@@ -97,9 +97,9 @@ export function OptionWizard({
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full max-h-[85vh] flex-col">
       {/* ━━━ Header with Progress ━━━ */}
-      <div className="space-y-3">
+      <div className="space-y-3 border-b border-border p-6 pb-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-lg">Add Product Options</h3>
           <button
@@ -160,7 +160,7 @@ export function OptionWizard({
       </div>
 
       {/* ━━━ Step Content ━━━ */}
-      <div className="min-h-[400px]">
+      <div className="flex-1 overflow-y-auto p-6">
         {/* Step 1: Choose Template */}
         {currentStep === "choose-template" && (
           <div className="space-y-3">
@@ -332,7 +332,7 @@ export function OptionWizard({
       </div>
 
       {/* ━━━ Footer Actions ━━━ */}
-      <div className="border-t border-border pt-3">
+      <div className="shrink-0 border-t border-border p-6 pt-3">
         <button
           onClick={onCancel}
           className="text-xs text-muted-foreground hover:text-foreground hover:underline"
