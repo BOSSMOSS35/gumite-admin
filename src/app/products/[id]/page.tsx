@@ -60,6 +60,7 @@ import {
   Check,
   Star,
   GripVertical,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -73,19 +74,9 @@ import {
 } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
-  createVariant,
   validateVariantOptions,
   generateProductVariants,
-  updateVariant,
-  deleteVariant,
-  addOption,
-  updateOption,
-  deleteOption,
   uploadProductImage,
-  addProductImage,
-  deleteProductImage,
-  reorderProductImages,
-  setProductThumbnail,
   type ProductVariant,
   type ProductStatus,
   type UpdateProductInput,
@@ -104,6 +95,16 @@ import {
   useDeleteProduct,
   useCategories,
   productKeys,
+  useCreateVariant,
+  useUpdateVariant,
+  useDeleteVariant,
+  useAddOption,
+  useUpdateOption,
+  useDeleteOption,
+  useAddProductImage,
+  useDeleteProductImage,
+  useReorderProductImages,
+  useSetProductThumbnail,
 } from "@/hooks/use-products";
 import { useCollections } from "@/hooks/use-collections";
 import { useQueryClient } from "@tanstack/react-query";
@@ -159,6 +160,22 @@ export default function ProductDetailPage() {
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
 
+  // Variant mutations
+  const createVariantMutation = useCreateVariant();
+  const updateVariantMutation = useUpdateVariant();
+  const deleteVariantMutation = useDeleteVariant();
+
+  // Option mutations
+  const addOptionMutation = useAddOption();
+  const updateOptionMutation = useUpdateOption();
+  const deleteOptionMutation = useDeleteOption();
+
+  // Image mutations
+  const addProductImageMutation = useAddProductImage();
+  const deleteProductImageMutation = useDeleteProductImage();
+  const reorderProductImagesMutation = useReorderProductImages();
+  const setProductThumbnailMutation = useSetProductThumbnail();
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -166,13 +183,11 @@ export default function ProductDetailPage() {
 
   // Drag and drop state for images
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
-  const [reordering, setReordering] = useState(false);
 
   // Variant modal state
   const [showAddVariantModal, setShowAddVariantModal] = useState(false);
   const [showEditVariantModal, setShowEditVariantModal] = useState(false);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
-  const [variantSaving, setVariantSaving] = useState(false);
   const [variantGenerating, setVariantGenerating] = useState(false);
   const [variantError, setVariantError] = useState<string | null>(null);
   const [variantOptionValidation, setVariantOptionValidation] = useState<VariantOptionValidationState>({
@@ -198,7 +213,6 @@ export default function ProductDetailPage() {
   const [showAddOptionModal, setShowAddOptionModal] = useState(false);
   const [showEditOptionModal, setShowEditOptionModal] = useState(false);
   const [editingOption, setEditingOption] = useState<{ id: string; title: string; values: string[] } | null>(null);
-  const [optionSaving, setOptionSaving] = useState(false);
   const [optionError, setOptionError] = useState<string | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
 
@@ -258,9 +272,15 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
-  // Helper to refetch product after sub-resource mutations (variants, options, images)
-  const refetchProduct = () => {
-    queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
+  // Derive saving states from mutations
+  const variantSaving = createVariantMutation.isPending || updateVariantMutation.isPending;
+  const optionSaving = addOptionMutation.isPending || updateOptionMutation.isPending;
+  const reordering = reorderProductImagesMutation.isPending || setProductThumbnailMutation.isPending;
+
+  // Calculate total possible variant combinations
+  const calculatePossibleVariants = (product: Product) => {
+    if (!product.options || product.options.length === 0) return 1;
+    return product.options.reduce((total, option) => total * (option.values?.length || 1), 1);
   };
 
   const currentVariantOptionValues = () => {
@@ -524,7 +544,7 @@ export default function ProductDetailPage() {
     setShowEditVariantModal(true);
   };
 
-  const handleAddVariant = async () => {
+  const handleAddVariant = () => {
     if (!product || !variantForm.title.trim()) {
       setVariantError("Title is required");
       return;
@@ -541,48 +561,49 @@ export default function ProductDetailPage() {
       return;
     }
 
-    setVariantSaving(true);
     setVariantError(null);
 
-    try {
-      const input: CreateVariantInput = {
-        title: variantForm.title.trim(),
-        sku: variantForm.sku || undefined,
-        barcode: variantForm.barcode || undefined,
-        manageInventory: variantForm.manageInventory,
-        allowBackorder: variantForm.allowBackorder,
-        inventoryQuantity: variantForm.inventoryQuantity
-          ? parseInt(variantForm.inventoryQuantity, 10)
-          : undefined,
-        weight: variantForm.weight || undefined,
-        prices: variantForm.price
-          ? [
-              {
-                currencyCode: variantForm.currencyCode,
-                amount: parseFloat(variantForm.price),
-                compareAtPrice: variantForm.compareAtPrice
-                  ? parseFloat(variantForm.compareAtPrice)
-                  : undefined,
-              },
-            ]
-          : undefined,
-        options: Object.keys(optionValues).length > 0 ? optionValues : undefined,
-      };
+    const input: CreateVariantInput = {
+      title: variantForm.title.trim(),
+      sku: variantForm.sku || undefined,
+      barcode: variantForm.barcode || undefined,
+      manageInventory: variantForm.manageInventory,
+      allowBackorder: variantForm.allowBackorder,
+      inventoryQuantity: variantForm.inventoryQuantity
+        ? parseInt(variantForm.inventoryQuantity, 10)
+        : undefined,
+      weight: variantForm.weight || undefined,
+      prices: variantForm.price
+        ? [
+            {
+              currencyCode: variantForm.currencyCode,
+              amount: parseFloat(variantForm.price),
+              compareAtPrice: variantForm.compareAtPrice
+                ? parseFloat(variantForm.compareAtPrice)
+                : undefined,
+            },
+          ]
+        : undefined,
+      options: Object.keys(optionValues).length > 0 ? optionValues : undefined,
+    };
 
-      await createVariant(product.id, input);
-      setShowAddVariantModal(false);
-      resetVariantForm();
-      setSuccess("Variant added successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setVariantError(err instanceof Error ? err.message : "Failed to add variant");
-    } finally {
-      setVariantSaving(false);
-    }
+    createVariantMutation.mutate(
+      { productId: product.id, data: input },
+      {
+        onSuccess: () => {
+          setShowAddVariantModal(false);
+          resetVariantForm();
+          setSuccess("Variant added successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setVariantError(err instanceof Error ? err.message : "Failed to add variant");
+        },
+      }
+    );
   };
 
-  const handleUpdateVariant = async () => {
+  const handleUpdateVariant = () => {
     if (!product || !editingVariant || !variantForm.title.trim()) {
       setVariantError("Title is required");
       return;
@@ -599,47 +620,50 @@ export default function ProductDetailPage() {
       return;
     }
 
-    setVariantSaving(true);
     setVariantError(null);
 
-    try {
-      const input: UpdateVariantInput = {
-        title: variantForm.title.trim(),
-        sku: variantForm.sku || undefined,
-        barcode: variantForm.barcode || undefined,
-        manageInventory: variantForm.manageInventory,
-        allowBackorder: variantForm.allowBackorder,
-        inventoryQuantity: variantForm.inventoryQuantity
-          ? parseInt(variantForm.inventoryQuantity, 10)
-          : undefined,
-        weight: variantForm.weight || undefined,
-        prices: [
-          {
-            currencyCode: variantForm.currencyCode,
-            amount: parseFloat(variantForm.price) || 0,
-            compareAtPrice: variantForm.compareAtPrice
-              ? parseFloat(variantForm.compareAtPrice)
-              : undefined,
-          },
-        ],
-        options: Object.keys(optionValues).length > 0 ? optionValues : undefined,
-      };
+    const input: UpdateVariantInput = {
+      title: variantForm.title.trim(),
+      sku: variantForm.sku || undefined,
+      barcode: variantForm.barcode || undefined,
+      manageInventory: variantForm.manageInventory,
+      allowBackorder: variantForm.allowBackorder,
+      inventoryQuantity: variantForm.inventoryQuantity
+        ? parseInt(variantForm.inventoryQuantity, 10)
+        : undefined,
+      weight: variantForm.weight || undefined,
+      prices: [
+        {
+          currencyCode: variantForm.currencyCode,
+          amount: parseFloat(variantForm.price) || 0,
+          compareAtPrice: variantForm.compareAtPrice
+            ? parseFloat(variantForm.compareAtPrice)
+            : undefined,
+        },
+      ],
+      options: Object.keys(optionValues).length > 0 ? optionValues : undefined,
+    };
 
-      await updateVariant(editingVariant.id, input);
-      setShowEditVariantModal(false);
-      setEditingVariant(null);
-      resetVariantForm();
-      setSuccess("Variant updated successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setVariantError(err instanceof Error ? err.message : "Failed to update variant");
-    } finally {
-      setVariantSaving(false);
-    }
+    updateVariantMutation.mutate(
+      { variantId: editingVariant.id, data: input, productId: product.id },
+      {
+        onSuccess: () => {
+          setShowEditVariantModal(false);
+          setEditingVariant(null);
+          resetVariantForm();
+          setSuccess("Variant updated successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setVariantError(err instanceof Error ? err.message : "Failed to update variant");
+        },
+      }
+    );
   };
 
   const handleDeleteVariant = async (variantId: string) => {
+    if (!product) return;
+
     const confirmed = await confirm({
       title: "Delete Variant",
       description: "Are you sure you want to delete this variant? This action cannot be undone.",
@@ -648,14 +672,18 @@ export default function ProductDetailPage() {
     });
     if (!confirmed) return;
 
-    try {
-      await deleteVariant(variantId);
-      setSuccess("Variant deleted successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete variant");
-    }
+    deleteVariantMutation.mutate(
+      { variantId, productId: product.id },
+      {
+        onSuccess: () => {
+          setSuccess("Variant deleted successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to delete variant");
+        },
+      }
+    );
   };
 
   const handleGenerateVariants = async () => {
@@ -700,7 +728,7 @@ export default function ProductDetailPage() {
     setShowEditOptionModal(true);
   };
 
-  const handleAddOption = async () => {
+  const handleAddOption = () => {
     if (!product || !optionForm.title.trim()) {
       setOptionError("Title is required");
       return;
@@ -709,60 +737,71 @@ export default function ProductDetailPage() {
       setOptionError("At least one value is required");
       return;
     }
-    setOptionSaving(true);
+
+    const values = optionForm.values.split(",").map((v) => v.trim()).filter(Boolean);
+
+    // Warn about single-value options (usually a mistake)
+    if (values.length === 1) {
+      setOptionError("Options should have multiple values. Did you mean to create a variant instead? Example: For sizes, enter 'S, M, L, XL' not just '54'");
+      return;
+    }
+
     setOptionError(null);
 
-    try {
-      const values = optionForm.values.split(",").map((v) => v.trim()).filter(Boolean);
-      const input: CreateOptionInput = {
-        title: optionForm.title.trim(),
-        values,
-      };
+    const input: CreateOptionInput = {
+      title: optionForm.title.trim(),
+      values,
+    };
 
-      await addOption(product.id, input);
-      setShowAddOptionModal(false);
-      resetOptionForm();
-      setSuccess("Option added successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setOptionError(err instanceof Error ? err.message : "Failed to add option");
-    } finally {
-      setOptionSaving(false);
-    }
+    addOptionMutation.mutate(
+      { productId: product.id, data: input },
+      {
+        onSuccess: () => {
+          setShowAddOptionModal(false);
+          resetOptionForm();
+          setSuccess("Option added successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setOptionError(err instanceof Error ? err.message : "Failed to add option");
+        },
+      }
+    );
   };
 
-  const handleUpdateOption = async () => {
+  const handleUpdateOption = () => {
     if (!product || !editingOption || !optionForm.title.trim()) {
       setOptionError("Title is required");
       return;
     }
-    setOptionSaving(true);
     setOptionError(null);
 
-    try {
-      const values = optionForm.values.split(",").map((v) => v.trim()).filter(Boolean);
-      const input: UpdateOptionInput = {
-        title: optionForm.title.trim(),
-        values: values.length > 0 ? values : undefined,
-      };
+    const values = optionForm.values.split(",").map((v) => v.trim()).filter(Boolean);
+    const input: UpdateOptionInput = {
+      title: optionForm.title.trim(),
+      values: values.length > 0 ? values : undefined,
+    };
 
-      await updateOption(product.id, editingOption.id, input);
-      setShowEditOptionModal(false);
-      setEditingOption(null);
-      resetOptionForm();
-      setSuccess("Option updated successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setOptionError(err instanceof Error ? err.message : "Failed to update option");
-    } finally {
-      setOptionSaving(false);
-    }
+    updateOptionMutation.mutate(
+      { productId: product.id, optionId: editingOption.id, data: input },
+      {
+        onSuccess: () => {
+          setShowEditOptionModal(false);
+          setEditingOption(null);
+          resetOptionForm();
+          setSuccess("Option updated successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setOptionError(err instanceof Error ? err.message : "Failed to update option");
+        },
+      }
+    );
   };
 
   const handleDeleteOption = async (optionId: string) => {
     if (!product) return;
+
     const confirmed = await confirm({
       title: "Delete Option",
       description: "Are you sure you want to delete this option? This action cannot be undone.",
@@ -771,14 +810,18 @@ export default function ProductDetailPage() {
     });
     if (!confirmed) return;
 
-    try {
-      await deleteOption(product.id, optionId);
-      setSuccess("Option deleted successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete option");
-    }
+    deleteOptionMutation.mutate(
+      { productId: product.id, optionId },
+      {
+        onSuccess: () => {
+          setSuccess("Option deleted successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to delete option");
+        },
+      }
+    );
   };
 
   // Image handlers
@@ -807,15 +850,28 @@ export default function ProductDetailPage() {
 
       // Only add image separately if backend didn't save it to product
       if (!uploadResult.savedToProduct) {
-        await addProductImage(product.id, {
-          url: uploadResult.url,
-          position: product.images.length,
-        });
+        addProductImageMutation.mutate(
+          {
+            productId: product.id,
+            data: {
+              url: uploadResult.url,
+              position: product.images.length,
+            },
+          },
+          {
+            onSuccess: () => {
+              setSuccess("Image uploaded successfully");
+              setTimeout(() => setSuccess(null), 3000);
+            },
+            onError: (imgErr) => {
+              setError(imgErr instanceof Error ? imgErr.message : "Failed to add image to product");
+            },
+          }
+        );
+      } else {
+        setSuccess("Image uploaded successfully");
+        setTimeout(() => setSuccess(null), 3000);
       }
-
-      setSuccess("Image uploaded successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload image");
     } finally {
@@ -829,6 +885,7 @@ export default function ProductDetailPage() {
 
   const handleDeleteImage = async (imageId: string) => {
     if (!product) return;
+
     const confirmed = await confirm({
       title: "Delete Image",
       description: "Are you sure you want to delete this image? This action cannot be undone.",
@@ -837,15 +894,19 @@ export default function ProductDetailPage() {
     });
     if (!confirmed) return;
 
-    try {
-      await deleteProductImage(product.id, imageId);
-      setSuccess("Image deleted successfully");
-      setSelectedImage(0); // Reset to first image
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete image");
-    }
+    deleteProductImageMutation.mutate(
+      { productId: product.id, imageId },
+      {
+        onSuccess: () => {
+          setSuccess("Image deleted successfully");
+          setSelectedImage(0); // Reset to first image
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to delete image");
+        },
+      }
+    );
   };
 
   // Drag and drop handlers
@@ -857,33 +918,37 @@ export default function ProductDetailPage() {
     e.preventDefault();
   };
 
-  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     if (draggedImageIndex === null || !product || draggedImageIndex === dropIndex) {
       setDraggedImageIndex(null);
       return;
     }
 
-    setReordering(true);
-    try {
-      // Create new order by moving dragged item to drop position
-      const newImages = [...product.images];
-      const [draggedImage] = newImages.splice(draggedImageIndex, 1);
-      newImages.splice(dropIndex, 0, draggedImage);
+    // Create new order by moving dragged item to drop position
+    const newImages = [...product.images];
+    const [draggedImage] = newImages.splice(draggedImageIndex, 1);
+    newImages.splice(dropIndex, 0, draggedImage);
 
-      // Send new order to backend
-      const imageIds = newImages.map((img) => img.id);
-      await reorderProductImages(product.id, imageIds);
-      setSuccess("Images reordered successfully");
-      refetchProduct();
-      setSelectedImage(0); // Reset to first image (new thumbnail)
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reorder images");
-    } finally {
-      setDraggedImageIndex(null);
-      setReordering(false);
-    }
+    // Send new order to backend
+    const imageIds = newImages.map((img) => img.id);
+
+    reorderProductImagesMutation.mutate(
+      { productId: product.id, imageIds },
+      {
+        onSuccess: () => {
+          setSuccess("Images reordered successfully");
+          setSelectedImage(0); // Reset to first image (new thumbnail)
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to reorder images");
+        },
+        onSettled: () => {
+          setDraggedImageIndex(null);
+        },
+      }
+    );
   };
 
   const handleDragEnd = () => {
@@ -891,20 +956,21 @@ export default function ProductDetailPage() {
   };
 
   // Set image as thumbnail
-  const handleSetThumbnail = async (imageId: string) => {
+  const handleSetThumbnail = (imageId: string) => {
     if (!product) return;
 
-    setReordering(true);
-    try {
-      await setProductThumbnail(product.id, imageId);
-      setSuccess("Thumbnail updated successfully");
-      refetchProduct();
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to set thumbnail");
-    } finally {
-      setReordering(false);
-    }
+    setProductThumbnailMutation.mutate(
+      { productId: product.id, imageId },
+      {
+        onSuccess: () => {
+          setSuccess("Thumbnail updated successfully");
+          setTimeout(() => setSuccess(null), 3000);
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : "Failed to set thumbnail");
+        },
+      }
+    );
   };
 
   // Get first variant price for display
@@ -1433,182 +1499,188 @@ export default function ProductDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Variants */}
+          {/* Variants (Shopify-style) */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="h-5 w-5" />
-                  Options & Variants
-                </CardTitle>
-                <CardDescription>
-                  Options are customer choices. Variants are the purchasable rows with SKU, price, and inventory.
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                {product.options.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleGenerateVariants}
-                    disabled={variantGenerating}
-                  >
-                    {variantGenerating ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Copy className="mr-2 h-4 w-4" />
-                    )}
-                    Generate missing variants
-                  </Button>
-                )}
-                <Button size="sm" onClick={openAddVariantModal}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Variant
-                </Button>
-              </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Variants
+              </CardTitle>
+              <CardDescription>
+                This product {product.options.length === 0 ? "has a single variant" : `comes in ${product.options.length} option${product.options.length > 1 ? 's' : ''}`}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="mb-4 grid gap-3 rounded-md border bg-muted/30 p-4 text-sm md:grid-cols-3">
-                <div>
-                  <p className="font-medium">1. Define options</p>
-                  <p className="text-muted-foreground">Create choice groups like Size or Color.</p>
+            <CardContent className="space-y-6">
+              {/* Options Section - Primary */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Options</Label>
+                  {product.options.length === 0 && (
+                    <Button size="sm" variant="outline" onClick={openAddOptionModal}>
+                      <Plus className="mr-2 h-3.5 w-3.5" />
+                      Add options like size or color
+                    </Button>
+                  )}
                 </div>
-                <div>
-                  <p className="font-medium">2. Generate variants</p>
-                  <p className="text-muted-foreground">Each option combination becomes one sellable variant.</p>
-                </div>
-                <div>
-                  <p className="font-medium">3. Edit each variant</p>
-                  <p className="text-muted-foreground">Set SKU, price, inventory, and assignments per row.</p>
-                </div>
-              </div>
-              {hasOptionVariantMismatch && (
-                <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  This product has option categories but only one linked variant. Use Generate missing variants so the storefront can show each choice separately.
-                </div>
-              )}
-              <Tabs defaultValue="variants">
-                <TabsList>
-                  <TabsTrigger value="variants">Sellable variants ({product.variants.length})</TabsTrigger>
-                  <TabsTrigger value="options">Option categories ({product.options.length})</TabsTrigger>
-                </TabsList>
-                <TabsContent value="variants" className="mt-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Variant</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-center">Inventory</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {product.variants.map((variant) => (
-                        <TableRow key={variant.id}>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <p className="font-medium">{variant.title}</p>
-                              {Object.keys(variant.options || {}).length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {Object.entries(variant.options).map(([name, value]) => (
-                                    <Badge key={`${variant.id}-${name}`} variant="outline" className="font-normal">
-                                      {name}: {value}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : (
-                                product.options.length > 0 && (
-                                  <p className="text-xs text-amber-700">No option assignment</p>
-                                )
-                              )}
+
+                {product.options.length > 0 && (
+                  <div className="space-y-3">
+                    {product.options.map((option) => (
+                      <div key={option.id} className="rounded-lg border p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <Label className="font-medium">{option.title}</Label>
+                              <Badge variant="secondary" className="text-xs">{option.values.length} values</Badge>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-sm">
-                            {variant.sku || "-"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {variant.prices[0] ? `£${variant.prices[0].amount.toFixed(2)}` : "-"}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant={variant.manageInventory ? "secondary" : "outline"}>
-                              {variant.manageInventory ? "Tracked" : "Not tracked"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEditVariantModal(variant)}>
-                                  Edit Variant
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-red-600"
-                                  onClick={() => handleDeleteVariant(variant.id)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {product.variants.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                            No variants defined
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-                <TabsContent value="options" className="mt-4 space-y-4">
-                  {product.options.map((option) => (
-                    <div key={option.id} className="flex items-center gap-4 rounded-lg border p-4">
-                      <div className="flex-1">
-                        <p className="font-medium">{option.title}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditOptionModal(option)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteOption(option.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
                           {option.values.map((value) => (
-                            <Badge key={value} variant="outline">{value}</Badge>
+                            <Badge key={value} variant="outline" className="font-normal">
+                              {value}
+                            </Badge>
                           ))}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditOptionModal(option)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => handleDeleteOption(option.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    ))}
+                    <Button variant="outline" className="w-full" onClick={openAddOptionModal}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add another option
+                    </Button>
+                  </div>
+                )}
+
+                {product.options.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Add options if this product comes in multiple versions, like different sizes or colors.
+                  </p>
+                )}
+              </div>
+
+              {product.options.length > 0 && <Separator />}
+
+              {/* Variants Section */}
+              {product.options.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-base font-semibold">Preview</Label>
+                      {hasOptionVariantMismatch && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          {product.variants.length} of {calculatePossibleVariants(product)} variants created
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-                  {product.options.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No options defined
-                    </div>
-                  )}
-                  <Button variant="outline" className="w-full" onClick={openAddOptionModal}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Option
-                  </Button>
-                </TabsContent>
-              </Tabs>
+                    {hasOptionVariantMismatch && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleGenerateVariants}
+                        disabled={variantGenerating}
+                      >
+                        {variantGenerating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Copy className="mr-2 h-4 w-4" />
+                        )}
+                        Generate all {calculatePossibleVariants(product)} variants
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Variant</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Available</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {product.variants.map((variant) => (
+                          <TableRow key={variant.id}>
+                            <TableCell>
+                              <div className="font-medium">{variant.title}</div>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={variant.prices[0]?.amount || ""}
+                                className="w-24 h-8"
+                                placeholder="0.00"
+                                disabled
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                value={variant.inventoryQuantity ?? ""}
+                                className="w-20 h-8"
+                                disabled={!variant.manageInventory}
+                                placeholder={variant.manageInventory ? "0" : "∞"}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                value={variant.sku || ""}
+                                className="w-32 h-8 font-mono text-xs"
+                                placeholder="SKU"
+                                disabled
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEditVariantModal(variant)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-red-600"
+                                    onClick={() => handleDeleteVariant(variant.id)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -2173,10 +2245,29 @@ export default function ProductDetailPage() {
           <DialogHeader>
             <DialogTitle>Add Option</DialogTitle>
             <DialogDescription>
-              Add a new option like Size, Color, or Material.
+              Options define product variations. Each option can have multiple values.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Guidance Card */}
+            <div className="rounded-lg border bg-blue-50 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="text-blue-600 mt-0.5">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-xs text-blue-900 space-y-1">
+                  <p className="font-medium">How options work:</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-blue-800">
+                    <li><strong>Option Name</strong> is the category (e.g., "Size", "Color")</li>
+                    <li><strong>Values</strong> are ALL the choices for that category</li>
+                    <li>Example: Option "Size" with values "S, M, L, XL"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             {optionError && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
                 {optionError}
@@ -2188,19 +2279,22 @@ export default function ProductDetailPage() {
                 id="option-title"
                 value={optionForm.title}
                 onChange={(e) => setOptionForm({ ...optionForm, title: e.target.value })}
-                placeholder="e.g., Size, Color, Material"
+                placeholder="Size"
               />
+              <p className="text-xs text-muted-foreground">
+                Common names: Size, Color, Material, Style
+              </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="option-values">Values *</Label>
+              <Label htmlFor="option-values">Values * (comma-separated)</Label>
               <Input
                 id="option-values"
                 value={optionForm.values}
                 onChange={(e) => setOptionForm({ ...optionForm, values: e.target.value })}
-                placeholder="e.g., Small, Medium, Large (comma-separated)"
+                placeholder="S, M, L, XL"
               />
               <p className="text-xs text-muted-foreground">
-                Enter values separated by commas
+                List ALL values for this option. For sizes: "54, 56, 58, 60, S, M, L, XL"
               </p>
             </div>
           </div>
