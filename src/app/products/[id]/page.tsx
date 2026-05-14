@@ -112,6 +112,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { OptionWizard } from "@/components/products/OptionWizard";
 import { ContextualHelpSidebar } from "@/components/products/ContextualHelpSidebar";
 
+type VariantTableDraft = {
+  price: string;
+  inventoryQuantity: string;
+  sku: string;
+};
+
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
     case "published":
@@ -193,6 +199,11 @@ export default function ProductDetailPage() {
   const [showEditVariantModal, setShowEditVariantModal] = useState(false);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [variantGenerating, setVariantGenerating] = useState(false);
+  const [variantBulkPrice, setVariantBulkPrice] = useState("");
+  const [variantBulkQuantity, setVariantBulkQuantity] = useState("");
+  const [variantTableDrafts, setVariantTableDrafts] = useState<Record<string, VariantTableDraft>>({});
+  const [savingVariantIds, setSavingVariantIds] = useState<Record<string, boolean>>({});
+  const [bulkVariantSaving, setBulkVariantSaving] = useState<"price" | "quantity" | null>(null);
   const [variantError, setVariantError] = useState<string | null>(null);
   const [variantOptionValidation, setVariantOptionValidation] = useState<VariantOptionValidationState>({
     status: "idle",
@@ -281,6 +292,24 @@ export default function ProductDetailPage() {
   const variantSaving = createVariantMutation.isPending || updateVariantMutation.isPending;
   const optionSaving = addOptionMutation.isPending || updateOptionMutation.isPending;
   const reordering = reorderProductImagesMutation.isPending || setProductThumbnailMutation.isPending;
+
+  useEffect(() => {
+    if (!product) return;
+
+    setVariantTableDrafts((current) => {
+      const next: Record<string, VariantTableDraft> = {};
+
+      product.variants.forEach((variant) => {
+        next[variant.id] = current[variant.id] ?? {
+          price: variant.prices[0]?.amount?.toString() || "",
+          inventoryQuantity: variant.inventoryQuantity?.toString() || "",
+          sku: variant.sku || "",
+        };
+      });
+
+      return next;
+    });
+  }, [product]);
 
   // Calculate total possible variant combinations
   const calculatePossibleVariants = (product: Product) => {
@@ -522,6 +551,153 @@ export default function ProductDetailPage() {
   };
 
   // Variant handlers
+  const getVariantTableDraft = (variant: ProductVariant): VariantTableDraft =>
+    variantTableDrafts[variant.id] ?? {
+      price: variant.prices[0]?.amount?.toString() || "",
+      inventoryQuantity: variant.inventoryQuantity?.toString() || "",
+      sku: variant.sku || "",
+    };
+
+  const updateVariantTableDraft = (
+    variantId: string,
+    field: keyof VariantTableDraft,
+    value: string
+  ) => {
+    setVariantTableDrafts((current) => ({
+      ...current,
+      [variantId]: {
+        ...(current[variantId] ?? { price: "", inventoryQuantity: "", sku: "" }),
+        [field]: value,
+      },
+    }));
+  };
+
+  const hasVariantTableChanges = (variant: ProductVariant) => {
+    const draft = getVariantTableDraft(variant);
+    return (
+      draft.price !== (variant.prices[0]?.amount?.toString() || "") ||
+      draft.inventoryQuantity !== (variant.inventoryQuantity?.toString() || "") ||
+      draft.sku !== (variant.sku || "")
+    );
+  };
+
+  const buildVariantUpdateInput = (
+    variant: ProductVariant,
+    draft: VariantTableDraft
+  ): UpdateVariantInput => {
+    const existingPrice = variant.prices[0];
+    const parsedPrice = parseFloat(draft.price);
+    const parsedQuantity = draft.inventoryQuantity === "" ? undefined : parseInt(draft.inventoryQuantity, 10);
+
+    return {
+      title: variant.title,
+      sku: draft.sku.trim() || undefined,
+      barcode: variant.barcode || undefined,
+      manageInventory: variant.manageInventory,
+      allowBackorder: variant.allowBackorder,
+      inventoryQuantity: Number.isFinite(parsedQuantity) ? parsedQuantity : undefined,
+      weight: variant.weight || undefined,
+      prices: [
+        {
+          currencyCode: existingPrice?.currencyCode || "GBP",
+          amount: Number.isFinite(parsedPrice) ? parsedPrice : existingPrice?.amount || 0,
+          compareAtPrice: existingPrice?.compareAtPrice,
+        },
+      ],
+      options: variant.options,
+    };
+  };
+
+  const saveVariantTableRow = async (variant: ProductVariant) => {
+    if (!product || !hasVariantTableChanges(variant)) return;
+
+    const draft = getVariantTableDraft(variant);
+    const price = parseFloat(draft.price);
+    const quantity = draft.inventoryQuantity === "" ? undefined : parseInt(draft.inventoryQuantity, 10);
+
+    if (draft.price !== "" && (!Number.isFinite(price) || price < 0)) {
+      setError("Variant price must be zero or greater");
+      return;
+    }
+
+    if (
+      draft.inventoryQuantity !== "" &&
+      (!Number.isInteger(quantity ?? Number.NaN) || (quantity ?? 0) < 0)
+    ) {
+      setError("Available quantity must be a whole number zero or greater");
+      return;
+    }
+
+    setSavingVariantIds((current) => ({ ...current, [variant.id]: true }));
+    setError(null);
+
+    try {
+      await updateVariantMutation.mutateAsync({
+        variantId: variant.id,
+        productId: product.id,
+        data: buildVariantUpdateInput(variant, draft),
+      });
+      setSuccess(`Saved ${variant.title}`);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save variant");
+    } finally {
+      setSavingVariantIds((current) => ({ ...current, [variant.id]: false }));
+    }
+  };
+
+  const applyBulkVariantField = async (field: "price" | "quantity") => {
+    if (!product) return;
+
+    const rawValue = field === "price" ? variantBulkPrice : variantBulkQuantity;
+    const value = field === "price" ? parseFloat(rawValue) : parseInt(rawValue, 10);
+
+    if (rawValue.trim() === "" || !Number.isFinite(value) || value < 0) {
+      setError(field === "price" ? "Enter a valid bulk price" : "Enter a valid bulk quantity");
+      return;
+    }
+
+    setBulkVariantSaving(field);
+    setError(null);
+
+    try {
+      await Promise.all(
+        product.variants.map((variant) => {
+          const draft = {
+            ...getVariantTableDraft(variant),
+            [field === "price" ? "price" : "inventoryQuantity"]: rawValue,
+          };
+
+          return updateVariantMutation.mutateAsync({
+            variantId: variant.id,
+            productId: product.id,
+            data: buildVariantUpdateInput(variant, draft),
+          });
+        })
+      );
+
+      setVariantTableDrafts((current) => {
+        const next = { ...current };
+        product.variants.forEach((variant) => {
+          next[variant.id] = {
+            ...getVariantTableDraft(variant),
+            [field === "price" ? "price" : "inventoryQuantity"]: rawValue,
+          };
+        });
+        return next;
+      });
+      if (field === "price") setVariantBulkPrice("");
+      if (field === "quantity") setVariantBulkQuantity("");
+      setSuccess(`Updated ${field === "price" ? "prices" : "available quantities"} for ${product.variants.length} variants`);
+      setTimeout(() => setSuccess(null), 3000);
+      refetchProduct();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to update variant ${field}`);
+    } finally {
+      setBulkVariantSaving(null);
+    }
+  };
+
   const resetVariantForm = () => {
     setVariantForm({
       title: "",
@@ -1683,6 +1859,49 @@ export default function ProductDetailPage() {
                     )}
                   </div>
 
+                  {product.variants.length > 0 && (
+                    <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 md:grid-cols-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={variantBulkPrice}
+                          onChange={(event) => setVariantBulkPrice(event.target.value)}
+                          placeholder="Bulk price"
+                          className="sm:max-w-[160px]"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => applyBulkVariantField("price")}
+                          disabled={bulkVariantSaving !== null || product.variants.length === 0}
+                        >
+                          {bulkVariantSaving === "price" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Apply price to all
+                        </Button>
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row md:justify-end">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={variantBulkQuantity}
+                          onChange={(event) => setVariantBulkQuantity(event.target.value)}
+                          placeholder="Bulk available"
+                          className="sm:max-w-[160px]"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => applyBulkVariantField("quantity")}
+                          disabled={bulkVariantSaving !== null || product.variants.length === 0}
+                        >
+                          {bulkVariantSaving === "quantity" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Apply quantity to all
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="rounded-lg border">
                     <Table>
                       <TableHeader>
@@ -1722,62 +1941,93 @@ export default function ProductDetailPage() {
                             </TableCell>
                           </TableRow>
                         )}
-                        {product.variants.map((variant) => (
-                          <TableRow key={variant.id}>
-                            <TableCell>
-                              <div className="font-medium">{variant.title}</div>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={variant.prices[0]?.amount || ""}
-                                className="w-24 h-8"
-                                placeholder="0.00"
-                                disabled
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                value={variant.inventoryQuantity ?? ""}
-                                className="w-20 h-8"
-                                disabled={!variant.manageInventory}
-                                placeholder={variant.manageInventory ? "0" : "∞"}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                value={variant.sku || ""}
-                                className="w-32 h-8 font-mono text-xs"
-                                placeholder="SKU"
-                                disabled
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openEditVariantModal(variant)}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-red-600"
-                                    onClick={() => handleDeleteVariant(variant.id)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {product.variants.map((variant) => {
+                          const draft = getVariantTableDraft(variant);
+                          const hasChanges = hasVariantTableChanges(variant);
+                          const isSaving = savingVariantIds[variant.id] || false;
+
+                          return (
+                            <TableRow key={variant.id}>
+                              <TableCell>
+                                <div className="font-medium">{variant.title}</div>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={draft.price}
+                                  onChange={(event) => updateVariantTableDraft(variant.id, "price", event.target.value)}
+                                  onBlur={() => saveVariantTableRow(variant)}
+                                  className="w-24 h-8"
+                                  placeholder="0.00"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={draft.inventoryQuantity}
+                                  onChange={(event) => updateVariantTableDraft(variant.id, "inventoryQuantity", event.target.value)}
+                                  onBlur={() => saveVariantTableRow(variant)}
+                                  className="w-20 h-8"
+                                  disabled={!variant.manageInventory}
+                                  placeholder={variant.manageInventory ? "0" : "∞"}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={draft.sku}
+                                  onChange={(event) => updateVariantTableDraft(variant.id, "sku", event.target.value)}
+                                  onBlur={() => saveVariantTableRow(variant)}
+                                  className="w-32 h-8 font-mono text-xs"
+                                  placeholder="SKU"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-1">
+                                  {hasChanges && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onMouseDown={(event) => event.preventDefault()}
+                                      onClick={() => saveVariantTableRow(variant)}
+                                      disabled={isSaving}
+                                    >
+                                      {isSaving ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Check className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  )}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => openEditVariantModal(variant)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit full details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-red-600"
+                                        onClick={() => handleDeleteVariant(variant.id)}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
