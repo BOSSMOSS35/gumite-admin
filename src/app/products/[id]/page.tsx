@@ -288,6 +288,44 @@ export default function ProductDetailPage() {
     return product.options.reduce((total, option) => total * (option.values?.length || 1), 1);
   };
 
+  const normalizeOptionValue = (value: string | undefined) => value?.trim().toLowerCase() || "";
+
+  const variantCombinationKey = (
+    options: Product["options"],
+    values: Record<string, string | undefined>
+  ) =>
+    options
+      .map((option) => `${option.title}:${normalizeOptionValue(values[option.title])}`)
+      .join("|");
+
+  const getMissingVariantCombinationCount = (product: Product) => {
+    const validOptions = product.options.filter((option) => option.values.length > 0);
+    if (validOptions.length === 0) return 0;
+
+    const expectedKeys = validOptions
+      .reduce<Array<Record<string, string>>>(
+        (combinations, option) =>
+          combinations.flatMap((combination) =>
+            option.values.map((value) => ({
+              ...combination,
+              [option.title]: value,
+            }))
+          ),
+        [{}]
+      )
+      .map((combination) => variantCombinationKey(validOptions, combination));
+
+    const createdKeys = new Set(
+      product.variants
+        .filter((variant) =>
+          validOptions.every((option) => normalizeOptionValue(variant.options?.[option.title]))
+        )
+        .map((variant) => variantCombinationKey(validOptions, variant.options))
+    );
+
+    return expectedKeys.filter((key) => !createdKeys.has(key)).length;
+  };
+
   const currentVariantOptionValues = () => {
     if (!product) return {};
 
@@ -327,11 +365,10 @@ export default function ProductDetailPage() {
       };
     }
 
-    const normalize = (value: string | undefined) => value?.trim().toLowerCase() || "";
     const duplicate = product.variants.find((variant) => {
       if (variant.id === variantId) return false;
       return product.options.every(
-        (option) => normalize(variant.options?.[option.title]) === normalize(optionValues[option.title])
+        (option) => normalizeOptionValue(variant.options?.[option.title]) === normalizeOptionValue(optionValues[option.title])
       );
     });
 
@@ -1106,10 +1143,10 @@ export default function ProductDetailPage() {
 
   const mainPrice = getMainPrice();
   const thumbnailUrl = getImageUrl(product.thumbnail) || getImageUrl(product.images[0]?.url);
-  const hasOptionVariantMismatch =
-    product.options.length > 1 &&
-    product.variants.length === 1 &&
-    Object.keys(product.variants[0]?.options || {}).length < product.options.length;
+  const possibleVariantCount = calculatePossibleVariants(product);
+  const missingVariantCombinationCount = getMissingVariantCombinationCount(product);
+  const createdVariantCombinationCount = possibleVariantCount - missingVariantCombinationCount;
+  const hasOptionVariantMismatch = missingVariantCombinationCount > 0;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -1625,7 +1662,7 @@ export default function ProductDetailPage() {
                       <Label className="text-base font-semibold">Preview</Label>
                       {hasOptionVariantMismatch && (
                         <Badge variant="outline" className="text-amber-600 border-amber-300">
-                          {product.variants.length} of {calculatePossibleVariants(product)} variants created
+                          {createdVariantCombinationCount} of {possibleVariantCount} variants created
                         </Badge>
                       )}
                     </div>
@@ -1641,7 +1678,7 @@ export default function ProductDetailPage() {
                         ) : (
                           <Copy className="mr-2 h-4 w-4" />
                         )}
-                        Generate all {calculatePossibleVariants(product)} variants
+                        Generate {missingVariantCombinationCount} missing variant{missingVariantCombinationCount === 1 ? "" : "s"}
                       </Button>
                     )}
                   </div>
@@ -1658,6 +1695,33 @@ export default function ProductDetailPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
+                        {product.variants.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="py-8 text-center">
+                              <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-sm text-muted-foreground">
+                                <Package className="h-8 w-8" />
+                                <div>
+                                  <p className="font-medium text-foreground">No purchasable variants created yet</p>
+                                  <p>
+                                    Generate variants from the option values above so customers can select them and add this product to bag.
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={handleGenerateVariants}
+                                  disabled={variantGenerating || !hasOptionVariantMismatch}
+                                >
+                                  {variantGenerating ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Copy className="mr-2 h-4 w-4" />
+                                  )}
+                                  Generate variants
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
                         {product.variants.map((variant) => (
                           <TableRow key={variant.id}>
                             <TableCell>
