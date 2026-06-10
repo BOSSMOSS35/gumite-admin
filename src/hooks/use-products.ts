@@ -119,8 +119,10 @@ export function useDeleteProduct() {
 
   return useMutation<void, Error, string>({
     mutationFn: (id) => deleteProduct(id),
-    onSuccess: () => {
+    onSuccess: (_result, productId) => {
+      // Invalidate both the list and the specific product detail
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
     },
   });
 }
