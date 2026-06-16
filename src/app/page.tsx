@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import {
   ChevronRight,
   ArrowUpRight,
@@ -25,6 +26,16 @@ import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/api";
 import { Wifi, WifiOff, Radio } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
+
+const MOCK_CHART_DATA = [
+  { date: "Mon", sales: 4000 },
+  { date: "Tue", sales: 3000 },
+  { date: "Wed", sales: 5000 },
+  { date: "Thu", sales: 2780 },
+  { date: "Fri", sales: 6890 },
+  { date: "Sat", sales: 8390 },
+  { date: "Sun", sales: 7490 },
+];
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -238,6 +249,72 @@ export default function DashboardPage() {
 
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Sales Chart - Takes 2 columns */}
+        <div className="lg:col-span-2 rounded-lg border bg-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-large-semi">Sales Over Time</h2>
+              <p className="text-small-regular text-muted-foreground mt-0.5">
+                Revenue for the last 7 days
+              </p>
+            </div>
+          </div>
+          <div className="h-[300px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={MOCK_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(value) => `$${value}`} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value: number) => [`$${value}`, 'Sales']}
+                />
+                <Area type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-large-semi mb-4">Quick Actions</h2>
+          <div className="flex flex-col gap-3">
+            <Link href="/products/new" className="flex items-center gap-3 rounded-md border p-3 hover:bg-muted transition-colors group">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600 group-hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400">
+                <Package className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Add Product</span>
+                <span className="text-xs text-muted-foreground">Create a new product listing</span>
+              </div>
+            </Link>
+            <Link href="/orders/drafts" className="flex items-center gap-3 rounded-md border p-3 hover:bg-muted transition-colors group">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600 group-hover:bg-green-100 dark:bg-green-500/10 dark:text-green-400">
+                <ShoppingBag className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Create Draft Order</span>
+                <span className="text-xs text-muted-foreground">Manually create an order</span>
+              </div>
+            </Link>
+            <Link href="/discounts" className="flex items-center gap-3 rounded-md border p-3 hover:bg-muted transition-colors group">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-600 group-hover:bg-purple-100 dark:bg-purple-500/10 dark:text-purple-400">
+                <DollarSign className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Create Discount</span>
+                <span className="text-xs text-muted-foreground">Generate a promo code</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+
         {/* Recent Orders - Takes 2 columns */}
         <div className="lg:col-span-2 rounded-lg border bg-card">
           <div className="flex items-center justify-between p-6 pb-4">

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldTooltip } from "@/components/ui/field-tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -310,7 +311,10 @@ export function DiscountDialog({
             {step === 1 && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Discount Code *</Label>
+                  <Label htmlFor="code" className="flex items-center">
+                    Discount Code *
+                    <FieldTooltip content="The unique code customers will enter at checkout. Cannot be duplicated." />
+                  </Label>
                   <div className="flex gap-2">
                     <Input
                       id="code"
@@ -509,7 +513,10 @@ export function DiscountDialog({
                 <Separator />
 
                 <div className="space-y-2">
-                  <Label htmlFor="minimumAmount">Minimum Order Amount</Label>
+                  <Label htmlFor="minimumAmount" className="flex items-center">
+                    Minimum Order Amount
+                    <FieldTooltip content="The minimum cart subtotal required before this discount can be applied." />
+                  </Label>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">£</span>
                     <Input
@@ -629,7 +636,10 @@ export function DiscountDialog({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Can Stack with Other Discounts</Label>
+                      <Label className="flex items-center">
+                        Can Stack with Other Discounts
+                        <FieldTooltip content="If enabled, customers can use this discount alongside other active discounts." />
+                      </Label>
                       <p className="text-xs text-muted-foreground">
                         Allow this discount to be combined with others
                       </p>

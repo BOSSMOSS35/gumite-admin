@@ -8,9 +8,23 @@ import { Search, Package, Loader2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 
+type SearchItem = 
+  | { type: 'product'; id: string; title: string; handle?: string; thumbnail?: string | null; brandName?: string | null; status?: string }
+  | { type: 'page'; id: string; title: string; path: string };
+
+const QUICK_LINKS = [
+  { id: "page-orders", title: "Orders", path: "/orders" },
+  { id: "page-customers", title: "Customers", path: "/customers" },
+  { id: "page-products", title: "Products", path: "/products" },
+  { id: "page-inventory", title: "Inventory", path: "/inventory" },
+  { id: "page-settings", title: "Settings", path: "/settings" },
+  { id: "page-discounts", title: "Discounts", path: "/discounts" },
+  { id: "page-pricing", title: "Pricing", path: "/pricing" },
+];
+
 export function CommandPalette() {
   const [query, setQuery] = React.useState("");
-  const [results, setResults] = React.useState<ProductSummary[]>([]);
+  const [results, setResults] = React.useState<SearchItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
@@ -33,12 +47,29 @@ export function CommandPalette() {
     setIsLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await getProducts({ q: query.trim(), start: 0, end: 10 });
-        setResults(res.content);
+        const pageMatches = QUICK_LINKS.filter(link => 
+          link.title.toLowerCase().includes(query.toLowerCase())
+        ).map(link => ({ ...link, type: 'page' as const }));
+
+        const res = await getProducts({ q: query.trim(), start: 0, end: 5 });
+        const productMatches = res.content.map(p => ({
+          type: 'product' as const,
+          id: p.id,
+          title: p.title,
+          handle: p.handle,
+          thumbnail: p.thumbnail,
+          brandName: p.brandName,
+          status: p.status
+        }));
+        
+        setResults([...pageMatches, ...productMatches]);
         setIsOpen(true);
         setSelectedIndex(-1);
       } catch {
-        setResults([]);
+        const pageMatches = QUICK_LINKS.filter(link => 
+          link.title.toLowerCase().includes(query.toLowerCase())
+        ).map(link => ({ ...link, type: 'page' as const }));
+        setResults(pageMatches);
       } finally {
         setIsLoading(false);
       }
@@ -83,9 +114,9 @@ export function CommandPalette() {
       case "Enter":
         e.preventDefault();
         if (selectedIndex >= 0 && results[selectedIndex]) {
-          navigateToProduct(results[selectedIndex].id);
+          navigate(results[selectedIndex]);
         } else if (results.length === 1) {
-          navigateToProduct(results[0].id);
+          navigate(results[0]);
         }
         break;
       case "Escape":
@@ -96,11 +127,15 @@ export function CommandPalette() {
     }
   }
 
-  function navigateToProduct(id: string) {
+  function navigate(item: SearchItem) {
     setQuery("");
     setResults([]);
     setIsOpen(false);
-    router.push(`/products/${id}`);
+    if (item.type === 'page') {
+      router.push(item.path);
+    } else {
+      router.push(`/products/${item.id}`);
+    }
   }
 
   // Global Cmd+K shortcut to focus search
@@ -164,14 +199,37 @@ export function CommandPalette() {
           ) : (
             <div className="py-1">
               <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                {results.length} product{results.length !== 1 ? "s" : ""} found
+                {results.length} result{results.length !== 1 ? "s" : ""} found
               </div>
-              {results.map((product, index) => {
-                const thumb = getImageUrl(product.thumbnail);
+              {results.map((item, index) => {
+                if (item.type === 'page') {
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => navigate(item)}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
+                        index === selectedIndex
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent/50"
+                      }`}
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">
+                        <Search className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex flex-1 flex-col min-w-0">
+                        <span className="truncate font-medium">{item.title}</span>
+                        <span className="truncate text-xs text-muted-foreground">Page</span>
+                      </div>
+                    </button>
+                  );
+                }
+
+                const thumb = getImageUrl(item.thumbnail);
                 return (
                   <button
-                    key={product.id}
-                    onClick={() => navigateToProduct(product.id)}
+                    key={item.id}
+                    onClick={() => navigate(item)}
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
                       index === selectedIndex
@@ -184,7 +242,7 @@ export function CommandPalette() {
                       {thumb ? (
                         <img
                           src={thumb}
-                          alt={product.title}
+                          alt={item.title}
                           width={40}
                           height={40}
                           className="h-full w-full object-cover"
@@ -199,15 +257,15 @@ export function CommandPalette() {
 
                     {/* Product info */}
                     <div className="flex flex-1 flex-col min-w-0">
-                      <span className="truncate font-medium">{product.title}</span>
+                      <span className="truncate font-medium">{item.title}</span>
                       <span className="truncate text-xs text-muted-foreground">
-                        {product.brandName && `${product.brandName} · `}
-                        {product.handle}
+                        {item.brandName && `${item.brandName} · `}
+                        {item.handle}
                       </span>
                     </div>
 
                     {/* Status badge */}
-                    <StatusBadge status={product.status} />
+                    {item.status && <StatusBadge status={item.status} />}
                   </button>
                 );
               })}

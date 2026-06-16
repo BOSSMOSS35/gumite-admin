@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +47,7 @@ import {
   Download,
   Users,
   Crown,
+  X,
   Star,
   TrendingUp,
   Gift,
@@ -117,6 +119,7 @@ export default function CustomersPage() {
 
   // ── Debounced search ───────────────────────────────────────
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -151,6 +154,50 @@ export default function CustomersPage() {
   // ── Handlers ───────────────────────────────────────────────
   const handleActionSuccess = () => {
     closeDialogs();
+  };
+
+  const handleBulkExport = () => {
+    try {
+      const selectedCustomers = customers.filter((c) => selectedCustomerIds.includes(c.id));
+      if (selectedCustomers.length === 0) return;
+
+      const headers = ["Customer", "Email", "Tier", "Orders", "Total Spent", "Status", "Joined Date"];
+      const rows = selectedCustomers.map((c) => [
+        getCustomerName(c),
+        c.email,
+        c.tier,
+        c.orderCount,
+        formatPrice(c.totalSpent, "GBP"),
+        c.status,
+        formatDate(c.createdAt),
+      ]);
+
+      const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `customers-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${selectedCustomerIds.length} customers`);
+    } catch {
+      toast.error("Failed to export customers");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCustomerIds.length === customers.length) {
+      setSelectedCustomerIds([]);
+    } else {
+      setSelectedCustomerIds(customers.map((c) => c.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedCustomerIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
   // ── Stats cards ────────────────────────────────────────────
@@ -312,6 +359,13 @@ export default function CustomersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12 text-center">
+                    <Checkbox
+                      checked={customers.length > 0 && selectedCustomerIds.length === customers.length}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Select all customers"
+                    />
+                  </TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Tier</TableHead>
                   <TableHead className="text-center">Orders</TableHead>
@@ -323,7 +377,17 @@ export default function CustomersPage() {
               </TableHeader>
               <TableBody>
                 {customers.map((customer) => (
-                  <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow 
+                    key={customer.id} 
+                    className={`cursor-pointer ${selectedCustomerIds.includes(customer.id) ? "bg-muted/50" : "hover:bg-muted/50"}`}
+                  >
+                    <TableCell className="w-12 text-center" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedCustomerIds.includes(customer.id)}
+                        onCheckedChange={() => toggleSelect(customer.id)}
+                        aria-label={`Select customer ${getCustomerName(customer)}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Link href={`/customers/${customer.id}`} className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -427,6 +491,33 @@ export default function CustomersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk Action Floating Bar */}
+      {selectedCustomerIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+          <span className="text-sm font-medium">{selectedCustomerIds.length} selected</span>
+          <div className="w-px h-4 bg-muted-foreground/30" />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-background hover:bg-background/20 hover:text-background h-8"
+              onClick={handleBulkExport}
+            >
+              Export
+            </Button>
+          </div>
+          <div className="w-px h-4 bg-muted-foreground/30 ml-2" />
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-background hover:bg-background/20 hover:text-background h-8 px-2 ml-2"
+            onClick={() => setSelectedCustomerIds([])}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Dialogs */}
       {selectedCustomer && (

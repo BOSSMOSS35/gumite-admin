@@ -41,7 +41,10 @@ import {
   Footprints,
   AlertCircle,
   CheckCircle2,
+  PackageCheck,
+  PackageOpen,
 } from "lucide-react";
+import { FieldTooltip } from "@/components/ui/field-tooltip";
 import {
   getCategories,
   getCollections,
@@ -1211,9 +1214,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="handle" className="flex items-center gap-1">
+                        <Label htmlFor="handle" className="flex items-center">
                           Handle
-                          <Info className="h-3 w-3 text-muted-foreground" />
+                          <FieldTooltip content="A unique URL-friendly string for the product. Duplicate handles will cause creation to fail." />
                         </Label>
                         <div className="space-y-2">
                           <div className="flex relative">
@@ -1555,8 +1558,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         <h2 className="text-lg font-semibold">Inventory</h2>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-muted-foreground">
-                              SKU <span className="text-xs">(Auto-generated if empty)</span>
+                            <Label className="flex items-center text-muted-foreground">
+                              SKU <span className="text-xs ml-1">(Auto-generated if empty)</span>
+                              <FieldTooltip content="Stock Keeping Unit. Must be unique per variant." />
                             </Label>
                             <Input
                               placeholder="Auto-generated"
@@ -1565,8 +1569,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-muted-foreground">
-                              Barcode (EAN-13) <span className="text-xs">(Auto-generated if empty)</span>
+                            <Label className="flex items-center text-muted-foreground">
+                              Barcode (EAN-13) <span className="text-xs ml-1">(Auto-generated if empty)</span>
+                              <FieldTooltip content="Used for scanning products (e.g., UPC, GTIN)." />
                             </Label>
                             <Input
                               placeholder="Auto-generated"

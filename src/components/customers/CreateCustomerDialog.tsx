@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldTooltip } from "@/components/ui/field-tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { createCustomer } from "@/lib/api";
@@ -84,7 +85,10 @@ export function CreateCustomerDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email" className="flex items-center">
+              Email *
+              <FieldTooltip content="Must be a valid and unique email address. Duplicates will cause creation to fail." />
+            </Label>
             <Input
               id="email"
               type="email"
@@ -114,7 +118,10 @@ export function CreateCustomerDialog({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone" className="flex items-center">
+              Phone
+              <FieldTooltip content="Include the country code (e.g., +44 or +1)." />
+            </Label>
             <Input
               id="phone"
               type="tel"

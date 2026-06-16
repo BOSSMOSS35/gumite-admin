@@ -60,7 +60,11 @@ import {
   ArrowLeft,
   ChevronRight,
   Palette,
+  PlusCircle,
+  Search,
+  Trash2,
 } from "lucide-react";
+import { FieldTooltip } from "@/components/ui/field-tooltip";
 import {
   getStores,
   createStore,
@@ -112,6 +116,9 @@ export default function StoreSettingsPage() {
   const [shippingOpen, setShippingOpen] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+
+  // Store initial form states for unsaved changes detection
+  const [initialForms, setInitialForms] = useState<Record<string, any>>({});
 
   // Form states
   const [businessForm, setBusinessForm] = useState({
@@ -256,9 +263,8 @@ export default function StoreSettingsPage() {
       setLoadingSettings(false);
     }
   }, []);
-
   const populateForms = (s: StoreSettings) => {
-    setBusinessForm({
+    const bForm = {
       description: s.description || "",
       logoUrl: s.logoUrl || "",
       faviconUrl: s.faviconUrl || "",
@@ -275,16 +281,18 @@ export default function StoreSettingsPage() {
         pinterest: "",
         linkedin: "",
       },
-    });
+    };
+    setBusinessForm(bForm);
 
-    setLocalizationForm({
+    const lForm = {
       timezone: s.timezone || "UTC",
       defaultLocale: s.defaultLocale || "en",
       dateFormat: s.dateFormat || "DD_MM_YYYY",
       currencyDisplayFormat: s.currencyDisplayFormat || "SYMBOL_BEFORE",
-    });
+    };
+    setLocalizationForm(lForm);
 
-    setFeaturesForm({
+    const fForm = {
       reviewsEnabled: s.reviewsEnabled,
       wishlistEnabled: s.wishlistEnabled,
       giftCardsEnabled: s.giftCardsEnabled,
@@ -292,26 +300,55 @@ export default function StoreSettingsPage() {
       guestCheckoutEnabled: s.guestCheckoutEnabled,
       newsletterEnabled: s.newsletterEnabled,
       productComparisonEnabled: s.productComparisonEnabled,
+    };
+    setFeaturesForm(fForm);
+
+    const pForm = s.policies || policiesForm;
+    setPoliciesForm(pForm);
+
+    const cForm = s.checkoutSettings || checkoutForm;
+    setCheckoutForm(cForm);
+
+    const shForm = s.shippingSettings || shippingForm;
+    setShippingForm(shForm);
+
+    const seoFormState = s.seoSettings || seoForm;
+    setSeoForm(seoFormState);
+
+    const tForm = s.themeSettings || themeForm;
+    setThemeForm(tForm);
+
+    setInitialForms({
+      business: bForm,
+      localization: lForm,
+      features: fForm,
+      policies: pForm,
+      checkout: cForm,
+      shipping: shForm,
+      seo: seoFormState,
+      theme: tForm,
     });
+  };
 
-    if (s.policies) {
-      setPoliciesForm(s.policies);
+  const handleDialogChange = (
+    open: boolean,
+    setOpen: (o: boolean) => void,
+    formName: keyof typeof initialForms,
+    currentForm: any,
+    setForm: (f: any) => void
+  ) => {
+    if (open) {
+      setOpen(true);
+      return;
     }
-
-    if (s.checkoutSettings) {
-      setCheckoutForm(s.checkoutSettings);
-    }
-
-    if (s.shippingSettings) {
-      setShippingForm(s.shippingSettings);
-    }
-
-    if (s.seoSettings) {
-      setSeoForm(s.seoSettings);
-    }
-
-    if (s.themeSettings) {
-      setThemeForm(s.themeSettings);
+    const hasChanges = JSON.stringify(currentForm) !== JSON.stringify(initialForms[formName]);
+    if (hasChanges) {
+      if (window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+        setForm(initialForms[formName]);
+        setOpen(false);
+      }
+    } else {
+      setOpen(false);
     }
   };
 
@@ -1125,7 +1162,7 @@ export default function StoreSettingsPage() {
       )}
 
       {/* Business Info Dialog */}
-      <Dialog open={businessInfoOpen} onOpenChange={setBusinessInfoOpen}>
+      <Dialog open={businessInfoOpen} onOpenChange={(open) => handleDialogChange(open, setBusinessInfoOpen, 'business', businessForm, setBusinessForm)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Business Information</DialogTitle>
@@ -1184,7 +1221,10 @@ export default function StoreSettingsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="legalBusinessName">Legal Business Name</Label>
+                <Label htmlFor="legalBusinessName" className="flex items-center">
+                  Legal Business Name
+                  <FieldTooltip content="Your officially registered business name." />
+                </Label>
                 <Input
                   id="legalBusinessName"
                   value={businessForm.legalBusinessName}
@@ -1193,7 +1233,10 @@ export default function StoreSettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="taxId">Tax ID</Label>
+                <Label htmlFor="taxId" className="flex items-center">
+                  Tax ID
+                  <FieldTooltip content="Your official business tax registration number." />
+                </Label>
                 <Input
                   id="taxId"
                   value={businessForm.taxId}
@@ -1290,7 +1333,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* Localization Dialog */}
-      <Dialog open={localizationOpen} onOpenChange={setLocalizationOpen}>
+      <Dialog open={localizationOpen} onOpenChange={(open) => handleDialogChange(open, setLocalizationOpen, 'localization', localizationForm, setLocalizationForm)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Localization Settings</DialogTitle>
@@ -1357,7 +1400,10 @@ export default function StoreSettingsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currencyDisplayFormat">Currency Display</Label>
+              <Label htmlFor="currencyDisplayFormat" className="flex items-center">
+                Currency Display
+                <FieldTooltip content="How prices are formatted and displayed to customers." />
+              </Label>
               <Select
                 value={localizationForm.currencyDisplayFormat}
                 onValueChange={(value) => setLocalizationForm({ ...localizationForm, currencyDisplayFormat: value })}
@@ -1384,7 +1430,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* Features Dialog */}
-      <Dialog open={featuresOpen} onOpenChange={setFeaturesOpen}>
+      <Dialog open={featuresOpen} onOpenChange={(open) => handleDialogChange(open, setFeaturesOpen, 'features', featuresForm, setFeaturesForm)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Store Features</DialogTitle>
@@ -1472,7 +1518,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* Policies Dialog */}
-      <Dialog open={policiesOpen} onOpenChange={setPoliciesOpen}>
+      <Dialog open={policiesOpen} onOpenChange={(open) => handleDialogChange(open, setPoliciesOpen, 'policies', policiesForm, setPoliciesForm)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Store Policies</DialogTitle>
@@ -1557,7 +1603,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* Checkout Dialog */}
-      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+      <Dialog open={checkoutOpen} onOpenChange={(open) => handleDialogChange(open, setCheckoutOpen, 'checkout', checkoutForm, setCheckoutForm)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Checkout Settings</DialogTitle>
@@ -1663,7 +1709,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* Shipping Dialog */}
-      <Dialog open={shippingOpen} onOpenChange={setShippingOpen}>
+      <Dialog open={shippingOpen} onOpenChange={(open) => handleDialogChange(open, setShippingOpen, 'shipping', shippingForm, setShippingForm)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Shipping Settings</DialogTitle>
@@ -1764,7 +1810,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* SEO Dialog */}
-      <Dialog open={seoOpen} onOpenChange={setSeoOpen}>
+      <Dialog open={seoOpen} onOpenChange={(open) => handleDialogChange(open, setSeoOpen, 'seo', seoForm, setSeoForm)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit SEO Settings</DialogTitle>
@@ -1842,7 +1888,7 @@ export default function StoreSettingsPage() {
       </Dialog>
 
       {/* Theme Dialog */}
-      <Dialog open={themeOpen} onOpenChange={setThemeOpen}>
+      <Dialog open={themeOpen} onOpenChange={(open) => handleDialogChange(open, setThemeOpen, 'theme', themeForm, setThemeForm)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Theme Settings</DialogTitle>

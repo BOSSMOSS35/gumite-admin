@@ -17,10 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -64,7 +66,7 @@ import {
   getProduct,
   type Product,
 } from "@/lib/api";
-import { useOrders } from "@/hooks/use-orders";
+import { useOrders, useFulfillOrder } from "@/hooks/use-orders";
 import { useOrderStore } from "@/stores/order-store";
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
@@ -103,6 +105,8 @@ export default function OrdersPage() {
     offset,
     setOffset,
   } = useOrderStore();
+
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
   // Create order state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -144,6 +148,16 @@ export default function OrdersPage() {
     created_before: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
   });
 
+  const fulfillMutation = useFulfillOrder();
+
+  const handleInlineFulfill = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    fulfillMutation.mutate({ id }, {
+      onSuccess: () => toast.success("Order fulfilled"),
+      onError: () => toast.error("Failed to fulfill order")
+    });
+  };
+
   const orders = data?.orders ?? [];
   const count = data?.count ?? 0;
 
@@ -175,9 +189,53 @@ export default function OrdersPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Export complete");
+      toast.success("Export complete");
     } catch {
       toast.error("Failed to export orders");
     }
+  };
+
+  const handleBulkExport = () => {
+    try {
+      const selectedOrders = orders.filter((o) => selectedOrderIds.includes(o.id));
+      if (selectedOrders.length === 0) return;
+
+      const headers = ["Order", "Date", "Customer", "Payment", "Fulfillment", "Order Total"];
+      const rows = selectedOrders.map((order) => [
+        `#${order.displayId}`,
+        formatDate(order.createdAt),
+        order.email,
+        order.paymentStatus,
+        order.fulfillmentStatus,
+        formatPrice(order.total, order.currencyCode),
+      ]);
+
+      const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `orders-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${selectedOrderIds.length} orders`);
+    } catch {
+      toast.error("Failed to export orders");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrderIds.length === orders.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(orders.map((o) => o.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedOrderIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
   // Debounced product search
@@ -469,6 +527,13 @@ export default function OrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12 text-center">
+                      <Checkbox
+                        checked={orders.length > 0 && selectedOrderIds.length === orders.length}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all orders"
+                      />
+                    </TableHead>
                     <TableHead>Order</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Customer</TableHead>
@@ -494,17 +559,37 @@ export default function OrdersPage() {
                     orders.map((order) => (
                       <TableRow
                         key={order.id}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className={`cursor-pointer ${selectedOrderIds.includes(order.id) ? "bg-muted/50" : "hover:bg-muted/50"}`}
                         onClick={() => (window.location.href = `/orders/${order.id}`)}
                       >
+                        <TableCell className="w-12 text-center" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedOrderIds.includes(order.id)}
+                            onCheckedChange={() => toggleSelect(order.id)}
+                            aria-label={`Select order ${order.displayId}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">#{order.displayId}</TableCell>
                         <TableCell>{formatDate(order.createdAt)}</TableCell>
                         <TableCell>{order.email}</TableCell>
                         <TableCell>
                           <PaymentStatusBadge status={order.paymentStatus} />
                         </TableCell>
-                        <TableCell>
-                          <FulfillmentStatusBadge status={order.fulfillmentStatus} />
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {order.fulfillmentStatus === "NOT_FULFILLED" && order.status !== "CANCELED" ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger className="focus:outline-none">
+                                <FulfillmentStatusBadge status={order.fulfillmentStatus} />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={(e) => handleInlineFulfill(e as any, order.id)}>
+                                  Mark as Fulfilled
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : (
+                            <FulfillmentStatusBadge status={order.fulfillmentStatus} />
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatPrice(order.total, order.currencyCode)}
@@ -549,8 +634,35 @@ export default function OrdersPage() {
         </CardContent>
       </Card>
 
-      {/* Create Draft Order Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetCreateForm(); }}>
+      {/* Bulk Action Floating Bar */}
+        {selectedOrderIds.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+            <span className="text-sm font-medium">{selectedOrderIds.length} selected</span>
+            <div className="w-px h-4 bg-muted-foreground/30" />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-background hover:bg-background/20 hover:text-background h-8"
+                onClick={handleBulkExport}
+              >
+                Export
+              </Button>
+            </div>
+            <div className="w-px h-4 bg-muted-foreground/30 ml-2" />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-background hover:bg-background/20 hover:text-background h-8 px-2 ml-2"
+              onClick={() => setSelectedOrderIds([])}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Create Draft Order Dialog */}
+        <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetCreateForm(); }}>
         <DialogContent className="sm:max-w-[540px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
