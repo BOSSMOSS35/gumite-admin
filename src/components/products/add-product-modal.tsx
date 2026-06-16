@@ -51,6 +51,7 @@ import {
   type ProductFormState,
   type ProductFormActions,
 } from "@/stores/product-form-store";
+import { toast } from "sonner";
 
 type Step = {
   id: string;
@@ -853,15 +854,20 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     if (store.currentStep < steps.length - 1) {
       // Validate step 0 (Details)
       if (store.currentStep === 0 && !store.title.trim()) {
-        store.setError("Product title is required.");
+        const error = "Product title is required.";
+        store.setError(error);
+        toast.error(error);
         return;
       }
+      // Clear any previous errors when moving to next step
+      store.setError(null);
       store.nextStep();
     } else {
       // Final step — validate everything before creating
       const error = validateProduct();
       if (error) {
         store.setError(error);
+        toast.error(error);
         return;
       }
       await saveProduct(false);
@@ -870,7 +876,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const handleSaveAsDraft = async () => {
     if (!store.title.trim()) {
-      store.setError("Product title is required even for drafts.");
+      const error = "Product title is required even for drafts.";
+      store.setError(error);
+      toast.error(error);
       return;
     }
     await saveProduct(true);
@@ -885,12 +893,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       let imageUrls: string[] = [];
       if (store.images.length > 0) {
         try {
+          toast.info(`Uploading ${store.images.length} image${store.images.length > 1 ? 's' : ''}...`);
           const uploadResults = await Promise.all(
             store.images.map((file) => uploadProductImage(file))
           );
           imageUrls = uploadResults.map((r) => r.url);
         } catch (uploadErr) {
           console.warn("Image upload failed, creating product without images:", uploadErr);
+          toast.warning("Image upload failed. Product will be created without images.");
         }
       }
       // Build the product input
@@ -948,10 +958,25 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       };
 
       await createProductMutation.mutateAsync(productInput);
+
+      // Success toast
+      toast.success(
+        isDraft
+          ? `Draft product "${store.title}" created successfully`
+          : `Product "${store.title}" created successfully`,
+        {
+          description: isDraft ? "You can publish it later from the products list" : undefined,
+        }
+      );
+
       onSave?.(isDraft);
       handleClose();
     } catch (err) {
-      store.setError(err instanceof Error ? err.message : "Failed to create product");
+      const errorMessage = err instanceof Error ? err.message : "Failed to create product";
+      store.setError(errorMessage);
+      toast.error("Failed to create product", {
+        description: errorMessage,
+      });
       console.error("Failed to create product:", err);
     } finally {
       store.setSaving(false);
