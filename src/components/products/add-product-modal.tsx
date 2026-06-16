@@ -1179,13 +1179,13 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
                               {store.handleValidationStatus === 'checking' && (
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                               )}
                               {store.handleValidationStatus === 'available' && (
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <CheckCircle2 className="h-5 w-5 text-green-600 animate-in fade-in zoom-in duration-200" />
                               )}
                               {store.handleValidationStatus === 'unavailable' && (
-                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <AlertCircle className="h-5 w-5 text-red-500 animate-in fade-in zoom-in duration-200" />
                               )}
                             </div>
                           </div>
@@ -1195,10 +1195,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                               {store.handleValidationMessage}
                             </p>
                           )}
-                          {store.handleValidationStatus === 'available' && (
-                            <p className="text-xs text-green-600 flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Handle is available
+                          {store.handleValidationStatus === 'available' && store.handle && (
+                            <p className="text-xs text-green-600 font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Handle is available ✓
                             </p>
                           )}
                         </div>
