@@ -1459,6 +1459,16 @@ export async function getProduct(id: string): Promise<Product> {
   return apiFetch<Product>(`/admin/products/${id}`);
 }
 
+// Validate product handle availability
+export interface ValidateHandleResponse {
+  available: boolean;
+  handle: string;
+}
+
+export async function validateProductHandle(handle: string): Promise<ValidateHandleResponse> {
+  return apiFetch<ValidateHandleResponse>(`/admin/products/validate-handle?handle=${encodeURIComponent(handle)}`);
+}
+
 // Create product
 export async function createProduct(data: CreateProductInput): Promise<Product> {
   return apiFetch<Product>("/admin/products", {

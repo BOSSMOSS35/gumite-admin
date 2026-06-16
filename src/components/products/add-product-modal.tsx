@@ -29,6 +29,8 @@ import {
   Pencil,
   Shirt,
   Footprints,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import {
   getCategories,
@@ -36,6 +38,7 @@ import {
   getBrands,
   createBrand,
   uploadProductImage,
+  validateProductHandle,
   type ProductCategory,
   type ProductCollection,
   type Brand,
@@ -117,7 +120,7 @@ function ChipTagInput({
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={values.filter(Boolean).length === 0 ? placeholder : ""}
-        className="flex-1 min-w-[80px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        className="flex-1 min-w-20 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
       />
     </div>
   );
@@ -686,6 +689,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   const [newTag, setNewTag] = React.useState("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Handle validation debounce timer
+  const handleValidationTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
   // Backend data (kept local — not form state)
   const [categories, setCategories] = React.useState<ProductCategory[]>([]);
   const [collections, setCollections] = React.useState<ProductCollection[]>([]);
@@ -748,15 +754,65 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     }
   };
 
+  // Debounced handle validation
+  React.useEffect(() => {
+    if (!store.handle || store.handle.trim().length === 0) {
+      store.setHandleValidationStatus('idle');
+      store.setHandleValidationMessage(null);
+      return;
+    }
+
+    // Clear existing timer
+    if (handleValidationTimerRef.current) {
+      clearTimeout(handleValidationTimerRef.current);
+    }
+
+    // Set checking status
+    store.setHandleValidationStatus('checking');
+
+    // Debounce validation by 500ms
+    handleValidationTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await validateProductHandle(store.handle);
+        if (result.available) {
+          store.setHandleValidationStatus('available');
+          store.setHandleValidationMessage(null);
+        } else {
+          store.setHandleValidationStatus('unavailable');
+          store.setHandleValidationMessage(`Handle "${store.handle}" is already taken`);
+        }
+      } catch (error) {
+        console.error("Handle validation failed:", error);
+        store.setHandleValidationStatus('idle');
+        store.setHandleValidationMessage(null);
+      }
+    }, 500);
+
+    return () => {
+      if (handleValidationTimerRef.current) {
+        clearTimeout(handleValidationTimerRef.current);
+      }
+    };
+  }, [store.handle]);
+
   const handleClose = () => {
     store.reset();
     setNewTag("");
+    if (handleValidationTimerRef.current) {
+      clearTimeout(handleValidationTimerRef.current);
+    }
     onClose();
   };
 
   const validateProduct = (): string | null => {
     if (!store.title.trim()) return "Product title is required.";
     if (!store.handle.trim()) return "Product handle is required.";
+    if (store.handleValidationStatus === 'unavailable') {
+      return `Handle "${store.handle}" is already taken. Please choose a different handle.`;
+    }
+    if (store.handleValidationStatus === 'checking') {
+      return "Please wait while we validate the product handle.";
+    }
 
     if (store.hasVariants) {
       if (store.options.length === 0 || store.options.every(o => !o.name)) {
@@ -1052,17 +1108,46 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                           <Info className="h-3 w-3" />
                           <span className="text-xs">(Optional)</span>
                         </Label>
-                        <div className="flex">
-                          <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">
-                            /
-                          </span>
-                          <Input
-                            id="handle"
-                            placeholder="winter-jacket"
-                            className="rounded-l-none"
-                            value={store.handle}
-                            onChange={(e) => store.setField("handle", e.target.value)}
-                          />
+                        <div className="space-y-2">
+                          <div className="flex relative">
+                            <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">
+                              /
+                            </span>
+                            <Input
+                              id="handle"
+                              placeholder="winter-jacket"
+                              className={cn(
+                                "rounded-l-none pr-10",
+                                store.handleValidationStatus === 'unavailable' && "border-red-500 focus-visible:ring-red-500",
+                                store.handleValidationStatus === 'available' && "border-green-500 focus-visible:ring-green-500"
+                              )}
+                              value={store.handle}
+                              onChange={(e) => store.setField("handle", e.target.value)}
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              {store.handleValidationStatus === 'checking' && (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              )}
+                              {store.handleValidationStatus === 'available' && (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              )}
+                              {store.handleValidationStatus === 'unavailable' && (
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                          </div>
+                          {store.handleValidationMessage && store.handleValidationStatus === 'unavailable' && (
+                            <p className="text-xs text-red-600 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              {store.handleValidationMessage}
+                            </p>
+                          )}
+                          {store.handleValidationStatus === 'available' && (
+                            <p className="text-xs text-green-600 flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Handle is available
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
