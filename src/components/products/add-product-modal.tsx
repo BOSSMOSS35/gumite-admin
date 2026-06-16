@@ -1058,14 +1058,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           className={cn(
-            "fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm",
+            "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           )}
         />
         <DialogPrimitive.Content
           className={cn(
-            "fixed inset-4 z-[100] mx-auto my-auto",
+            "fixed inset-4 z-50 mx-auto my-auto",
             "flex flex-col bg-background shadow-2xl rounded-lg",
             "max-w-6xl w-full max-h-[90vh]",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
@@ -1608,7 +1608,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
     {/* Discard Draft Confirmation Dialog - Outside modal for proper z-index */}
     <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
-      <AlertDialogContent className="z-[100]">
+      <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Discard draft?</AlertDialogTitle>
           <AlertDialogDescription>
