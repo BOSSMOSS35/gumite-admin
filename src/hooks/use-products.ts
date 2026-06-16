@@ -117,7 +117,12 @@ export function useUpdateProduct() {
 export function useDeleteProduct() {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, string>({
+  return useMutation<
+    void,
+    Error,
+    string,
+    { previousProducts: [queryKey: readonly unknown[], data: unknown][] }
+  >({
     mutationFn: (id) => deleteProduct(id),
     // Optimistic update - remove product from UI immediately
     onMutate: async (productId) => {
