@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import {
   ChevronRight,
   ArrowUpRight,
@@ -106,6 +107,13 @@ export default function DashboardPage() {
     date: new Date(point.date).toLocaleDateString("en-US", { weekday: "short" }),
     sales: point.revenue,
   })) || [];
+
+  const chartConfig = {
+    sales: {
+      label: "Sales",
+      color: "hsl(var(--primary))",
+    },
+  } satisfies ChartConfig;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -263,24 +271,24 @@ export default function DashboardPage() {
                 <Skeleton className="w-full h-full rounded-md" />
               </div>
             ) : chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer config={chartConfig} className="h-full w-full">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(value) => `$${value}`} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: number) => [`$${value}`, 'Sales']}
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(value) => `£${value}`} />
+                  <ChartTooltip 
+                    cursor={false} 
+                    content={<ChartTooltipContent indicator="line" formatter={(value) => `£${value}`} />}
                   />
-                  <Area type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+                  <Area type="monotone" dataKey="sales" stroke="var(--color-sales)" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
                 </AreaChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             ) : (
               <div className="w-full h-full flex items-center justify-center border border-dashed rounded-md">
                 <p className="text-muted-foreground text-sm">No sales data for this period</p>
