@@ -13,6 +13,16 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Autocomplete } from "@/components/ui/autocomplete";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   X,
   Upload,
   Info,
@@ -698,6 +708,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   // Track if we've shown the restore draft notification
   const [hasShownRestoreNotification, setHasShownRestoreNotification] = React.useState(false);
 
+  // Discard draft confirmation dialog
+  const [showDiscardDialog, setShowDiscardDialog] = React.useState(false);
+
   // Backend data (kept local — not form state)
   const [categories, setCategories] = React.useState<ProductCategory[]>([]);
   const [collections, setCollections] = React.useState<ProductCollection[]>([]);
@@ -820,14 +833,13 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     onClose();
   };
 
-  const handleDiscardDraft = () => {
-    if (confirm("Are you sure you want to discard this draft? All unsaved changes will be lost.")) {
-      store.reset();
-      setNewTag("");
-      setHasShownRestoreNotification(false);
-      toast.success("Draft discarded");
-      onClose();
-    }
+  const confirmDiscardDraft = () => {
+    store.reset();
+    setNewTag("");
+    setHasShownRestoreNotification(false);
+    setShowDiscardDialog(false);
+    toast.success("Draft discarded");
+    onClose();
   };
 
   const validateProduct = (): string | null => {
@@ -1559,7 +1571,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                   </Button>
                 )}
                 {(store.title || store.description || store.handle) && (
-                  <Button type="button" variant="ghost" onClick={handleDiscardDraft} disabled={store.saving} className="text-destructive hover:text-destructive">
+                  <Button type="button" variant="ghost" onClick={() => setShowDiscardDialog(true)} disabled={store.saving} className="text-destructive hover:text-destructive">
                     Discard Draft
                   </Button>
                 )}
@@ -1595,6 +1607,24 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
+
+      {/* Discard Draft Confirmation Dialog */}
+      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to discard this draft? All unsaved changes will be lost and cannot be recovered.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDiscardDraft} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DialogPrimitive.Root>
   );
 }
