@@ -119,10 +119,41 @@ export function useDeleteProduct() {
 
   return useMutation<void, Error, string>({
     mutationFn: (id) => deleteProduct(id),
+    // Optimistic update - remove product from UI immediately
+    onMutate: async (productId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: productKeys.lists() });
+
+      // Snapshot previous value
+      const previousProducts = queryClient.getQueriesData({ queryKey: productKeys.lists() });
+
+      // Optimistically remove from all product lists
+      queryClient.setQueriesData<ProductsResponse>(
+        { queryKey: productKeys.lists() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            content: old.content.filter((p) => p.id !== productId),
+            totalElements: old.totalElements - 1,
+          };
+        }
+      );
+
+      return { previousProducts };
+    },
     onSuccess: (_result, productId) => {
-      // Invalidate both the list and the specific product detail
+      // Invalidate to ensure we're in sync with server
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
+    },
+    onError: (_error, _productId, context) => {
+      // Rollback on error
+      if (context?.previousProducts) {
+        context.previousProducts.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
     },
   });
 }

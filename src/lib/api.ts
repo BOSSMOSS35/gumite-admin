@@ -127,8 +127,19 @@ export async function apiFetch<T>(
     throw await parseErrorResponse(response);
   }
 
-  const json = await response.json();
-  return json as T;
+  // Handle 204 No Content responses (e.g., DELETE requests)
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
+    return undefined as T;
+  }
+
+  // Only try to parse JSON if there's content
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    const json = await response.json();
+    return json as T;
+  }
+
+  return undefined as T;
 }
 
 // Order types
