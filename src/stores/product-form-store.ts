@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 // --- Types ---
 
@@ -246,9 +247,10 @@ const initialState: ProductFormState = {
   handleValidationMessage: null,
 };
 
-export const useProductFormStore = create<ProductFormState & ProductFormActions>(
-  (set, get) => ({
-    ...initialState,
+export const useProductFormStore = create<ProductFormState & ProductFormActions>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
 
     // --- Field updates ---
     setField: (field, value) => set({ [field]: value }),
@@ -423,5 +425,33 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
 
     // --- Reset ---
     reset: () => set(initialState),
-  })
+    }),
+    {
+      name: 'product-form-storage',
+      storage: createJSONStorage(() => localStorage),
+      // Only persist form data, not UI state
+      partialize: (state) => ({
+        title: state.title,
+        subtitle: state.subtitle,
+        handle: state.handle,
+        description: state.description,
+        hasVariants: state.hasVariants,
+        category: state.category,
+        collection: state.collection,
+        brandId: state.brandId,
+        tags: state.tags,
+        options: state.options,
+        variantPrices: state.variantPrices,
+        price: state.price,
+        compareAtPrice: state.compareAtPrice,
+        costPerItem: state.costPerItem,
+        sku: state.sku,
+        barcode: state.barcode,
+        quantity: state.quantity,
+        trackQuantity: state.trackQuantity,
+        // Exclude: images (File objects can't be serialized),
+        // currentStep, saving, error, validation states
+      }),
+    }
+  )
 );

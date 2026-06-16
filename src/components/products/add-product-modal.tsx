@@ -693,6 +693,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   // Handle validation debounce timer
   const handleValidationTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Track if we've shown the restore draft notification
+  const [hasShownRestoreNotification, setHasShownRestoreNotification] = React.useState(false);
+
   // Backend data (kept local — not form state)
   const [categories, setCategories] = React.useState<ProductCategory[]>([]);
   const [collections, setCollections] = React.useState<ProductCollection[]>([]);
@@ -718,8 +721,18 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   React.useEffect(() => {
     if (isOpen) {
       fetchBackendData();
+
+      // Check if there's cached data and notify user
+      const hasData = Boolean(store.title || store.description || store.handle);
+      if (hasData && !hasShownRestoreNotification) {
+        setHasShownRestoreNotification(true);
+        toast.info("Unsaved draft detected", {
+          description: "Your previous work has been restored. You can continue editing or discard it.",
+          duration: 5000,
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, hasShownRestoreNotification]);
 
   const fetchBackendData = async () => {
     setLoadingData(true);
@@ -797,12 +810,22 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   }, [store.handle]);
 
   const handleClose = () => {
-    store.reset();
+    // Don't reset store on close - let the cache persist
     setNewTag("");
     if (handleValidationTimerRef.current) {
       clearTimeout(handleValidationTimerRef.current);
     }
     onClose();
+  };
+
+  const handleDiscardDraft = () => {
+    if (confirm("Are you sure you want to discard this draft? All unsaved changes will be lost.")) {
+      store.reset();
+      setNewTag("");
+      setHasShownRestoreNotification(false);
+      toast.success("Draft discarded");
+      onClose();
+    }
   };
 
   const validateProduct = (): string | null => {
@@ -969,8 +992,12 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
         }
       );
 
+      // Clear cache on successful creation
+      store.reset();
+      setHasShownRestoreNotification(false);
+
       onSave?.(isDraft);
-      handleClose();
+      onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to create product";
       store.setError(errorMessage);
@@ -1522,10 +1549,15 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
               </div>
             )}
             <div className="flex items-center justify-between px-6 py-4">
-              <div>
+              <div className="flex items-center gap-2">
                 {store.currentStep > 0 && (
                   <Button type="button" variant="ghost" onClick={store.prevStep} disabled={store.saving}>
                     Back
+                  </Button>
+                )}
+                {(store.title || store.description || store.handle) && (
+                  <Button type="button" variant="ghost" onClick={handleDiscardDraft} disabled={store.saving} className="text-destructive hover:text-destructive">
+                    Discard Draft
                   </Button>
                 )}
               </div>
