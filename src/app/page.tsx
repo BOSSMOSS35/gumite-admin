@@ -19,7 +19,7 @@ import {
   Truck,
   RefreshCw,
 } from "lucide-react";
-import { useDashboard } from "@/hooks/use-dashboard";
+import { useDashboard, useAnalytics } from "@/hooks/use-dashboard";
 import { useActivityEvents } from "@/hooks/use-activity-events";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -27,15 +27,7 @@ import { formatPrice } from "@/lib/api";
 import { Wifi, WifiOff, Radio } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 
-const MOCK_CHART_DATA = [
-  { date: "Mon", sales: 4000 },
-  { date: "Tue", sales: 3000 },
-  { date: "Wed", sales: 5000 },
-  { date: "Thu", sales: 2780 },
-  { date: "Fri", sales: 6890 },
-  { date: "Sat", sales: 8390 },
-  { date: "Sun", sales: 7490 },
-];
+
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -107,7 +99,13 @@ function ActivitySkeleton() {
 
 export default function DashboardPage() {
   const { stats, isLoading, isError, error, refetch } = useDashboard();
+  const { data: analytics, isLoading: analyticsLoading } = useAnalytics("7d");
   const { activities, connectionStatus, isConnected } = useActivityEvents();
+
+  const chartData = analytics?.salesOverTime?.map((point) => ({
+    date: new Date(point.date).toLocaleDateString("en-US", { weekday: "short" }),
+    sales: point.revenue,
+  })) || [];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -260,24 +258,34 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="h-[300px] w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MOCK_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(value) => `$${value}`} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: number) => [`$${value}`, 'Sales']}
-                />
-                <Area type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {analyticsLoading ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <Skeleton className="w-full h-full rounded-md" />
+              </div>
+            ) : chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(value) => `$${value}`} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value: number) => [`$${value}`, 'Sales']}
+                  />
+                  <Area type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center border border-dashed rounded-md">
+                <p className="text-muted-foreground text-sm">No sales data for this period</p>
+              </div>
+            )}
           </div>
         </div>
 
