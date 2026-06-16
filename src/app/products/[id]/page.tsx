@@ -65,6 +65,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -538,6 +539,17 @@ export default function ProductDetailPage() {
       }
     );
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave]);
 
   const saving = updateProductMutation.isPending;
 
@@ -2005,27 +2017,25 @@ export default function ProductDetailPage() {
                         {product.variants.length === 0 && (
                           <TableRow>
                             <TableCell colSpan={6} className="py-8 text-center">
-                              <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-sm text-muted-foreground">
-                                <Package className="h-8 w-8" />
-                                <div>
-                                  <p className="font-medium text-foreground">No purchasable variants created yet</p>
-                                  <p>
-                                    Generate variants from the option values above so customers can select them and add this product to bag.
-                                  </p>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  onClick={handleGenerateVariants}
-                                  disabled={variantGenerating || !hasOptionVariantMismatch}
-                                >
-                                  {variantGenerating ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Copy className="mr-2 h-4 w-4" />
-                                  )}
-                                  Generate variants
-                                </Button>
-                              </div>
+                              <EmptyState
+                                icon={Package}
+                                title="No purchasable variants created yet"
+                                description="Generate variants from the option values above so customers can select them and add this product to bag."
+                                customAction={
+                                  <Button
+                                    size="sm"
+                                    onClick={handleGenerateVariants}
+                                    disabled={variantGenerating || !hasOptionVariantMismatch}
+                                  >
+                                    {variantGenerating ? (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Copy className="mr-2 h-4 w-4" />
+                                    )}
+                                    Generate variants
+                                  </Button>
+                                }
+                              />
                             </TableCell>
                           </TableRow>
                         )}

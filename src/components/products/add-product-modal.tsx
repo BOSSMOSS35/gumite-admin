@@ -898,11 +898,25 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const handleContinue = async () => {
     if (store.currentStep < steps.length - 1) {
-      // Validate step 0 (Details) - only show error banner, no toast
-      if (store.currentStep === 0 && !store.title.trim()) {
-        store.setFieldError("title", "Product title is required.");
-        store.setError("Product title is required.");
-        return;
+      // Validate step 0 (Details)
+      if (store.currentStep === 0) {
+        let hasError = false;
+        if (!store.title.trim()) {
+          store.setFieldError("title", "Product title is required.");
+          hasError = true;
+        }
+        if (!store.handle.trim()) {
+          store.setFieldError("handle", "Product handle is required.");
+          hasError = true;
+        } else if (store.handleValidationStatus === 'unavailable') {
+          store.setFieldError("handle", `Handle "${store.handle}" is already taken.`);
+          hasError = true;
+        }
+        
+        if (hasError) {
+          store.setError("Please fix the errors before continuing.");
+          return;
+        }
       }
       // Clear any previous errors when moving to next step
       store.clearFieldErrors();
@@ -1010,7 +1024,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
             ],
       };
 
-      await createProductMutation.mutateAsync(productInput);
+      const createdProduct = await createProductMutation.mutateAsync(productInput);
 
       // Success toast
       toast.success(
@@ -1019,6 +1033,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
           : `Product "${store.title}" created successfully`,
         {
           description: isDraft ? "You can publish it later from the products list" : undefined,
+          action: {
+            label: "View Product",
+            onClick: () => window.location.href = `/products/${createdProduct.id}`,
+          },
         }
       );
 

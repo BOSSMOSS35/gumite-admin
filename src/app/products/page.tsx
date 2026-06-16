@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useCallback } from "react";
+import { useState, Suspense, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getImageUrl } from "@/lib/utils";
@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +99,8 @@ function ProductsPageContent({ onOpenModal }: { onOpenModal: () => void }) {
 
 export default function ProductsPage() {
   const [addProductOpen, setAddProductOpen] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Zustand store — client UI state
   const {
@@ -159,6 +162,49 @@ export default function ProductsPage() {
     [openDeleteDialog],
   );
 
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedProductIds.length === 0) return;
+    try {
+      // Loop over and delete. Real app would have a bulk endpoint
+      await Promise.all(selectedProductIds.map((id) => deleteProductMutation.mutateAsync(id)));
+      toast.success(`${selectedProductIds.length} products deleted`);
+      setSelectedProductIds([]);
+    } catch (err) {
+      toast.error("Failed to delete selected products");
+    }
+  }, [selectedProductIds, deleteProductMutation]);
+
+  const toggleProductSelect = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProductIds(prev => [...prev, id]);
+    } else {
+      setSelectedProductIds(prev => prev.filter(p => p !== id));
+    }
+  };
+
+  const toggleAllSelect = (checked: boolean) => {
+    if (checked) {
+      setSelectedProductIds(products.map(p => p.id));
+    } else {
+      setSelectedProductIds([]);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CMD+K or / to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "/" && document.activeElement?.tagName !== "INPUT") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const confirmDeleteProduct = useCallback(async () => {
     if (!productToDeleteId) return;
     try {
@@ -209,7 +255,8 @@ export default function ProductsPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search products..."
+                  ref={searchInputRef}
+                  placeholder="Search products (Press / to focus)"
                   className="pl-9"
                   value={filters.searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -255,11 +302,24 @@ export default function ProductsPage() {
 
       {/* Products Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>All Products</CardTitle>
-          <CardDescription>
-            {totalElements} products in your inventory
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>All Products</CardTitle>
+            <CardDescription>
+              {totalElements} products in your inventory
+            </CardDescription>
+          </div>
+          {selectedProductIds.length > 0 && (
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+              <span className="text-sm text-muted-foreground mr-2">
+                {selectedProductIds.length} selected
+              </span>
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Selected
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {/* Error State */}
@@ -290,6 +350,12 @@ export default function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[40px]">
+                    <Checkbox 
+                      checked={products.length > 0 && selectedProductIds.length === products.length}
+                      onCheckedChange={(checked) => toggleAllSelect(checked === true)}
+                    />
+                  </TableHead>
                   <TableHead className="w-[100px]">Image</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead className="hidden md:table-cell">Handle</TableHead>
@@ -312,7 +378,13 @@ export default function ProductsPage() {
                   </TableRow>
                 ) : (
                   products.map((product) => (
-                    <TableRow key={product.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableRow key={product.id} className="cursor-pointer hover:bg-muted/50" data-state={selectedProductIds.includes(product.id) ? "selected" : undefined}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox 
+                          checked={selectedProductIds.includes(product.id)}
+                          onCheckedChange={(checked) => toggleProductSelect(product.id, checked === true)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <Link href={`/products/${product.id}`}>
                           {product.thumbnail ? (

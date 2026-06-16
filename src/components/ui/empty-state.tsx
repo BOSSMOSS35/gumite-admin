@@ -15,10 +15,11 @@ interface EmptyStateProps {
   title: string
   description: string
   action?: EmptyStateAction
+  customAction?: React.ReactNode
   className?: string
 }
 
-export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action, customAction, className }: EmptyStateProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center py-12 px-4 text-center", className)}>
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
@@ -26,7 +27,9 @@ export function EmptyState({ icon: Icon, title, description, action, className }
       </div>
       <h3 className="text-lg font-medium mb-1">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-sm mb-6">{description}</p>
-      {action && (
+      {customAction ? (
+        customAction
+      ) : action && (
         action.href ? (
           <Button asChild>
             <Link href={action.href}>{action.label}</Link>
