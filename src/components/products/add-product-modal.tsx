@@ -1604,24 +1604,25 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
-
-      {/* Discard Draft Confirmation Dialog */}
-      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard draft?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to discard this draft? All unsaved changes will be lost and cannot be recovered.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDiscardDraft} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DialogPrimitive.Root>
+
+    {/* Discard Draft Confirmation Dialog - Outside modal for proper z-index */}
+    <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+      <AlertDialogContent className="z-[100]">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard draft?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to discard this draft? All unsaved changes will be lost and cannot be recovered.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDiscardDraft} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Discard
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
