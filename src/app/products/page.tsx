@@ -65,6 +65,7 @@ import type { ProductStatus, ProductSummary } from "@/lib/api";
 import { useProducts, useDeleteProduct, useCategories } from "@/hooks/use-products";
 import { useProductStore } from "@/stores/product-store";
 import { toast } from "sonner";
+import { useDebounce } from "@/hooks/use-debounce";
 
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
@@ -112,6 +113,8 @@ export default function ProductsPage() {
   } = useProductStore();
 
   // React Query — server state
+  const debouncedSearchQuery = useDebounce(filters.searchQuery, 300);
+
   const {
     data: productsData,
     isLoading,
@@ -122,7 +125,7 @@ export default function ProductsPage() {
   } = useProducts({
     start: pagination.start,
     end: pagination.end,
-    q: filters.searchQuery || undefined,
+    q: debouncedSearchQuery || undefined,
     status: filters.status !== "all" ? filters.status : undefined,
     categoryId: filters.categoryId !== "all" ? filters.categoryId : undefined,
   });
@@ -289,9 +292,9 @@ export default function ProductsPage() {
                 <TableRow>
                   <TableHead className="w-[100px]">Image</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead>Handle</TableHead>
-                  <TableHead className="text-center">Variants</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Handle</TableHead>
+                  <TableHead className="text-center hidden sm:table-cell">Variants</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -335,11 +338,11 @@ export default function ProductsPage() {
                           )}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">/{product.handle}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-muted-foreground hidden md:table-cell">/{product.handle}</TableCell>
+                      <TableCell className="text-center hidden sm:table-cell">
                         {product.variantCount ?? 0}
                       </TableCell>
-                      <TableCell>{getStatusBadge(product.status)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{getStatusBadge(product.status)}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

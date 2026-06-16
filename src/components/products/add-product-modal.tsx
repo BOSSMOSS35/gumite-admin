@@ -714,8 +714,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   // Backend data (kept local — not form state)
   const [categories, setCategories] = React.useState<ProductCategory[]>([]);
   const [collections, setCollections] = React.useState<ProductCollection[]>([]);
-  const [brands, setBrands] = React.useState<Brand[]>([]);
+  const [brands, setBrands] = React.useState<{ id: string; name: string }[]>([]);
   const [loadingData, setLoadingData] = React.useState(false);
+
+  const [uploadProgress, setUploadProgress] = React.useState(0);
 
   // --- Zustand store ---
   const store = useProductFormStore();
@@ -843,13 +845,20 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   };
 
   const validateProduct = (): string | null => {
-    if (!store.title.trim()) return "Product title is required.";
-    if (!store.handle.trim()) return "Product handle is required.";
-    if (store.handleValidationStatus === 'unavailable') {
-      return `Handle "${store.handle}" is already taken. Please choose a different handle.`;
+    store.clearFieldErrors();
+    let hasError = false;
+
+    if (!store.title.trim()) {
+      store.setFieldError("title", "Product title is required.");
+      hasError = true;
     }
-    if (store.handleValidationStatus === 'checking') {
-      return "Please wait while we validate the product handle.";
+    if (!store.handle.trim()) {
+      store.setFieldError("handle", "Product handle is required.");
+      hasError = true;
+    }
+    if (store.handleValidationStatus === 'unavailable') {
+      store.setFieldError("handle", `Handle "${store.handle}" is already taken.`);
+      hasError = true;
     }
 
     if (store.hasVariants) {
@@ -891,10 +900,12 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     if (store.currentStep < steps.length - 1) {
       // Validate step 0 (Details) - only show error banner, no toast
       if (store.currentStep === 0 && !store.title.trim()) {
+        store.setFieldError("title", "Product title is required.");
         store.setError("Product title is required.");
         return;
       }
       // Clear any previous errors when moving to next step
+      store.clearFieldErrors();
       store.setError(null);
       store.nextStep();
     } else {
@@ -921,16 +932,24 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   const saveProduct = async (isDraft: boolean) => {
     store.setSaving(true);
     store.setError(null);
+    setUploadProgress(0);
 
     try {
       // Upload images to S3 first (non-blocking — product creation proceeds even if upload fails)
       let imageUrls: string[] = [];
       if (store.images.length > 0) {
         try {
+          const interval = setInterval(() => {
+            setUploadProgress((p) => Math.min(p + 10, 90));
+          }, 200);
+
           toast.info(`Uploading ${store.images.length} image${store.images.length > 1 ? 's' : ''}...`);
           const uploadResults = await Promise.all(
             store.images.map((file) => uploadProductImage(file))
           );
+          
+          clearInterval(interval);
+          setUploadProgress(100);
           imageUrls = uploadResults.map((r) => r.url);
         } catch (uploadErr) {
           console.warn("Image upload failed, creating product without images:", uploadErr);
@@ -1147,13 +1166,20 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="title" className={store.fieldErrors.title ? "text-red-500" : ""}>Title</Label>
                         <Input
                           id="title"
                           placeholder="Winter jacket"
+                          className={store.fieldErrors.title ? "border-red-500 focus-visible:ring-red-500" : ""}
                           value={store.title}
-                          onChange={(e) => store.setTitle(e.target.value)}
+                          onChange={(e) => {
+                            store.setTitle(e.target.value);
+                            store.setFieldError("title", null);
+                          }}
                         />
+                        {store.fieldErrors.title && (
+                          <p className="text-xs text-red-500">{store.fieldErrors.title}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="subtitle" className="text-muted-foreground">
@@ -1445,7 +1471,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         <h2 className="text-lg font-semibold">Pricing</h2>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label>Price</Label>
+                            <Label className={store.fieldErrors.price ? "text-red-500" : ""}>Price</Label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                                 £
@@ -1455,11 +1481,17 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                                 min="0"
                                 step="0.01"
                                 placeholder="0.00"
-                                className="pl-7"
+                                className={cn("pl-7", store.fieldErrors.price ? "border-red-500 focus-visible:ring-red-500" : "")}
                                 value={store.price}
-                                onChange={(e) => store.setField("price", e.target.value)}
+                                onChange={(e) => {
+                                  store.setField("price", e.target.value);
+                                  store.setFieldError("price", null);
+                                }}
                               />
                             </div>
+                            {store.fieldErrors.price && (
+                              <p className="text-xs text-red-500">{store.fieldErrors.price}</p>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-muted-foreground">
@@ -1526,13 +1558,20 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label>Quantity</Label>
+                            <Label className={store.fieldErrors.quantity ? "text-red-500" : ""}>Quantity</Label>
                             <Input
                               type="number"
                               placeholder="0"
+                              className={store.fieldErrors.quantity ? "border-red-500 focus-visible:ring-red-500" : ""}
                               value={store.quantity}
-                              onChange={(e) => store.setField("quantity", e.target.value)}
+                              onChange={(e) => {
+                                store.setField("quantity", e.target.value);
+                                store.setFieldError("quantity", null);
+                              }}
                             />
+                            {store.fieldErrors.quantity && (
+                              <p className="text-xs text-red-500">{store.fieldErrors.quantity}</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1569,7 +1608,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                   </Button>
                 )}
                 {(store.title || store.description || store.handle) && (
-                  <Button type="button" variant="ghost" onClick={() => setShowDiscardDialog(true)} disabled={store.saving} className="text-destructive hover:text-destructive">
+                  <Button type="button" variant="destructive" onClick={() => setShowDiscardDialog(true)} disabled={store.saving} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none">
                     Discard Draft
                   </Button>
                 )}
@@ -1582,7 +1621,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                   {store.saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      {uploadProgress > 0 && uploadProgress < 100 ? `Uploading ${uploadProgress}%` : "Saving..."}
                     </>
                   ) : (
                     "Save as draft"
@@ -1592,7 +1631,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                   {store.saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      {uploadProgress > 0 && uploadProgress < 100 ? `Uploading ${uploadProgress}%` : "Creating..."}
                     </>
                   ) : store.currentStep === steps.length - 1 ? (
                     "Create product"

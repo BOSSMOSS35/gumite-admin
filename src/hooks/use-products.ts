@@ -181,13 +181,52 @@ export function useCreateVariant() {
   return useMutation<
     ProductVariant,
     Error,
-    { productId: string; data: CreateVariantInput }
+    { productId: string; data: CreateVariantInput },
+    { previousProduct: Product | undefined }
   >({
     mutationFn: ({ productId, data }) => createVariant(productId, data),
+    onMutate: async ({ productId, data }) => {
+      await queryClient.cancelQueries({ queryKey: productKeys.detail(productId) });
+      const previousProduct = queryClient.getQueryData<Product>(productKeys.detail(productId));
+
+      queryClient.setQueryData<Product>(productKeys.detail(productId), (old) => {
+        if (!old) return old;
+        const newVariant: ProductVariant = {
+          id: `temp-${Date.now()}`,
+          productId: productId,
+          title: data.title || "New Variant",
+          options: data.options || {},
+          allowBackorder: data.allowBackorder || false,
+          manageInventory: data.manageInventory !== false,
+          prices: (data.prices || []).map((p, i) => ({
+            id: `price-${Date.now()}-${i}`,
+            currencyCode: p.currencyCode || "GBP",
+            amount: p.amount || 0,
+            hasDiscount: false,
+          })),
+          sku: data.sku,
+          barcode: data.barcode,
+          inventoryQuantity: data.inventoryQuantity || 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return {
+          ...old,
+          variants: [...(old.variants || []), newVariant]
+        };
+      });
+
+      return { previousProduct };
+    },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
         queryKey: productKeys.detail(variables.productId),
       });
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previousProduct) {
+        queryClient.setQueryData(productKeys.detail(variables.productId), context.previousProduct);
+      }
     },
   });
 }
@@ -198,13 +237,54 @@ export function useUpdateVariant() {
   return useMutation<
     ProductVariant,
     Error,
-    { variantId: string; data: UpdateVariantInput; productId: string }
+    { variantId: string; data: UpdateVariantInput; productId: string },
+    { previousProduct: Product | undefined }
   >({
     mutationFn: ({ variantId, data }) => updateVariant(variantId, data),
+    onMutate: async ({ productId, variantId, data }) => {
+      await queryClient.cancelQueries({ queryKey: productKeys.detail(productId) });
+      const previousProduct = queryClient.getQueryData<Product>(productKeys.detail(productId));
+
+      queryClient.setQueryData<Product>(productKeys.detail(productId), (old) => {
+        if (!old || !old.variants) return old;
+        return {
+          ...old,
+          variants: old.variants.map((v) => {
+            if (v.id !== variantId) return v;
+            
+            // Map prices to correct type if they exist in data
+            const updatedPrices = data.prices 
+              ? data.prices.map((p, i) => {
+                  const existingPrice = v.prices[i] || {};
+                  return {
+                    id: existingPrice.id || `price-${Date.now()}-${i}`,
+                    currencyCode: p.currencyCode || existingPrice.currencyCode || "GBP",
+                    amount: p.amount ?? existingPrice.amount ?? 0,
+                    hasDiscount: existingPrice.hasDiscount || false,
+                  };
+                })
+              : v.prices;
+
+            return {
+              ...v,
+              ...data,
+              prices: updatedPrices,
+            };
+          })
+        };
+      });
+
+      return { previousProduct };
+    },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
         queryKey: productKeys.detail(variables.productId),
       });
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previousProduct) {
+        queryClient.setQueryData(productKeys.detail(variables.productId), context.previousProduct);
+      }
     },
   });
 }
@@ -215,13 +295,33 @@ export function useDeleteVariant() {
   return useMutation<
     void,
     Error,
-    { variantId: string; productId: string }
+    { variantId: string; productId: string },
+    { previousProduct: Product | undefined }
   >({
     mutationFn: ({ variantId }) => deleteVariant(variantId),
+    onMutate: async ({ productId, variantId }) => {
+      await queryClient.cancelQueries({ queryKey: productKeys.detail(productId) });
+      const previousProduct = queryClient.getQueryData<Product>(productKeys.detail(productId));
+
+      queryClient.setQueryData<Product>(productKeys.detail(productId), (old) => {
+        if (!old || !old.variants) return old;
+        return {
+          ...old,
+          variants: old.variants.filter((v) => v.id !== variantId)
+        };
+      });
+
+      return { previousProduct };
+    },
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
         queryKey: productKeys.detail(variables.productId),
       });
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previousProduct) {
+        queryClient.setQueryData(productKeys.detail(variables.productId), context.previousProduct);
+      }
     },
   });
 }

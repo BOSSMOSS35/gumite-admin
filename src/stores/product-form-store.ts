@@ -53,6 +53,7 @@ export interface ProductFormState {
   // UI state
   saving: boolean;
   error: string | null;
+  fieldErrors: Record<string, string>;
 
   // Handle validation
   handleValidationStatus: 'idle' | 'checking' | 'available' | 'unavailable';
@@ -211,6 +212,8 @@ export interface ProductFormActions {
   // Saving state
   setSaving: (saving: boolean) => void;
   setError: (error: string | null) => void;
+  setFieldError: (field: string, error: string | null) => void;
+  clearFieldErrors: () => void;
 
   // Handle validation
   setHandleValidationStatus: (status: 'idle' | 'checking' | 'available' | 'unavailable') => void;
@@ -243,6 +246,7 @@ const initialState: ProductFormState = {
   trackQuantity: true,
   saving: false,
   error: null,
+  fieldErrors: {},
   handleValidationStatus: 'idle',
   handleValidationMessage: null,
 };
@@ -418,6 +422,16 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
     // --- Saving ---
     setSaving: (saving) => set({ saving }),
     setError: (error) => set({ error }),
+    setFieldError: (field, error) => set((s) => {
+      const newErrors = { ...s.fieldErrors };
+      if (error) {
+        newErrors[field] = error;
+      } else {
+        delete newErrors[field];
+      }
+      return { fieldErrors: newErrors };
+    }),
+    clearFieldErrors: () => set({ fieldErrors: {} }),
 
     // --- Handle validation ---
     setHandleValidationStatus: (status) => set({ handleValidationStatus: status }),
