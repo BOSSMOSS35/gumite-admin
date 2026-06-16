@@ -1054,6 +1054,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   };
 
   return (
+    <>
     <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
