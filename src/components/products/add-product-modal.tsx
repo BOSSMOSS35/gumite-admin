@@ -621,6 +621,8 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                               </span>
                               <Input
                                 type="number"
+                                min="0"
+                                step="0.01"
                                 placeholder="0.00"
                                 className={cn(
                                   "h-8 pl-5 text-sm",
@@ -1155,10 +1157,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="handle" className="flex items-center gap-1 text-muted-foreground">
+                        <Label htmlFor="handle" className="flex items-center gap-1">
                           Handle
-                          <Info className="h-3 w-3" />
-                          <span className="text-xs">(Optional)</span>
+                          <Info className="h-3 w-3 text-muted-foreground" />
                         </Label>
                         <div className="space-y-2">
                           <div className="flex relative">
@@ -1441,6 +1442,8 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                               </span>
                               <Input
                                 type="number"
+                                min="0"
+                                step="0.01"
                                 placeholder="0.00"
                                 className="pl-7"
                                 value={store.price}
