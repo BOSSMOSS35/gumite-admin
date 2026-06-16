@@ -889,11 +889,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const handleContinue = async () => {
     if (store.currentStep < steps.length - 1) {
-      // Validate step 0 (Details)
+      // Validate step 0 (Details) - only show error banner, no toast
       if (store.currentStep === 0 && !store.title.trim()) {
-        const error = "Product title is required.";
-        store.setError(error);
-        toast.error(error);
+        store.setError("Product title is required.");
         return;
       }
       // Clear any previous errors when moving to next step
@@ -904,6 +902,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       const error = validateProduct();
       if (error) {
         store.setError(error);
+        // Only show toast for final validation failures
         toast.error(error);
         return;
       }
@@ -912,11 +911,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   };
 
   const handleSaveAsDraft = async () => {
+    // Allow drafts even without title - just show warning
     if (!store.title.trim()) {
-      const error = "Product title is required even for drafts.";
-      store.setError(error);
-      toast.error(error);
-      return;
+      toast.warning("Saving draft without a title. You can add it later.");
     }
     await saveProduct(true);
   };
