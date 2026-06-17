@@ -63,7 +63,7 @@ import { StackedThumbnails } from "@/components/ui/thumbnail";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AddProductModal } from "@/components/products/add-product-modal";
 import type { ProductStatus, ProductSummary } from "@/lib/api";
-import { useProducts, useDeleteProduct, useCategories } from "@/hooks/use-products";
+import { useProducts, useDeleteProduct, useCategories, useUpdateProduct } from "@/hooks/use-products";
 import { useProductStore } from "@/stores/product-store";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -98,6 +98,7 @@ function ProductsPageContent({ onOpenModal }: { onOpenModal: () => void }) {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [addProductOpen, setAddProductOpen] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +139,7 @@ export default function ProductsPage() {
   const deleteProductMutation = useDeleteProduct();
 
   const products = productsData?.content ?? [];
-  const totalElements = productsData?.totalElements ?? 0;
+  const totalElements = productsData?.totalElements || products.length || 0;
   const totalPages = productsData?.totalPages ?? 0;
   const categories = categoriesData?.categories ?? [];
 
@@ -146,6 +147,8 @@ export default function ProductsPage() {
   const productToDelete = productToDeleteId
     ? products.find((p) => p.id === productToDeleteId)
     : null;
+
+  const updateProductMutation = useUpdateProduct();
 
   const handleProductSave = useCallback(
     (_isDraft: boolean) => {
@@ -173,6 +176,22 @@ export default function ProductsPage() {
       toast.error("Failed to delete selected products");
     }
   }, [selectedProductIds, deleteProductMutation]);
+
+  const handleBulkStatusChange = useCallback(async (status: ProductStatus) => {
+    if (selectedProductIds.length === 0) return;
+    try {
+      await Promise.all(
+        selectedProductIds.map((id) =>
+          updateProductMutation.mutateAsync({ id, data: { status } })
+        )
+      );
+      toast.success(`${selectedProductIds.length} products marked as ${status}`);
+      setSelectedProductIds([]);
+      refetch();
+    } catch (err) {
+      toast.error(`Failed to update products status`);
+    }
+  }, [selectedProductIds, updateProductMutation, refetch]);
 
   const toggleProductSelect = (id: string, checked: boolean) => {
     if (checked) {
@@ -314,6 +333,27 @@ export default function ProductsPage() {
               <span className="text-sm text-muted-foreground mr-2">
                 {selectedProductIds.length} selected
               </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Change Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleBulkStatusChange("published")}>
+                    Mark as Published
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkStatusChange("draft")}>
+                    Mark as Draft
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkStatusChange("proposed")}>
+                    Mark as Proposed
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkStatusChange("rejected")}>
+                    Mark as Rejected
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Selected
@@ -346,6 +386,15 @@ export default function ProductsPage() {
                 </div>
               ))}
             </div>
+          ) : products.length === 0 ? (
+            <div className="py-12">
+              <EmptyState
+                icon={Package}
+                title="No products found"
+                description="Get started by adding your first product to the catalog."
+                action={{ label: "Add Product", onClick: () => setAddProductOpen(true) }}
+              />
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -365,20 +414,13 @@ export default function ProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <EmptyState
-                        icon={Package}
-                        title="No products found"
-                        description="Get started by adding your first product to the catalog."
-                        action={{ label: "Add Product", onClick: () => setAddProductOpen(true) }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  products.map((product) => (
-                    <TableRow key={product.id} className="cursor-pointer hover:bg-muted/50" data-state={selectedProductIds.includes(product.id) ? "selected" : undefined}>
+                {products.map((product) => (
+                  <TableRow 
+                    key={product.id} 
+                    className="cursor-pointer hover:bg-muted/50" 
+                    data-state={selectedProductIds.includes(product.id) ? "selected" : undefined}
+                    onClick={() => router.push(`/products/${product.id}`)}
+                  >
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox 
                           checked={selectedProductIds.includes(product.id)}
@@ -415,7 +457,7 @@ export default function ProductsPage() {
                         {product.variantCount ?? 0}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{getStatusBadge(product.status)}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -451,7 +493,7 @@ export default function ProductsPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                )}
+                }
               </TableBody>
             </Table>
           )}
