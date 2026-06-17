@@ -121,6 +121,7 @@ import { useCollections } from "@/hooks/use-collections";
 import { useQueryClient } from "@tanstack/react-query";
 import { OptionWizard } from "@/components/products/OptionWizard";
 import { ContextualHelpSidebar } from "@/components/products/ContextualHelpSidebar";
+import { FieldTooltip } from "@/components/ui/field-tooltip";
 
 type VariantTableDraft = {
   price: string;
@@ -298,6 +299,18 @@ export default function ProductDetailPage() {
       setHasChanges(false);
     }
   }, [product]);
+  // Prevent navigation if there are unsaved changes
+  useEffect(() => {
+    if (!hasChanges) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
 
   // Derive saving states from mutations
   const variantSaving = createVariantMutation.isPending || updateVariantMutation.isPending;
@@ -1527,7 +1540,10 @@ export default function ProductDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="handle">Handle</Label>
+                  <Label htmlFor="handle" className="flex items-center">
+                    Handle
+                    <FieldTooltip content="A unique URL-friendly string for the product." />
+                  </Label>
                   <Input
                     id="handle"
                     value={formData.handle}
@@ -1785,7 +1801,10 @@ export default function ProductDetailPage() {
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label>Price</Label>
+                  <Label className="flex items-center">
+                    Price
+                    <FieldTooltip content="Managed per variant. Edit variants below to change this." />
+                  </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
                     <Input
@@ -1797,7 +1816,10 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Compare at Price</Label>
+                  <Label className="flex items-center">
+                    Compare at Price
+                    <FieldTooltip content="Managed per variant. Edit variants below to change this." />
+                  </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
                     <Input
@@ -2239,7 +2261,10 @@ export default function ProductDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>SKU</Label>
+                  <Label className="flex items-center">
+                    SKU
+                    <FieldTooltip content="Managed per variant. Edit variants below to change this." />
+                  </Label>
                   <Input
                     value={product.variants[0]?.sku || ""}
                     disabled
@@ -2247,7 +2272,10 @@ export default function ProductDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Barcode</Label>
+                  <Label className="flex items-center">
+                    Barcode
+                    <FieldTooltip content="Managed per variant. Edit variants below to change this." />
+                  </Label>
                   <Input
                     value={product.variants[0]?.barcode || ""}
                     disabled
@@ -2837,6 +2865,49 @@ export default function ProductDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Sticky Save Bar */}
+      {hasChanges && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t bg-background/80 p-4 backdrop-blur-sm lg:left-64 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-medium">You have unsaved changes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => {
+              if (product) {
+                setFormData({
+                  title: product.title || "",
+                  handle: product.handle || "",
+                  subtitle: product.subtitle || "",
+                  description: product.description || "",
+                  status: product.status,
+                  material: product.material || "",
+                  weight: product.weight || "",
+                  originCountry: product.originCountry || "",
+                  tags: product.tags || [],
+                  categoryId: product.categories?.[0] || "",
+                  collectionId: product.collectionId || "",
+                  brandId: product.brandId || "",
+                });
+                setHasChanges(false);
+              }
+            }}>
+              Discard
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
