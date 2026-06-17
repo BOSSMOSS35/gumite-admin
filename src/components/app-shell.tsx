@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isPublicRoute, pathname]);
+  }, [isAuthenticated, isPublicRoute]);
 
   useEffect(() => {
     if (isPublicRoute || !isAuthenticated) return;
