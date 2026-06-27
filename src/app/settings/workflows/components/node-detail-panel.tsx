@@ -222,8 +222,9 @@ export function NodeDetailPanel({
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-4">
+          <div className="space-y-4">
           {/* Live output for running steps */}
           {step.status === "RUNNING" && (
             <div>
@@ -300,7 +301,8 @@ export function NodeDetailPanel({
             </div>
           )}
         </div>
-      </ScrollArea>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
