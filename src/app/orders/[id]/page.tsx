@@ -276,7 +276,7 @@ export default function OrderDetailsPage() {
   const canFulfill = order.fulfillmentStatus === "NOT_FULFILLED" && order.status !== "CANCELED";
   const canShip = (order.fulfillmentStatus === "FULFILLED" || order.fulfillmentStatus === "NOT_FULFILLED") && order.status !== "CANCELED";
   const canComplete = order.status === "PENDING" && order.fulfillmentStatus !== "NOT_FULFILLED";
-  const canCancel = order.status === "PENDING";
+  const canCancel = order.status === "PENDING" && order.fulfillmentStatus === "NOT_FULFILLED";
   const hasLifecycleActions = canFulfill || canShip || canComplete || canCancel;
   const orderStatusDisplay = getOrderStatusDisplay(order.status);
 
