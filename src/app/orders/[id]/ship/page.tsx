@@ -211,6 +211,39 @@ export default function ShipOrderPage() {
     }
   };
 
+  
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const handlePreviewLabel = async () => {
+    if (!order || !selectedCarrier || !selectedService) {
+      toast.error("Please select a carrier and service");
+      return;
+    }
+    setPreviewLoading(true);
+    try {
+      const res = await apiFetch<any>(`/admin/orders/${order.id}/label/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          packageWeight: packageDimensions.weight ? parseFloat(packageDimensions.weight) : undefined,
+          packageLength: packageDimensions.length ? parseFloat(packageDimensions.length) : undefined,
+          packageWidth: packageDimensions.width ? parseFloat(packageDimensions.width) : undefined,
+          packageHeight: packageDimensions.height ? parseFloat(packageDimensions.height) : undefined,
+          carrierId: selectedCarrier,
+          serviceCode: selectedService,
+        }),
+      });
+      setPreviewUrl(res.labelUrl);
+      setPreviewDialogOpen(true);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to preview label");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [labelUrl, setLabelUrl] = useState<string | null>(null);
 
@@ -1031,6 +1064,31 @@ export default function ShipOrderPage() {
       </div>
 
       
+      
+      {/* Preview Label Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Preview Shipping Label</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 bg-muted/20 rounded-md overflow-hidden border">
+            {previewUrl ? (
+              <iframe src={previewUrl} className="w-full h-full" />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>Dismiss</Button>
+            <Button onClick={() => { setPreviewDialogOpen(false); handleShip(); }}>
+              Confirm & Generate Label
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Address Dialog */}
       <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
         <DialogContent className="max-w-md">

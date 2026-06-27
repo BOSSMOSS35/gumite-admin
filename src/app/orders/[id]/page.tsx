@@ -43,7 +43,7 @@ import {
   MoreHorizontal,
   ArrowRight,
   Package,
-  Truck,
+  Truck, FileText,
   CreditCard,
   ShoppingCart,
   AlertCircle,
@@ -537,6 +537,21 @@ export default function OrderDetailsPage() {
                 <FulfillmentStatusBadge status={order.fulfillmentStatus} />
               </CardHeader>
               <CardContent className="space-y-4">
+                
+                {/* Shipping Label */}
+                {order.metadata?.label_s3_url && (
+                  <div className="flex items-center justify-between pb-4 mb-4 border-b">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Shipping Label</span>
+                    </div>
+                    <Button variant="secondary" size="sm" asChild>
+                      <a href={order.metadata.label_s3_url} target="_blank" rel="noopener noreferrer">
+                        View Label
+                      </a>
+                    </Button>
+                  </div>
+                )}
                 {/* Tracking Number */}
                 {order.metadata?.trackingNumber && (
                   <div className="flex items-center justify-between">
