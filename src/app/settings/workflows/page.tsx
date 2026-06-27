@@ -22,6 +22,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   RefreshCw,
   Wifi,
   WifiOff,
@@ -47,8 +53,9 @@ import { NodeDetailPanel } from "./components/node-detail-panel";
 import { WorkflowStats } from "./components/workflow-stats";
 import { ExecutionTimeline } from "./components/execution-timeline";
 
-function StatusBadge({ status }: { status: WorkflowExecution["status"] }) {
-  switch (status) {
+function StatusBadge({ status }: { status: WorkflowExecution["status"] | string }) {
+  const normalizedStatus = (status || "").toUpperCase();
+  switch (normalizedStatus) {
     case "RUNNING":
       return (
         <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 gap-1">
@@ -68,6 +75,13 @@ function StatusBadge({ status }: { status: WorkflowExecution["status"] }) {
         <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 gap-1">
           <XCircle className="h-3 w-3" />
           Failed
+        </Badge>
+      );
+    default:
+      return (
+        <Badge className="bg-gray-500/10 text-gray-600 border-gray-500/20 gap-1 capitalize">
+          <Clock className="h-3 w-3" />
+          {(status || "Pending").toLowerCase()}
         </Badge>
       );
   }
@@ -167,21 +181,29 @@ function ExecutionListView({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        {execution.steps.slice(0, 6).map((step, i) => (
-                          <div
-                            key={i}
-                            className={`w-2 h-2 rounded-full ${
-                              step.status === "COMPLETED"
-                                ? "bg-green-500"
-                                : step.status === "RUNNING"
-                                ? "bg-blue-500 animate-pulse"
-                                : step.status === "FAILED"
-                                ? "bg-red-500"
-                                : "bg-muted-foreground/30"
-                            }`}
-                            title={step.name}
-                          />
-                        ))}
+                        <TooltipProvider delayDuration={100}>
+                          {execution.steps.slice(0, 6).map((step, i) => (
+                            <Tooltip key={i}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`w-2 h-2 rounded-full ${
+                                    step.status === "COMPLETED"
+                                      ? "bg-green-500"
+                                      : step.status === "RUNNING"
+                                      ? "bg-blue-500 animate-pulse"
+                                      : step.status === "FAILED"
+                                      ? "bg-red-500"
+                                      : "bg-muted-foreground/30"
+                                  }`}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium text-xs">{step.name}</p>
+                                <p className="text-[10px] text-muted-foreground capitalize">{step.status.toLowerCase()}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </TooltipProvider>
                         {execution.steps.length > 6 && (
                           <span className="text-xs text-muted-foreground ml-1">
                             +{execution.steps.length - 6}

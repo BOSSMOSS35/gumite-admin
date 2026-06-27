@@ -38,28 +38,28 @@ const statusConfig: Record<
   }
 > = {
   PENDING: {
-    bg: "bg-muted",
+    bg: "bg-muted/50 backdrop-blur-md",
     border: "border-muted-foreground/30 border-dashed",
     icon: <Clock className="h-4 w-4 text-muted-foreground" />,
   },
   RUNNING: {
-    bg: "bg-blue-500/10",
-    border: "border-blue-500",
+    bg: "bg-blue-500/5 backdrop-blur-md shadow-sm",
+    border: "border-blue-500/50",
     icon: <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />,
     pulse: true,
   },
   COMPLETED: {
-    bg: "bg-green-500/10",
-    border: "border-green-500",
+    bg: "bg-green-500/5 backdrop-blur-md shadow-sm",
+    border: "border-green-500/50",
     icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
   },
   FAILED: {
-    bg: "bg-red-500/10",
-    border: "border-red-500",
+    bg: "bg-red-500/5 backdrop-blur-md shadow-sm",
+    border: "border-red-500/50",
     icon: <XCircle className="h-4 w-4 text-red-500" />,
   },
   SKIPPED: {
-    bg: "bg-muted",
+    bg: "bg-muted/50 backdrop-blur-md",
     border: "border-muted-foreground/50",
     icon: <SkipForward className="h-4 w-4 text-muted-foreground" />,
   },
@@ -77,7 +77,7 @@ function WorkflowNodeComponent({ data, selected }: WorkflowNodeComponentProps) {
   return (
     <div
       className={cn(
-        "relative px-4 py-3 rounded-lg border-2 min-w-[140px] max-w-[200px] transition-all duration-200",
+        "relative px-4 py-3 rounded-lg border min-w-[140px] max-w-[200px] transition-all duration-200",
         config.bg,
         config.border,
         selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
@@ -100,16 +100,20 @@ function WorkflowNodeComponent({ data, selected }: WorkflowNodeComponentProps) {
           <div className="font-medium text-sm truncate" title={data.label}>
             {data.label}
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground">
-              Step {data.stepIndex + 1}/{data.totalSteps}
-            </span>
-            {data.durationMs !== undefined && data.status !== "PENDING" && (
-              <span className="text-xs font-mono text-muted-foreground">
-                {formatDuration(data.durationMs)}
-              </span>
-            )}
-          </div>
+          {(!data.isFirst || (data.durationMs !== undefined && data.status !== "PENDING")) && (
+            <div className="flex items-center gap-2 mt-1">
+              {!data.isFirst && (
+                <span className="text-xs text-muted-foreground">
+                  Step {data.stepIndex + 1}/{data.totalSteps}
+                </span>
+              )}
+              {data.durationMs !== undefined && data.status !== "PENDING" && (
+                <span className="text-xs font-mono text-muted-foreground">
+                  {formatDuration(data.durationMs)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
