@@ -237,7 +237,7 @@ export function NodeDetailPanel({
             <div>
               <h4 className="text-sm font-medium mb-2 text-red-600">Error</h4>
               <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50 p-3">
-                <pre className="text-xs font-mono text-red-700 dark:text-red-400 whitespace-pre-wrap">
+                <pre className="text-xs font-mono text-red-700 dark:text-red-400 whitespace-pre-wrap break-all">
                   {step.error}
                 </pre>
               </div>
