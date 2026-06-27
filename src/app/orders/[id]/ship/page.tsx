@@ -53,6 +53,7 @@ import {
   Loader2,
   Printer,
   DollarSign,
+  Receipt,
   ChevronDown,
   ChevronRight,
   MapPin,
@@ -238,7 +239,12 @@ export default function ShipOrderPage() {
       setPreviewUrl(res.labelUrl);
       setPreviewDialogOpen(true);
     } catch (err: any) {
-      toast.error(err.message || "Failed to preview label");
+      if (err.message && err.message.includes("Test labels are not supported")) {
+        setPreviewUrl(null); // Indicates not supported
+        setPreviewDialogOpen(true);
+      } else {
+        toast.error(err.message || "Failed to preview label");
+      }
     } finally {
       setPreviewLoading(false);
     }
@@ -762,7 +768,7 @@ export default function ShipOrderPage() {
                   <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
                         <CardTitle className="text-base">Rate Comparison</CardTitle>
                         {rates.length > 0 && (
                           <Badge variant="secondary" className="text-xs">
@@ -996,7 +1002,7 @@ export default function ShipOrderPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <Receipt className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">Cost Summary</CardTitle>
               </div>
             </CardHeader>
@@ -1071,9 +1077,16 @@ export default function ShipOrderPage() {
           <DialogHeader>
             <DialogTitle>Preview Shipping Label</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 bg-muted/20 rounded-md overflow-hidden border">
+          <div className="flex-1 bg-muted/20 rounded-md overflow-hidden border flex flex-col">
             {previewUrl ? (
               <iframe src={previewUrl} className="w-full h-full" />
+            ) : !previewUrl && previewDialogOpen ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                <p className="text-lg font-medium">Preview Not Supported</p>
+                <p className="text-muted-foreground mt-2 max-w-md">
+                  The selected carrier does not support free test labels. You can still confirm to purchase and generate the real label.
+                </p>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
