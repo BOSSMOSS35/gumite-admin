@@ -1034,17 +1034,17 @@ export default function ShipOrderPage() {
                 <Button
                   className="w-full"
                   size="lg"
-                  onClick={handleShip}
-                  disabled={actionLoading}
+                  onClick={useShipEngine ? handlePreviewLabel : handleShip}
+                  disabled={actionLoading || previewLoading}
                 >
-                  {actionLoading ? (
+                  {actionLoading || previewLoading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : useShipEngine ? (
                     <Printer className="h-4 w-4 mr-2" />
                   ) : (
                     <Truck className="h-4 w-4 mr-2" />
                   )}
-                  {useShipEngine ? "Generate Label & Ship" : "Mark as Shipped"}
+                  {useShipEngine ? "Preview & Generate Label" : "Mark as Shipped"}
                 </Button>
                 <Button
                   variant="ghost"
