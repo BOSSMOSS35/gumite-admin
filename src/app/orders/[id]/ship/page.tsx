@@ -166,6 +166,51 @@ export default function ShipOrderPage() {
   const [ratesOpen, setRatesOpen] = useState(true);
 
   // Label dialog
+  
+  const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    firstName: "", lastName: "", company: "", phone: "",
+    address1: "", address2: "", city: "", province: "", postalCode: "", countryCode: ""
+  });
+  const [addressSaving, setAddressSaving] = useState(false);
+
+  const openAddressDialog = () => {
+    if (order?.shippingAddress) {
+      setAddressForm({
+        firstName: order.shippingAddress.firstName || "",
+        lastName: order.shippingAddress.lastName || "",
+        company: order.shippingAddress.company || "",
+        phone: order.shippingAddress.phone || "",
+        address1: order.shippingAddress.address1 || "",
+        address2: order.shippingAddress.address2 || "",
+        city: order.shippingAddress.city || "",
+        province: order.shippingAddress.province || "",
+        postalCode: order.shippingAddress.postalCode || "",
+        countryCode: order.shippingAddress.countryCode || "GB",
+      });
+    }
+    setAddressDialogOpen(true);
+  };
+
+  const handleSaveAddress = async () => {
+    if (!order) return;
+    setAddressSaving(true);
+    try {
+      await apiFetch(`/admin/orders/${order.id}/shipping-address`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addressForm),
+      });
+      toast.success("Shipping address updated!");
+      setAddressDialogOpen(false);
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update address");
+    } finally {
+      setAddressSaving(false);
+    }
+  };
+
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [labelUrl, setLabelUrl] = useState<string | null>(null);
 
@@ -835,7 +880,7 @@ export default function ShipOrderPage() {
 
           {/* Items Being Shipped */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">Items Being Shipped</CardTitle>
@@ -884,6 +929,7 @@ export default function ShipOrderPage() {
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-base">Shipping Address</CardTitle>
               </div>
+              <Button variant="outline" size="sm" onClick={openAddressDialog}>Edit</Button>
             </CardHeader>
             <CardContent>
               {order.shippingAddress ? (
@@ -908,7 +954,7 @@ export default function ShipOrderPage() {
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No shipping address provided</p>
+                <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">No shipping address provided</p><Button variant="outline" size="sm" onClick={openAddressDialog}>Add Address</Button></div>
               )}
             </CardContent>
           </Card>
@@ -983,6 +1029,62 @@ export default function ShipOrderPage() {
           </div>
         </div>
       </div>
+
+      
+      {/* Edit Address Dialog */}
+      <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Shipping Address</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">First Name</label>
+                <Input value={addressForm.firstName} onChange={(e) => setAddressForm({ ...addressForm, firstName: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Last Name</label>
+                <Input value={addressForm.lastName} onChange={(e) => setAddressForm({ ...addressForm, lastName: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Address Line 1</label>
+              <Input value={addressForm.address1} onChange={(e) => setAddressForm({ ...addressForm, address1: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Address Line 2</label>
+              <Input value={addressForm.address2} onChange={(e) => setAddressForm({ ...addressForm, address2: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">City</label>
+                <Input value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Postal Code</label>
+                <Input value={addressForm.postalCode} onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">State / Province</label>
+                <Input value={addressForm.province} onChange={(e) => setAddressForm({ ...addressForm, province: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Country Code</label>
+                <Input value={addressForm.countryCode} onChange={(e) => setAddressForm({ ...addressForm, countryCode: e.target.value })} maxLength={2} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddressDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveAddress} disabled={addressSaving}>
+              {addressSaving ? "Saving..." : "Save Address"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Label Print Dialog */}
       <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
