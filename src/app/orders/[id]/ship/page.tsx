@@ -138,9 +138,9 @@ export default function ShipOrderPage() {
   const actionLoading = shipMutation.isPending;
 
   // Shipping method state
-  const [useShipEngine, setUseShipEngine] = useState(false);
-  const [selectedCarrier, setSelectedCarrier] = useState("se-358070");
-  const [selectedService, setSelectedService] = useState("ups_worldwide_expedited");
+  const [useShipEngine, setUseShipEngine] = useState(true);
+  const [selectedCarrier, setSelectedCarrier] = useState("");
+  const [selectedService, setSelectedService] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
 
@@ -201,13 +201,25 @@ export default function ShipOrderPage() {
     getShippingConfig()
       .then((config) => {
         setShippingConfig(config);
-        if (config.shipEngineConfigured) {
-          setSelectedCarrier(config.defaultCarrierId);
-          setSelectedService(config.defaultServiceCode);
-        }
       })
       .catch((err) => console.error("Failed to load shipping config:", err));
   }, [user]);
+
+  // Fetch the customer's chosen shipping option details to pre-select carrier and service
+  useEffect(() => {
+    if (!order?.shippingMethodId) return;
+    
+    apiFetch<any>(`/admin/shipping/options/${order.shippingMethodId}`)
+      .then(option => {
+        if (option?.data?.carrier_id) {
+          setSelectedCarrier(option.data.carrier_id);
+          if (option.data.service_code) {
+            setSelectedService(option.data.service_code);
+          }
+        }
+      })
+      .catch(err => console.error("Failed to fetch customer shipping option details:", err));
+  }, [order?.shippingMethodId]);
 
   // Fetch carrier services when carrier changes
   const fetchCarrierServices = useCallback(async (carrierId: string) => {
@@ -233,7 +245,7 @@ export default function ShipOrderPage() {
 
   // Fetch shipping rates
   const fetchRates = useCallback(async () => {
-    if (!order) return;
+    if (!order || !selectedCarrier) return;
     setRatesLoading(true);
     try {
       const data = await apiFetch<{ rates: any[] }>(`/admin/orders/${order.id}/rates`, {
@@ -244,6 +256,7 @@ export default function ShipOrderPage() {
           packageLength: packageDimensions.length ? parseFloat(packageDimensions.length) : undefined,
           packageWidth: packageDimensions.width ? parseFloat(packageDimensions.width) : undefined,
           packageHeight: packageDimensions.height ? parseFloat(packageDimensions.height) : undefined,
+          carrierIds: selectedCarrier ? [selectedCarrier] : undefined,
         }),
       });
       setRates(data.rates || []);
@@ -252,7 +265,7 @@ export default function ShipOrderPage() {
     } finally {
       setRatesLoading(false);
     }
-  }, [order, packageDimensions]);
+  }, [order, packageDimensions, selectedCarrier]);
 
   const handleShip = () => {
     if (!order) return;

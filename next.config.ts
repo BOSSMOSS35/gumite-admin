@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
         destination: `${API_URL}/ws/:path*`,
       },
       {
+        source: "/store/:path*",
+        destination: `${API_URL}/store/:path*`,
+      },
+      {
         source: "/files",
         destination: `${API_URL}/files`,
       },
