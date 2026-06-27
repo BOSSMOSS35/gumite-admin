@@ -260,8 +260,8 @@ export default function ShipOrderPage() {
         }),
       });
       setRates(data.rates || []);
-    } catch {
-      toast.error("Failed to fetch rates");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to fetch rates");
     } finally {
       setRatesLoading(false);
     }
