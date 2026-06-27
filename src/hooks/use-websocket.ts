@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-const WS_ENDPOINT = "/ws";
+const WS_ENDPOINT = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/ws` : "/ws";
 
 export interface UseWebSocketOptions {
   autoConnect?: boolean;
