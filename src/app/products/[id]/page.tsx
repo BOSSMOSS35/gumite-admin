@@ -1547,6 +1547,7 @@ export default function ProductDetailPage() {
                   <Input
                     id="handle"
                     value={formData.handle}
+                    disabled
                     onChange={(e) => updateField("handle", e.target.value)}
                   />
                 </div>
@@ -2107,6 +2108,7 @@ export default function ProductDetailPage() {
                               <TableCell>
                                 <Input
                                   value={draft.sku}
+                                  disabled
                                   onChange={(event) => updateVariantTableDraft(variant.id, "sku", event.target.value)}
                                   onBlur={() => saveVariantTableRow(variant)}
                                   className="w-32 h-8 font-mono text-xs"
@@ -2268,6 +2270,7 @@ export default function ProductDetailPage() {
                   <Input
                     value={product.variants[0]?.sku || ""}
                     disabled
+                    readOnly
                     className="bg-muted font-mono text-sm"
                   />
                 </div>
@@ -2279,6 +2282,7 @@ export default function ProductDetailPage() {
                   <Input
                     value={product.variants[0]?.barcode || ""}
                     disabled
+                    readOnly
                     className="bg-muted font-mono text-sm"
                   />
                 </div>
@@ -2406,6 +2410,7 @@ export default function ProductDetailPage() {
                 <Input
                   id="variant-sku"
                   value={variantForm.sku}
+                  disabled
                   onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
                   placeholder="Auto-generated if empty"
                 />
@@ -2415,6 +2420,7 @@ export default function ProductDetailPage() {
                 <Input
                   id="variant-barcode"
                   value={variantForm.barcode}
+                  disabled
                   onChange={(e) => setVariantForm({ ...variantForm, barcode: e.target.value })}
                   placeholder="EAN/UPC"
                 />
@@ -2606,6 +2612,7 @@ export default function ProductDetailPage() {
                 <Input
                   id="edit-variant-sku"
                   value={variantForm.sku}
+                  disabled
                   onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
                   placeholder="Auto-generated if empty"
                 />
@@ -2615,6 +2622,7 @@ export default function ProductDetailPage() {
                 <Input
                   id="edit-variant-barcode"
                   value={variantForm.barcode}
+                  disabled
                   onChange={(e) => setVariantForm({ ...variantForm, barcode: e.target.value })}
                   placeholder="EAN/UPC"
                 />

@@ -35,6 +35,11 @@ export interface ProductFormState {
   brandId: string;
   tags: string[];
 
+  // Dimensions & Details
+  weight: string;
+  originCountry: string;
+  material: string;
+
   // Variants
   options: ProductOption[];
   variantPrices: VariantPricing[];
@@ -224,17 +229,25 @@ export interface ProductFormActions {
 }
 
 const initialState: ProductFormState = {
-  currentStep: 0,
+  currentStep: 1,
+
   title: "",
   subtitle: "",
   handle: "",
   description: "",
   hasVariants: false,
+
   images: [],
+
   category: "",
   collection: "",
   brandId: "",
   tags: [],
+  
+  weight: "",
+  originCountry: "",
+  material: "",
+
   options: [],
   variantPrices: [],
   price: "",

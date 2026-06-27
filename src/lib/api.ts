@@ -1427,12 +1427,23 @@ export interface CreateProductVariantInput {
 
 export interface CreateProductInput {
   title: string;
+  subtitle?: string;
   description?: string;
   handle: string;
   status?: ProductStatus;
-  shippingProfileId: string;
-  images?: string[];
   thumbnail?: string;
+  images?: string[];
+  weight?: number;
+  length?: number;
+  height?: number;
+  width?: number;
+  hsCode?: string;
+  originCountry?: string;
+  midCode?: string;
+  material?: string;
+  collectionId?: string;
+  typeId?: string;
+  shippingProfileId: string;
   options?: { title: string; values: string[] }[];
   variants?: CreateProductVariantInput[];
   categoryIds?: string[];
