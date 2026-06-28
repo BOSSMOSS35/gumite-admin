@@ -609,6 +609,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
 	                    <th className="text-left px-4 py-2 font-medium">Sellable variant</th>
                     <th className="text-left px-4 py-2 font-medium w-32">Price (£)</th>
                     <th className="text-left px-4 py-2 font-medium w-24">Qty</th>
+                    <th className="text-left px-4 py-2 font-medium w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -616,7 +617,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                     <React.Fragment key={group.header ?? "__all"}>
                       {group.header && groupedVariants.length > 1 && (
                         <tr className="bg-muted/30">
-                          <td colSpan={4} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {group.header}
                           </td>
                         </tr>
@@ -661,6 +662,16 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                                 store.updateVariantPrice(variant._idx, "quantity", e.target.value)
                               }
                             />
+                          </td>
+                          <td className="px-4 py-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                              onClick={() => store.removeVariantPrice(variant._idx)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </td>
                         </tr>
                       ))}

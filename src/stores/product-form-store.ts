@@ -55,10 +55,10 @@ export interface ProductFormState {
   quantity: string;
   trackQuantity: boolean;
 
-  // UI state
   saving: boolean;
   error: string | null;
   fieldErrors: Record<string, string>;
+  deletedVariantKeys: string[];
 
   // Handle validation
   handleValidationStatus: 'idle' | 'checking' | 'available' | 'unavailable';
@@ -134,12 +134,15 @@ function generateHandle(title: string): string {
  */
 function reconcileVariantPrices(
   combinations: Record<string, string>[],
-  existingPrices: VariantPricing[]
+  existingPrices: VariantPricing[],
+  deletedKeys: string[] = []
 ): VariantPricing[] {
   const comboKey = (combo: Record<string, string>) =>
     Object.values(combo).sort().join("|").toLowerCase();
 
-  return combinations.map((combo, idx) => {
+  const filteredCombos = combinations.filter(combo => !deletedKeys.includes(comboKey(combo)));
+
+  return filteredCombos.map((combo, idx) => {
     // 1. Exact match
     const exactMatch = existingPrices.find(
       (vp) => JSON.stringify(vp.optionValues) === JSON.stringify(combo)
@@ -208,6 +211,7 @@ export interface ProductFormActions {
     field: keyof VariantPricing,
     value: string
   ) => void;
+  removeVariantPrice: (index: number) => void;
   setAllVariantPrices: (price: string) => void;
   setAllVariantQuantities: (quantity: string) => void;
 
@@ -260,6 +264,7 @@ const initialState: ProductFormState = {
   saving: false,
   error: null,
   fieldErrors: {},
+  deletedVariantKeys: [],
   handleValidationStatus: 'idle',
   handleValidationMessage: null,
 };
@@ -311,7 +316,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -321,7 +326,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -333,7 +338,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -345,7 +350,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -370,7 +375,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -384,7 +389,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -395,7 +400,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -407,7 +412,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         const combinations = generateVariantCombinations(newOptions);
         return {
           options: newOptions,
-          variantPrices: reconcileVariantPrices(combinations, s.variantPrices),
+          variantPrices: reconcileVariantPrices(combinations, s.variantPrices, s.deletedVariantKeys),
         };
       }),
 
@@ -418,6 +423,17 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
           i === index ? { ...vp, [field]: value } : vp
         ),
       })),
+
+    removeVariantPrice: (index) =>
+      set((s) => {
+        const vp = s.variantPrices[index];
+        if (!vp) return s;
+        const comboKey = Object.values(vp.optionValues).sort().join("|").toLowerCase();
+        return {
+          variantPrices: s.variantPrices.filter((_, i) => i !== index),
+          deletedVariantKeys: [...s.deletedVariantKeys, comboKey],
+        };
+      }),
 
     setAllVariantPrices: (price) =>
       set((s) => ({
@@ -476,6 +492,7 @@ export const useProductFormStore = create<ProductFormState & ProductFormActions>
         barcode: state.barcode,
         quantity: state.quantity,
         trackQuantity: state.trackQuantity,
+        deletedVariantKeys: state.deletedVariantKeys,
         // Exclude: images (File objects can't be serialized),
         // currentStep, saving, error, validation states
       }),
