@@ -276,11 +276,9 @@ export default function OrderDetailsPage() {
   const canFulfill = order.fulfillmentStatus === "NOT_FULFILLED" && order.status !== "CANCELED";
   const canShip = (order.fulfillmentStatus === "FULFILLED" || order.fulfillmentStatus === "NOT_FULFILLED") && order.status !== "CANCELED";
   const canComplete = order.status === "PENDING" && order.fulfillmentStatus !== "NOT_FULFILLED";
-  // Can cancel if order is not canceled AND either:
-  // 1. No fulfillments (NOT_FULFILLED)
-  // 2. All fulfillments are canceled (CANCELED)
-  const canCancel = order.status !== "CANCELED" &&
-    (order.fulfillmentStatus === "NOT_FULFILLED" || order.fulfillmentStatus === "CANCELED");
+  // Can cancel any order that isn't already canceled
+  // Backend workflow will auto-cancel any active fulfillments
+  const canCancel = order.status !== "CANCELED";
   const hasLifecycleActions = canFulfill || canShip || canComplete || canCancel;
   const orderStatusDisplay = getOrderStatusDisplay(order.status);
 
