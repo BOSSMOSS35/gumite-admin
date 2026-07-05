@@ -2800,14 +2800,16 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="option-values">Values * (comma-separated)</Label>
-                  <Input
+                  <Textarea
                     id="option-values"
                     value={optionForm.values}
                     onChange={(e) => setOptionForm({ ...optionForm, values: e.target.value })}
-                    placeholder="S, M, L, XL"
+                    placeholder="UK 8.5 / EU 43, UK 9 / EU 43.5, UK 9.5 / EU 44"
+                    rows={3}
+                    className="font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground">
-                    List ALL values for this option. For sizes: "54, 56, 58, 60, S, M, L, XL"
+                    List ALL values for this option. Examples: "UK 8.5 / EU 43, UK 9.5 / EU 44" or "S, M, L, XL"
                   </p>
                 </div>
               </div>
@@ -2851,14 +2853,16 @@ export default function ProductDetailPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-option-values">Values</Label>
-              <Input
+              <Textarea
                 id="edit-option-values"
                 value={optionForm.values}
                 onChange={(e) => setOptionForm({ ...optionForm, values: e.target.value })}
-                placeholder="e.g., Small, Medium, Large (comma-separated)"
+                placeholder="e.g., UK 8.5 / EU 43, UK 9 / EU 43.5, UK 9.5 / EU 44"
+                rows={3}
+                className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Enter values separated by commas
+                Enter values separated by commas. Note: You cannot remove values that are being used by existing variants.
               </p>
             </div>
           </div>

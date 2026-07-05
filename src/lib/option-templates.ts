@@ -76,6 +76,45 @@ export const OPTION_TEMPLATES: OptionTemplate[] = [
     helpText: "Traditional European sizing. Common in formal wear.",
     exampleProducts: ["Suits", "Dress shirts"],
   },
+  {
+    id: "clothing-sizes-uk-only",
+    category: "clothing",
+    name: "Clothing Sizes (UK Only)",
+    description: "UK numeric sizes only",
+    icon: "👕",
+    options: [
+      {
+        title: "Size",
+        values: ["6", "8", "10", "12", "14", "16", "18", "20"],
+      },
+    ],
+    helpText: "Standard UK sizing. Common in UK retail.",
+    exampleProducts: ["Dresses", "Shirts", "Trousers"],
+  },
+  {
+    id: "clothing-sizes-uk-eu-combined",
+    category: "clothing",
+    name: "Clothing Sizes (UK + EU Combined)",
+    description: "Shows both UK and EU sizes",
+    icon: "👕",
+    options: [
+      {
+        title: "Size",
+        values: [
+          "UK 6 / EU 34",
+          "UK 8 / EU 36",
+          "UK 10 / EU 38",
+          "UK 12 / EU 40",
+          "UK 14 / EU 42",
+          "UK 16 / EU 44",
+          "UK 18 / EU 46",
+        ],
+        recommended: true,
+      },
+    ],
+    helpText: "Combined UK/EU sizing for clothing. Helps international customers.",
+    exampleProducts: ["Dresses", "Jackets", "Trousers"],
+  },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Shoe Sizes
@@ -119,6 +158,50 @@ export const OPTION_TEMPLATES: OptionTemplate[] = [
     ],
     helpText: "Use for EU-focused markets.",
     exampleProducts: ["Dress shoes", "Casual shoes"],
+  },
+  {
+    id: "shoe-sizes-uk-eu-combined",
+    category: "shoes",
+    name: "Shoe Sizes (UK + EU Combined)",
+    description: "Shows both UK and EU sizes",
+    icon: "👟",
+    options: [
+      {
+        title: "Size",
+        values: [
+          "UK 6 / EU 39",
+          "UK 6.5 / EU 40",
+          "UK 7 / EU 40.5",
+          "UK 7.5 / EU 41",
+          "UK 8 / EU 42",
+          "UK 8.5 / EU 43",
+          "UK 9 / EU 43.5",
+          "UK 9.5 / EU 44",
+          "UK 10 / EU 44.5",
+          "UK 10.5 / EU 45",
+          "UK 11 / EU 46",
+        ],
+        recommended: true,
+      },
+    ],
+    helpText:
+      "Combined UK/EU sizing for UK-focused markets. Prevents duplicate variants.",
+    exampleProducts: ["Trainers", "Boots", "Casual shoes"],
+  },
+  {
+    id: "shoe-sizes-uk-only",
+    category: "shoes",
+    name: "Shoe Sizes (UK Only)",
+    description: "UK sizing only",
+    icon: "👟",
+    options: [
+      {
+        title: "Size",
+        values: ["6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11"],
+      },
+    ],
+    helpText: "Use for UK-focused markets or when EU sizing isn't needed.",
+    exampleProducts: ["Sports shoes", "Casual footwear"],
   },
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -228,8 +311,8 @@ export const OPTION_TEMPLATES: OptionTemplate[] = [
   {
     id: "clothing-size-color",
     category: "clothing",
-    name: "Clothing: Size + Color",
-    description: "Most common clothing variant setup",
+    name: "Clothing: Size + Color (Letter/EU)",
+    description: "Letter sizes with EU numbers and colors",
     icon: "👕",
     options: [
       {
@@ -247,10 +330,31 @@ export const OPTION_TEMPLATES: OptionTemplate[] = [
     exampleProducts: ["T-Shirts", "Hoodies", "Jeans"],
   },
   {
+    id: "clothing-size-color-uk",
+    category: "clothing",
+    name: "Clothing: Size + Color (UK/EU)",
+    description: "UK + EU sizes with colors",
+    icon: "👕",
+    options: [
+      {
+        title: "Size",
+        values: ["UK 8 / EU 36", "UK 10 / EU 38", "UK 12 / EU 40", "UK 14 / EU 42"],
+        recommended: true,
+      },
+      {
+        title: "Color",
+        values: ["Black", "White", "Navy", "Gray"],
+      },
+    ],
+    helpText:
+      "Creates 16 variants (4 sizes × 4 colors). For UK-focused clothing.",
+    exampleProducts: ["Dresses", "Shirts", "Jackets"],
+  },
+  {
     id: "shoes-size-color",
     category: "shoes",
-    name: "Shoes: Size + Color",
-    description: "Common shoe variant setup",
+    name: "Shoes: Size + Color (US/EU)",
+    description: "US + EU shoe sizes with colors",
     icon: "👟",
     options: [
       {
@@ -271,6 +375,32 @@ export const OPTION_TEMPLATES: OptionTemplate[] = [
     helpText:
       "Creates 12 variants (4 sizes × 3 colors). Common for footwear.",
     exampleProducts: ["Sneakers", "Boots", "Sandals"],
+  },
+  {
+    id: "shoes-size-color-uk",
+    category: "shoes",
+    name: "Shoes: Size + Color (UK/EU)",
+    description: "UK + EU shoe sizes with colors",
+    icon: "👟",
+    options: [
+      {
+        title: "Size",
+        values: [
+          "UK 7 / EU 40.5",
+          "UK 8 / EU 42",
+          "UK 9 / EU 43.5",
+          "UK 10 / EU 44.5",
+        ],
+        recommended: true,
+      },
+      {
+        title: "Color",
+        values: ["Black", "White", "Brown"],
+      },
+    ],
+    helpText:
+      "Creates 12 variants (4 sizes × 3 colors). For UK-focused markets.",
+    exampleProducts: ["Trainers", "Boots", "Casual shoes"],
   },
 ];
 

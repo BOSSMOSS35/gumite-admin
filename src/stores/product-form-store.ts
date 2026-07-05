@@ -122,10 +122,15 @@ export function getVariantDisplayName(
 }
 
 function generateHandle(title: string): string {
-  return title
+  const baseHandle = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+  // Add timestamp suffix to ensure uniqueness (last 6 digits for brevity)
+  const uniqueSuffix = Date.now().toString().slice(-6);
+
+  return `${baseHandle}-${uniqueSuffix}`;
 }
 
 /**
