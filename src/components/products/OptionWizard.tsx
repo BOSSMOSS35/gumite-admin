@@ -33,22 +33,36 @@ export function OptionWizard({
     existingOptions
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // Store raw text input for values to avoid splitting on every keystroke
+  const [valuesText, setValuesText] = useState<Record<number, string>>(() => {
+    const initial: Record<number, string> = {};
+    existingOptions.forEach((opt, index) => {
+      initial[index] = opt.values.join(", ");
+    });
+    return initial;
+  });
 
   // ━━━ Step 1: Choose Template ━━━
   const handleTemplateSelect = (template: OptionTemplate) => {
     setSelectedTemplate(template);
-    setOptions(
-      template.options.map((opt) => ({
-        title: opt.title,
-        values: opt.values,
-      }))
-    );
+    const newOptions = template.options.map((opt) => ({
+      title: opt.title,
+      values: opt.values,
+    }));
+    setOptions(newOptions);
+    // Initialize valuesText with template values
+    const initialValuesText: Record<number, string> = {};
+    newOptions.forEach((opt, index) => {
+      initialValuesText[index] = opt.values.join(", ");
+    });
+    setValuesText(initialValuesText);
     setCurrentStep("configure-options");
   };
 
   const handleCustom = () => {
     setSelectedTemplate(null);
     setOptions([{ title: "", values: [] }]);
+    setValuesText({ 0: "" });
     setCurrentStep("configure-options");
   };
 
@@ -58,24 +72,33 @@ export function OptionWizard({
   };
 
   // ━━━ Step 2: Configure Options ━━━
-  const handleOptionChange = (index: number, field: "title" | "values", value: string | string[]) => {
+  const handleOptionChange = (index: number, field: "title" | "values", value: string) => {
     const newOptions = [...options];
     if (field === "title") {
-      newOptions[index].title = value as string;
+      newOptions[index].title = value;
     } else {
-      newOptions[index].values = value as string[];
+      // Store the raw text input
+      setValuesText({ ...valuesText, [index]: value });
+      // Parse values from text
+      newOptions[index].values = value.split(",").map((v) => v.trim()).filter(Boolean);
     }
     setOptions(newOptions);
   };
 
   const handleAddOption = () => {
     if (options.length < 3) {
+      const newIndex = options.length;
       setOptions([...options, { title: "", values: [] }]);
+      setValuesText({ ...valuesText, [newIndex]: "" });
     }
   };
 
   const handleRemoveOption = (index: number) => {
     setOptions(options.filter((_, i) => i !== index));
+    // Clean up valuesText for removed index
+    const newValuesText = { ...valuesText };
+    delete newValuesText[index];
+    setValuesText(newValuesText);
   };
 
   const canProceedToPreview = options.every(
@@ -226,15 +249,9 @@ export function OptionWizard({
                         Values (comma-separated)
                       </label>
                       <textarea
-                        value={option.values.join(", ")}
-                        onChange={(e) =>
-                          handleOptionChange(
-                            index,
-                            "values",
-                            e.target.value.split(",").map((v) => v.trim()).filter(Boolean)
-                          )
-                        }
-                        placeholder="e.g., S / EU 54, M / EU 56, L / EU 58, XL / EU 60"
+                        value={valuesText[index] || ""}
+                        onChange={(e) => handleOptionChange(index, "values", e.target.value)}
+                        placeholder="e.g., UK 8.5 / EU 43, UK 9 / EU 43.5, UK 9.5 / EU 44, UK 10 / EU 44.5"
                         rows={3}
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
                       />
