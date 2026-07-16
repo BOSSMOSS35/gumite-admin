@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "*.runixcloud.dev",
+        hostname: "gumite-image-cdn.bukhari-kibuka7.workers.dev",
       },
     ],
   },
@@ -46,10 +46,6 @@ const nextConfig: NextConfig = {
       {
         source: "/store/:path*",
         destination: `${API_URL}/store/:path*`,
-      },
-      {
-        source: "/files",
-        destination: `${API_URL}/files`,
       },
     ];
   },

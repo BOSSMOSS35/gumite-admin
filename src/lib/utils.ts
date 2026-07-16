@@ -17,19 +17,22 @@ export function cn(...inputs: ClassValue[]) {
  * slashes (/) to %2F which can break some proxy chains. The backend's
  * allowedKeyPattern (^[a-zA-Z0-9/_.-]+$) ensures keys are safe.
  */
-const MINIO_URL_PATTERN = /^https?:\/\/[^/]*runixcloud\.dev\/gumite\//;
-const MINIO_LOCALHOST_PATTERN = /^https?:\/\/(?:localhost|minio):9000\/gumite\//;
+const MINIO_URL_PREFIX = "runixcloud.dev/gumite/";
+const MINIO_LOCALHOST_PREFIX = ":9000/gumite/";
+const IMAGE_CDN_BASE = "https://gumite-image-cdn.bukhari-kibuka7.workers.dev/gumite/";
 
 export function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
 
-  // Rewrite MinIO URLs to backend proxy
-  if (MINIO_URL_PATTERN.test(url)) {
-    const key = url.replace(MINIO_URL_PATTERN, "");
-    return `/files?key=${key}`;
+  // Route remote MinIO to Cloudflare Image CDN worker directly
+  if (url.includes(MINIO_URL_PREFIX)) {
+    const key = url.substring(url.indexOf(MINIO_URL_PREFIX) + MINIO_URL_PREFIX.length);
+    return `${IMAGE_CDN_BASE}${key}`;
   }
-  if (MINIO_LOCALHOST_PATTERN.test(url)) {
-    const key = url.replace(MINIO_LOCALHOST_PATTERN, "");
+  
+  // Localhost fallback
+  if (url.includes(MINIO_LOCALHOST_PREFIX)) {
+    const key = url.substring(url.indexOf(MINIO_LOCALHOST_PREFIX) + MINIO_LOCALHOST_PREFIX.length);
     return `/files?key=${key}`;
   }
 
@@ -38,11 +41,11 @@ export function getImageUrl(url: string | undefined | null): string | null {
     return url;
   }
 
-  // Relative /files?key=... URLs — already correct
+  // Relative /files?key=... URLs — already correct for local dev
   if (url.startsWith("/files")) {
     return url;
   }
 
-  // Bare key like "products/abc/img.jpg" — proxy it
-  return `/files?key=${url}`;
+  // Bare key like "products/abc/img.jpg" — route to CDN
+  return `${IMAGE_CDN_BASE}${url}`;
 }
