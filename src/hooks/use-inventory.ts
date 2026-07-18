@@ -85,6 +85,9 @@ export function useInventoryMovements(
     limit?: number;
     offset?: number;
     locationId?: string;
+    inventoryItemId?: string;
+    inventoryLevelId?: string;
+    sku?: string;
     movementType?: string;
   },
   enabled: boolean = true
