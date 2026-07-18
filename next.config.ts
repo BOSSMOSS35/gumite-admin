@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "gumite-image-cdn.bukhari-kibuka7.workers.dev",
+        hostname: "gumite-image-cdn.mosesbbosa91.workers.dev",
       },
     ],
   },

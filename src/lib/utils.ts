@@ -17,7 +17,7 @@ export function cn(...inputs: ClassValue[]) {
  * slashes (/) to %2F which can break some proxy chains. The backend's
  * allowedKeyPattern (^[a-zA-Z0-9/_.-]+$) ensures keys are safe.
  */
-const IMAGE_CDN_BASE = "https://gumite-image-cdn.bukhari-kibuka7.workers.dev/gumite/";
+const IMAGE_CDN_BASE = "https://gumite-image-cdn.mosesbbosa91.workers.dev/gumite/";
 
 export function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
