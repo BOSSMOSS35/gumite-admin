@@ -17,20 +17,29 @@ export function cn(...inputs: ClassValue[]) {
  * slashes (/) to %2F which can break some proxy chains. The backend's
  * allowedKeyPattern (^[a-zA-Z0-9/_.-]+$) ensures keys are safe.
  */
-const MINIO_URL_PREFIX = "runixcloud.dev/gumite/";
-const MINIO_LOCALHOST_PREFIX = ":9000/gumite/";
 const IMAGE_CDN_BASE = "https://gumite-image-cdn.bukhari-kibuka7.workers.dev/gumite/";
 
 export function getImageUrl(url: string | undefined | null): string | null {
   if (!url) return null;
 
-  // Route remote MinIO to Cloudflare Image CDN worker directly
-  if (url.includes(MINIO_URL_PREFIX)) {
-    const key = url.substring(url.indexOf(MINIO_URL_PREFIX) + MINIO_URL_PREFIX.length);
-    return `${IMAGE_CDN_BASE}${key}`;
+  // Intercept any raw storage URLs (MinIO, R2 direct, R2 dev) and route to our edge CDN
+  const cdnPrefixes = [
+    "runixcloud.dev/gumite/",
+    ".r2.cloudflarestorage.com/gumite/",
+    ".r2.dev/gumite/",
+    ".r2.dev/",
+  ];
+
+  for (const prefix of cdnPrefixes) {
+    if (url.includes(prefix)) {
+      const key = url.substring(url.indexOf(prefix) + prefix.length);
+      const cleanKey = key.startsWith("gumite/") ? key.slice(7) : key;
+      return `${IMAGE_CDN_BASE}${cleanKey}`;
+    }
   }
   
   // Localhost fallback
+  const MINIO_LOCALHOST_PREFIX = ":9000/gumite/";
   if (url.includes(MINIO_LOCALHOST_PREFIX)) {
     const key = url.substring(url.indexOf(MINIO_LOCALHOST_PREFIX) + MINIO_LOCALHOST_PREFIX.length);
     return `/files?key=${key}`;
