@@ -24,7 +24,6 @@ export function getImageUrl(url: string | undefined | null): string | null {
 
   // Intercept any raw storage URLs (MinIO, R2 direct, R2 dev) and route to our edge CDN
   const cdnPrefixes = [
-    "runixcloud.dev/gumite/",
     ".r2.cloudflarestorage.com/gumite/",
     ".r2.dev/gumite/",
     ".r2.dev/",

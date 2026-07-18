@@ -21,10 +21,6 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "gumite-minio-sdsl.runixcloud.dev",
-      },
-      {
-        protocol: "https",
         hostname: "gumite-image-cdn.bukhari-kibuka7.workers.dev",
       },
     ],
