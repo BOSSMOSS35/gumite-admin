@@ -9,6 +9,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  restoreProduct,
   uploadProductImage,
   getCategories,
   createVariant,
@@ -159,6 +160,19 @@ export function useDeleteProduct() {
           queryClient.setQueryData(queryKey, data);
         });
       }
+    },
+  });
+}
+
+export function useRestoreProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Product, Error, string>({
+    mutationFn: (id) => restoreProduct(id),
+    onSuccess: (_result, productId) => {
+      // Invalidate queries to refresh product lists and detail
+      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
     },
   });
 }

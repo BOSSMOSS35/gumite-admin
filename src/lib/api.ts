@@ -1544,6 +1544,13 @@ export async function deleteProduct(id: string): Promise<void> {
   });
 }
 
+// Restore soft-deleted product
+export async function restoreProduct(id: string): Promise<Product> {
+  return apiFetch<Product>(`/admin/products/${id}/restore`, {
+    method: "POST",
+  });
+}
+
 // =============================================================================
 // Categories API (Admin)
 // =============================================================================

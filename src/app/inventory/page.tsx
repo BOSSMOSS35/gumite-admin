@@ -499,29 +499,45 @@ export default function InventoryPage() {
                 {filteredLevels.map((level) => {
                   const status = getStockStatus(level.availableQuantity, level.stockedQuantity);
                   return (
-                    <TableRow key={level.id}>
+                    <TableRow key={level.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-mono text-sm">
-                        {level.sku || "-"}
+                        <Link href={`/inventory/${level.id}`} className="hover:underline">
+                          {level.sku || "-"}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {level.locationName || "-"}
+                        <Link href={`/inventory/${level.id}`}>
+                          {level.locationName || "-"}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-center font-medium">
-                        {level.stockedQuantity}
+                        <Link href={`/inventory/${level.id}`}>
+                          {level.stockedQuantity}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground">
-                        {level.reservedQuantity}
+                        <Link href={`/inventory/${level.id}`}>
+                          {level.reservedQuantity}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={level.availableQuantity <= 2 ? "text-yellow-600 font-medium" : ""}>
-                          {level.availableQuantity}
-                        </span>
+                        <Link href={`/inventory/${level.id}`}>
+                          <span className={level.availableQuantity <= 2 ? "text-yellow-600 font-medium" : ""}>
+                            {level.availableQuantity}
+                          </span>
+                        </Link>
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground">
-                        {level.incomingQuantity}
+                        <Link href={`/inventory/${level.id}`}>
+                          {level.incomingQuantity}
+                        </Link>
                       </TableCell>
-                      <TableCell>{getStatusBadge(status)}</TableCell>
                       <TableCell>
+                        <Link href={`/inventory/${level.id}`}>
+                          {getStatusBadge(status)}
+                        </Link>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -531,6 +547,13 @@ export default function InventoryPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href={`/inventory/${level.id}`} className="w-full">
+                                <Package className="mr-2 h-4 w-4" />
+                                View Details
+                              </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => openAdjustmentDialog("add", level)}>
                               <Plus className="mr-2 h-4 w-4" />

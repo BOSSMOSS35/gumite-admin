@@ -104,6 +104,7 @@ import {
   useProduct,
   useUpdateProduct,
   useDeleteProduct,
+  useRestoreProduct,
   useCategories,
   productKeys,
   useCreateVariant,
@@ -180,6 +181,7 @@ export default function ProductDetailPage() {
   // Mutations
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
+  const restoreProductMutation = useRestoreProduct();
 
   // Variant mutations
   const createVariantMutation = useCreateVariant();
@@ -1368,6 +1370,18 @@ export default function ProductDetailPage() {
   }
 
   const queryError = productError instanceof Error ? productError.message : productError ? "Failed to load product" : null;
+  const isNotFoundError = queryError?.toLowerCase().includes("not found") || queryError?.toLowerCase().includes("404");
+
+  const handleRestore = async () => {
+    try {
+      await restoreProductMutation.mutateAsync(productId);
+      toast.success("Product restored successfully");
+      refetchProduct();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to restore product";
+      toast.error(errorMessage);
+    }
+  };
 
   if ((queryError || error) && !product) {
     return (
@@ -1375,11 +1389,32 @@ export default function ProductDetailPage() {
         <AlertCircle className="h-12 w-12 text-red-500" />
         <h2 className="text-xl font-semibold">Failed to load product</h2>
         <p className="text-muted-foreground">{queryError || error}</p>
+        {isNotFoundError && (
+          <p className="text-sm text-muted-foreground">
+            This product may have been deleted. Try restoring it below.
+          </p>
+        )}
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.push("/products")}>
             Back to Products
           </Button>
-          <Button onClick={() => refetchProduct()}>Retry</Button>
+          {isNotFoundError ? (
+            <Button
+              onClick={handleRestore}
+              disabled={restoreProductMutation.isPending}
+            >
+              {restoreProductMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Restoring...
+                </>
+              ) : (
+                "Restore Product"
+              )}
+            </Button>
+          ) : (
+            <Button onClick={() => refetchProduct()}>Retry</Button>
+          )}
         </div>
       </div>
     );

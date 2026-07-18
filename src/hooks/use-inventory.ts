@@ -3,11 +3,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getInventoryLevels,
+  getInventoryLevel,
   getStockLocations,
   adjustInventory,
   getInventoryMovements,
   createStockLocation,
   deleteStockLocation,
+  type InventoryLevel,
   type InventoryLevelsResponse,
   type StockLocationsResponse,
   type AdjustInventoryRequest,
@@ -20,12 +22,14 @@ export const inventoryKeys = {
   all: ["inventory"] as const,
   levels: (params?: { limit?: number; offset?: number; locationId?: string }) =>
     ["inventory", "levels", params] as const,
+  level: (id: string) => ["inventory", "level", id] as const,
   locations: (params?: { limit?: number; offset?: number }) =>
     ["inventory", "locations", params] as const,
   movements: (params?: {
     limit?: number;
     offset?: number;
     locationId?: string;
+    inventoryLevelId?: string;
     movementType?: string;
   }) => ["inventory", "movements", params] as const,
 };
@@ -41,6 +45,20 @@ export function useInventoryLevels(params?: {
   return useQuery<InventoryLevelsResponse>({
     queryKey: inventoryKeys.levels(params),
     queryFn: () => getInventoryLevels(params),
+    staleTime: 15000,
+  });
+}
+
+/**
+ * Hook for fetching a single inventory level
+ */
+export function useInventoryLevel(id: string) {
+  return useQuery<InventoryLevel>({
+    queryKey: inventoryKeys.level(id),
+    queryFn: async () => {
+      const response = await getInventoryLevel(id);
+      return response.inventoryLevel;
+    },
     staleTime: 15000,
   });
 }
