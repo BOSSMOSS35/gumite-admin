@@ -90,7 +90,7 @@ export function EditableField({
         )}
         data-testid="success-message"
       >
-        <Badge className="p-2 my-4 bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300 hover:bg-green-100">
+        <Badge className="p-2 my-4 bg-success/10 text-success hover:bg-success/10">
           <span>{successMessage || `${label} updated successfully`}</span>
         </Badge>
       </div>
@@ -103,7 +103,7 @@ export function EditableField({
         )}
         data-testid="error-message"
       >
-        <Badge className="p-2 my-4 bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300 hover:bg-red-100">
+        <Badge className="p-2 my-4 bg-destructive/10 text-destructive hover:bg-destructive/10">
           <span>{errorMessage}</span>
         </Badge>
       </div>

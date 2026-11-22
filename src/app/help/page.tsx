@@ -112,19 +112,19 @@ const helpSections: HelpSection[] = [
           <div className="space-y-3">
             <p>Speed up your workflow with these quick actions:</p>
             <div className="grid gap-2">
-              <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="flex items-center justify-between rounded-none border p-3">
                 <span>Open Command Palette</span>
                 <kbd className="px-2 py-1 text-xs border rounded bg-muted font-mono">Ctrl + K</kbd>
               </div>
-              <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="flex items-center justify-between rounded-none border p-3">
                 <span>Search Products</span>
                 <span className="text-sm text-muted-foreground">Command Palette → Type product name</span>
               </div>
-              <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="flex items-center justify-between rounded-none border p-3">
                 <span>Toggle Theme</span>
                 <span className="text-sm text-muted-foreground">Header → Theme toggle button</span>
               </div>
-              <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="flex items-center justify-between rounded-none border p-3">
                 <span>View Notifications</span>
                 <span className="text-sm text-muted-foreground">Header → Bell icon</span>
               </div>
@@ -241,7 +241,7 @@ const helpSections: HelpSection[] = [
             <p>Products have two statuses:</p>
             <ul className="list-disc pl-6 space-y-1.5">
               <li><Badge variant="outline">Draft</Badge> — The product is not visible in the storefront. Use this while preparing product details.</li>
-              <li><Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Published</Badge> — The product is live and visible to customers.</li>
+              <li><Badge className="bg-success/10 text-success ">Published</Badge> — The product is live and visible to customers.</li>
             </ul>
             <p className="text-sm text-muted-foreground">
               You can toggle the status at any time from the product detail page.
@@ -265,11 +265,11 @@ const helpSections: HelpSection[] = [
             <div className="flex flex-wrap items-center gap-2 py-2">
               <Badge variant="outline">New</Badge>
               <ArrowRight className="size-4 text-muted-foreground" />
-              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Processing</Badge>
+              <Badge className="bg-info/10 text-info ">Processing</Badge>
               <ArrowRight className="size-4 text-muted-foreground" />
-              <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">Shipped</Badge>
+              <Badge className="bg-info/10 text-info ">Shipped</Badge>
               <ArrowRight className="size-4 text-muted-foreground" />
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Delivered</Badge>
+              <Badge className="bg-success/10 text-success ">Delivered</Badge>
             </div>
             <ul className="list-disc pl-6 space-y-1.5">
               <li><strong>New</strong> — Order has been placed and payment confirmed.</li>
@@ -381,20 +381,20 @@ const helpSections: HelpSection[] = [
           <div className="space-y-3">
             <p>Customers are automatically assigned tiers based on their activity:</p>
             <div className="grid gap-2">
-              <div className="flex items-center gap-3 rounded-md border p-3">
-                <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">Bronze</Badge>
+              <div className="flex items-center gap-3 rounded-none border p-3">
+                <Badge className="bg-warning/10 text-warning ">Bronze</Badge>
                 <span className="text-sm">New customers — default tier.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-md border p-3">
+              <div className="flex items-center gap-3 rounded-none border p-3">
                 <Badge className="bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Silver</Badge>
                 <span className="text-sm">Repeat customers with moderate spend.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-md border p-3">
-                <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Gold</Badge>
+              <div className="flex items-center gap-3 rounded-none border p-3">
+                <Badge className="bg-warning/10 text-warning ">Gold</Badge>
                 <span className="text-sm">High-value customers with consistent purchases.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-md border p-3">
-                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">Platinum</Badge>
+              <div className="flex items-center gap-3 rounded-none border p-3">
+                <Badge className="bg-info/10 text-info ">Platinum</Badge>
                 <span className="text-sm">Top-tier VIP customers.</span>
               </div>
             </div>
@@ -549,19 +549,19 @@ const helpSections: HelpSection[] = [
           <div className="space-y-3">
             <p>Available discount types:</p>
             <div className="grid gap-2">
-              <div className="flex items-center gap-3 rounded-md border p-3">
+              <div className="flex items-center gap-3 rounded-none border p-3">
                 <Badge variant="outline">Percentage</Badge>
                 <span className="text-sm">A percentage off the order total (e.g., 20% off).</span>
               </div>
-              <div className="flex items-center gap-3 rounded-md border p-3">
+              <div className="flex items-center gap-3 rounded-none border p-3">
                 <Badge variant="outline">Fixed Amount</Badge>
                 <span className="text-sm">A fixed currency amount off the order (e.g., $10 off).</span>
               </div>
-              <div className="flex items-center gap-3 rounded-md border p-3">
+              <div className="flex items-center gap-3 rounded-none border p-3">
                 <Badge variant="outline">Free Shipping</Badge>
                 <span className="text-sm">Waives shipping costs for qualifying orders.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-md border p-3">
+              <div className="flex items-center gap-3 rounded-none border p-3">
                 <Badge variant="outline">BOGO</Badge>
                 <span className="text-sm">Buy one, get one free or at a discount.</span>
               </div>
@@ -605,11 +605,11 @@ const helpSections: HelpSection[] = [
             <div className="flex flex-wrap items-center gap-2 py-2">
               <Badge variant="outline">Requested</Badge>
               <ArrowRight className="size-4 text-muted-foreground" />
-              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Approved</Badge>
+              <Badge className="bg-info/10 text-info ">Approved</Badge>
               <ArrowRight className="size-4 text-muted-foreground" />
-              <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">Received</Badge>
+              <Badge className="bg-info/10 text-info ">Received</Badge>
               <ArrowRight className="size-4 text-muted-foreground" />
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Refunded</Badge>
+              <Badge className="bg-success/10 text-success ">Refunded</Badge>
             </div>
             <ol className="list-decimal pl-6 space-y-1.5">
               <li><strong>Review the request</strong> — Check the return reason and item condition.</li>
@@ -862,7 +862,7 @@ export default function HelpPage() {
 
   return (
     <div className="flex flex-col">
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="border-b bg-background/95 supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-4xl px-6 py-6">
           <Breadcrumb>
             <BreadcrumbList>

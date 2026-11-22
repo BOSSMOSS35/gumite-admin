@@ -387,14 +387,14 @@ export function formatDateTime(dateString: string): string {
 export function getPaymentStatusDisplay(status: PaymentStatus): { label: string; color: string } {
   const config: Record<PaymentStatus, { label: string; color: string }> = {
     NOT_PAID: { label: "Not Paid", color: "bg-gray-400" },
-    AWAITING: { label: "Awaiting", color: "bg-orange-500" },
-    CAPTURED: { label: "Captured", color: "bg-green-500" },
-    PARTIALLY_PAID: { label: "Partially Paid", color: "bg-yellow-500" },
-    PAID: { label: "Paid", color: "bg-green-500" },
-    PARTIALLY_REFUNDED: { label: "Partially Refunded", color: "bg-purple-500" },
-    REFUNDED: { label: "Refunded", color: "bg-purple-500" },
-    CANCELED: { label: "Canceled", color: "bg-red-500" },
-    REQUIRES_ACTION: { label: "Requires Action", color: "bg-orange-500" },
+    AWAITING: { label: "Awaiting", color: "bg-warning" },
+    CAPTURED: { label: "Captured", color: "bg-success" },
+    PARTIALLY_PAID: { label: "Partially Paid", color: "bg-warning" },
+    PAID: { label: "Paid", color: "bg-success" },
+    PARTIALLY_REFUNDED: { label: "Partially Refunded", color: "bg-info" },
+    REFUNDED: { label: "Refunded", color: "bg-info" },
+    CANCELED: { label: "Canceled", color: "bg-destructive" },
+    REQUIRES_ACTION: { label: "Requires Action", color: "bg-warning" },
   };
   return config[status] || { label: status, color: "bg-gray-400" };
 }
@@ -402,25 +402,25 @@ export function getPaymentStatusDisplay(status: PaymentStatus): { label: string;
 export function getFulfillmentStatusDisplay(status: FulfillmentStatus): { label: string; color: string } {
   const config: Record<FulfillmentStatus, { label: string; color: string }> = {
     NOT_FULFILLED: { label: "Not Fulfilled", color: "bg-gray-400" },
-    PARTIALLY_FULFILLED: { label: "Partially Fulfilled", color: "bg-orange-500" },
-    FULFILLED: { label: "Fulfilled", color: "bg-green-500" },
-    PARTIALLY_SHIPPED: { label: "Partially Shipped", color: "bg-blue-400" },
-    SHIPPED: { label: "Shipped", color: "bg-blue-500" },
-    PARTIALLY_RETURNED: { label: "Partially Returned", color: "bg-purple-400" },
-    RETURNED: { label: "Returned", color: "bg-purple-500" },
-    CANCELED: { label: "Canceled", color: "bg-red-500" },
-    REQUIRES_ACTION: { label: "Requires Action", color: "bg-orange-500" },
+    PARTIALLY_FULFILLED: { label: "Partially Fulfilled", color: "bg-warning" },
+    FULFILLED: { label: "Fulfilled", color: "bg-success" },
+    PARTIALLY_SHIPPED: { label: "Partially Shipped", color: "bg-info" },
+    SHIPPED: { label: "Shipped", color: "bg-info" },
+    PARTIALLY_RETURNED: { label: "Partially Returned", color: "bg-info" },
+    RETURNED: { label: "Returned", color: "bg-info" },
+    CANCELED: { label: "Canceled", color: "bg-destructive" },
+    REQUIRES_ACTION: { label: "Requires Action", color: "bg-warning" },
   };
   return config[status] || { label: status, color: "bg-gray-400" };
 }
 
 export function getOrderStatusDisplay(status: OrderStatus): { label: string; color: string } {
   const config: Record<OrderStatus, { label: string; color: string }> = {
-    PENDING: { label: "Pending", color: "bg-orange-500" },
-    COMPLETED: { label: "Completed", color: "bg-green-500" },
+    PENDING: { label: "Pending", color: "bg-warning" },
+    COMPLETED: { label: "Completed", color: "bg-success" },
     ARCHIVED: { label: "Archived", color: "bg-gray-500" },
-    CANCELED: { label: "Canceled", color: "bg-red-500" },
-    REQUIRES_ACTION: { label: "Requires Action", color: "bg-orange-500" },
+    CANCELED: { label: "Canceled", color: "bg-destructive" },
+    REQUIRES_ACTION: { label: "Requires Action", color: "bg-warning" },
   };
   return config[status] || { label: status, color: "bg-gray-400" };
 }
@@ -602,11 +602,11 @@ export async function rejectReturn(
 // Return status display helper
 export function getReturnStatusDisplay(status: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    requested: { label: "Requested", color: "bg-yellow-500" },
-    approved: { label: "Approved", color: "bg-green-500" },
-    received: { label: "Received", color: "bg-blue-500" },
-    refunded: { label: "Refunded", color: "bg-purple-500" },
-    rejected: { label: "Rejected", color: "bg-red-500" },
+    requested: { label: "Requested", color: "bg-warning" },
+    approved: { label: "Approved", color: "bg-success" },
+    received: { label: "Received", color: "bg-info" },
+    refunded: { label: "Refunded", color: "bg-info" },
+    rejected: { label: "Rejected", color: "bg-destructive" },
     canceled: { label: "Canceled", color: "bg-gray-500" },
   };
   return config[status.toLowerCase()] || { label: status, color: "bg-gray-400" };
@@ -759,15 +759,15 @@ export async function deleteStockLocation(id: string): Promise<{ message: string
 // Adjustment reason display helper
 export function getAdjustmentReasonDisplay(reason: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    RESTOCK: { label: "Restock", color: "bg-green-500" },
-    DAMAGED: { label: "Damaged", color: "bg-red-500" },
-    LOST: { label: "Lost", color: "bg-red-500" },
-    FOUND: { label: "Found", color: "bg-green-500" },
-    CORRECTION: { label: "Correction", color: "bg-blue-500" },
-    RETURN_RECEIVED: { label: "Return Received", color: "bg-purple-500" },
-    TRANSFER_IN: { label: "Transfer In", color: "bg-green-500" },
-    TRANSFER_OUT: { label: "Transfer Out", color: "bg-orange-500" },
-    CYCLE_COUNT: { label: "Cycle Count", color: "bg-blue-500" },
+    RESTOCK: { label: "Restock", color: "bg-success" },
+    DAMAGED: { label: "Damaged", color: "bg-destructive" },
+    LOST: { label: "Lost", color: "bg-destructive" },
+    FOUND: { label: "Found", color: "bg-success" },
+    CORRECTION: { label: "Correction", color: "bg-info" },
+    RETURN_RECEIVED: { label: "Return Received", color: "bg-info" },
+    TRANSFER_IN: { label: "Transfer In", color: "bg-success" },
+    TRANSFER_OUT: { label: "Transfer Out", color: "bg-warning" },
+    CYCLE_COUNT: { label: "Cycle Count", color: "bg-info" },
     OTHER: { label: "Other", color: "bg-gray-500" },
   };
   return config[reason.toUpperCase()] || { label: reason, color: "bg-gray-400" };
@@ -864,16 +864,16 @@ export async function getMovementTypes(): Promise<{ movementTypes: MovementTypeI
 // Movement type display helper
 export function getMovementTypeDisplay(type: MovementType): { label: string; color: string; icon: string } {
   const config: Record<MovementType, { label: string; color: string; icon: string }> = {
-    STOCK_ADDED: { label: "Stock Added", color: "text-green-600 bg-green-100", icon: "+" },
-    STOCK_REMOVED: { label: "Stock Removed", color: "text-red-600 bg-red-100", icon: "-" },
-    ADJUSTMENT: { label: "Adjustment", color: "text-blue-600 bg-blue-100", icon: "~" },
-    RESERVED: { label: "Reserved", color: "text-yellow-600 bg-yellow-100", icon: "R" },
-    RELEASED: { label: "Released", color: "text-purple-600 bg-purple-100", icon: "L" },
-    FULFILLED: { label: "Fulfilled", color: "text-green-600 bg-green-100", icon: "F" },
-    RETURNED: { label: "Returned", color: "text-orange-600 bg-orange-100", icon: "↩" },
-    TRANSFERRED_IN: { label: "Transfer In", color: "text-green-600 bg-green-100", icon: "→" },
-    TRANSFERRED_OUT: { label: "Transfer Out", color: "text-orange-600 bg-orange-100", icon: "←" },
-    CYCLE_COUNT: { label: "Cycle Count", color: "text-blue-600 bg-blue-100", icon: "#" },
+    STOCK_ADDED: { label: "Stock Added", color: "text-success bg-success/10", icon: "+" },
+    STOCK_REMOVED: { label: "Stock Removed", color: "text-destructive bg-destructive/10", icon: "-" },
+    ADJUSTMENT: { label: "Adjustment", color: "text-info bg-info/10", icon: "~" },
+    RESERVED: { label: "Reserved", color: "text-warning bg-warning/10", icon: "R" },
+    RELEASED: { label: "Released", color: "text-info bg-info/10", icon: "L" },
+    FULFILLED: { label: "Fulfilled", color: "text-success bg-success/10", icon: "F" },
+    RETURNED: { label: "Returned", color: "text-warning bg-warning/10", icon: "↩" },
+    TRANSFERRED_IN: { label: "Transfer In", color: "text-success bg-success/10", icon: "→" },
+    TRANSFERRED_OUT: { label: "Transfer Out", color: "text-warning bg-warning/10", icon: "←" },
+    CYCLE_COUNT: { label: "Cycle Count", color: "text-info bg-info/10", icon: "#" },
   };
   return config[type] || { label: type, color: "text-gray-600 bg-gray-100", icon: "?" };
 }
@@ -2486,19 +2486,19 @@ export async function removeCustomerFromGroup(
 // Customer display helpers
 export function getTierDisplay(tier: CustomerTier): { label: string; color: string } {
   const config: Record<CustomerTier, { label: string; color: string }> = {
-    BRONZE: { label: "Bronze", color: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300" },
+    BRONZE: { label: "Bronze", color: "bg-warning/10 text-warning " },
     SILVER: { label: "Silver", color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" },
-    GOLD: { label: "Gold", color: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300" },
-    PLATINUM: { label: "Platinum", color: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300" },
+    GOLD: { label: "Gold", color: "bg-warning/10 text-warning " },
+    PLATINUM: { label: "Platinum", color: "bg-info/10 text-info " },
   };
   return config[tier] || { label: tier, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
 
 export function getCustomerStatusDisplay(status: CustomerStatus): { label: string; color: string } {
   const config: Record<CustomerStatus, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300" },
-    SUSPENDED: { label: "Suspended", color: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300" },
-    BANNED: { label: "Banned", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
+    ACTIVE: { label: "Active", color: "bg-success/10 text-success " },
+    SUSPENDED: { label: "Suspended", color: "bg-warning/10 text-warning " },
+    BANNED: { label: "Banned", color: "bg-destructive/10 text-destructive " },
   };
   return config[status] || { label: status, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
@@ -2874,27 +2874,27 @@ export function getPricingRuleTypeDisplay(type: string): { label: string; color:
   const config: Record<string, { label: string; color: string }> = {
     PERCENTAGE_DISCOUNT: {
       label: "Percentage Discount",
-      color: "border border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+      color: "border border-success/30 bg-success/10 text-success ",
     },
     FIXED_DISCOUNT: {
       label: "Fixed Discount",
-      color: "border border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+      color: "border border-info/30 bg-info/10 text-info ",
     },
     MARKUP: {
       label: "Markup",
-      color: "border border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+      color: "border border-warning/30 bg-warning/10 text-warning ",
     },
     TIME_BASED: {
       label: "Time-Based",
-      color: "border border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
+      color: "border border-info/30 bg-info/10 text-info ",
     },
     QUANTITY_BASED: {
       label: "Quantity-Based",
-      color: "border border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
+      color: "border border-warning/30 bg-warning/10 text-warning ",
     },
     TIERED: {
       label: "Tiered",
-      color: "border border-indigo-300/70 bg-indigo-100/80 text-indigo-800 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-300",
+      color: "border border-info/30 bg-info/10 text-info ",
     },
   };
   return config[type] || {
@@ -2907,7 +2907,7 @@ export function getPricingRuleStatusDisplay(status: string): { label: string; co
   const config: Record<string, { label: string; color: string }> = {
     ACTIVE: {
       label: "Active",
-      color: "border border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+      color: "border border-success/30 bg-success/10 text-success ",
     },
     INACTIVE: {
       label: "Inactive",
@@ -2915,11 +2915,11 @@ export function getPricingRuleStatusDisplay(status: string): { label: string; co
     },
     SCHEDULED: {
       label: "Scheduled",
-      color: "border border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+      color: "border border-info/30 bg-info/10 text-info ",
     },
     EXPIRED: {
       label: "Expired",
-      color: "border border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
+      color: "border border-destructive/30 bg-destructive/10 text-destructive ",
     },
   };
   return config[status] || {
@@ -2931,10 +2931,10 @@ export function getPricingRuleStatusDisplay(status: string): { label: string; co
 export function getPriceChangeTypeDisplay(type: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
     MANUAL: { label: "Manual", color: "text-zinc-700 dark:text-zinc-300" },
-    BULK_UPDATE: { label: "Bulk Update", color: "text-blue-700 dark:text-blue-300" },
-    RULE_APPLIED: { label: "Rule Applied", color: "text-purple-700 dark:text-purple-300" },
-    SYNC_FROM_SHOPIFY: { label: "Shopify Sync", color: "text-green-700 dark:text-green-300" },
-    SYNC_FROM_WOOCOMMERCE: { label: "WooCommerce Sync", color: "text-orange-700 dark:text-orange-300" },
+    BULK_UPDATE: { label: "Bulk Update", color: "text-info " },
+    RULE_APPLIED: { label: "Rule Applied", color: "text-info " },
+    SYNC_FROM_SHOPIFY: { label: "Shopify Sync", color: "text-success " },
+    SYNC_FROM_WOOCOMMERCE: { label: "WooCommerce Sync", color: "text-warning " },
   };
   return config[type] || { label: type, color: "text-zinc-700 dark:text-zinc-300" };
 }
@@ -3230,23 +3230,23 @@ export async function generateDiscountCode(): Promise<{ code: string }> {
 // Discount display helpers
 export function getPromotionTypeDisplay(type: string): { label: string; color: string; icon: string } {
   const config: Record<string, { label: string; color: string; icon: string }> = {
-    PERCENTAGE: { label: "Percentage Off", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300", icon: "%" },
-    FIXED: { label: "Fixed Amount", color: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300", icon: "£" },
-    FREE_SHIPPING: { label: "Free Shipping", color: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300", icon: "🚚" },
-    BUY_X_GET_Y: { label: "Buy X Get Y", color: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300", icon: "🎁" },
+    PERCENTAGE: { label: "Percentage Off", color: "bg-success/10 text-success ", icon: "%" },
+    FIXED: { label: "Fixed Amount", color: "bg-info/10 text-info ", icon: "£" },
+    FREE_SHIPPING: { label: "Free Shipping", color: "bg-info/10 text-info ", icon: "🚚" },
+    BUY_X_GET_Y: { label: "Buy X Get Y", color: "bg-warning/10 text-warning ", icon: "🎁" },
   };
   return config[type] || { label: type, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300", icon: "?" };
 }
 
 export function getPromotionStatusDisplay(status: string): { label: string; color: string } {
   const config: Record<string, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300" },
+    ACTIVE: { label: "Active", color: "bg-success/10 text-success " },
     INACTIVE: { label: "Inactive", color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" },
-    SCHEDULED: { label: "Scheduled", color: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300" },
-    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
-    DISABLED: { label: "Disabled", color: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300" },
-    LIMIT_REACHED: { label: "Limit Reached", color: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300" },
-    DELETED: { label: "Deleted", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
+    SCHEDULED: { label: "Scheduled", color: "bg-info/10 text-info " },
+    EXPIRED: { label: "Expired", color: "bg-destructive/10 text-destructive " },
+    DISABLED: { label: "Disabled", color: "bg-warning/10 text-warning " },
+    LIMIT_REACHED: { label: "Limit Reached", color: "bg-warning/10 text-warning " },
+    DELETED: { label: "Deleted", color: "bg-destructive/10 text-destructive " },
   };
   return config[status] || { label: status, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
 }
@@ -3465,9 +3465,9 @@ export async function getGiftCardStats(): Promise<GiftCardStatsResponse> {
 // Gift card display helpers
 export function getGiftCardStatusDisplay(status: GiftCardStatus): { label: string; color: string } {
   const config: Record<GiftCardStatus, { label: string; color: string }> = {
-    ACTIVE: { label: "Active", color: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300" },
-    FULLY_REDEEMED: { label: "Fully Redeemed", color: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300" },
-    EXPIRED: { label: "Expired", color: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300" },
+    ACTIVE: { label: "Active", color: "bg-success/10 text-success " },
+    FULLY_REDEEMED: { label: "Fully Redeemed", color: "bg-info/10 text-info " },
+    EXPIRED: { label: "Expired", color: "bg-destructive/10 text-destructive " },
     DISABLED: { label: "Disabled", color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" },
   };
   return config[status] || { label: status, color: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300" };
@@ -4757,10 +4757,10 @@ export interface AdminReviewsResponse {
 
 export function getReviewStatusDisplay(status: ReviewStatus): { label: string; color: string } {
   const config: Record<ReviewStatus, { label: string; color: string }> = {
-    pending: { label: "Pending", color: "bg-yellow-500" },
-    approved: { label: "Approved", color: "bg-green-500" },
-    rejected: { label: "Rejected", color: "bg-red-500" },
-    flagged: { label: "Flagged", color: "bg-orange-500" },
+    pending: { label: "Pending", color: "bg-warning" },
+    approved: { label: "Approved", color: "bg-success" },
+    rejected: { label: "Rejected", color: "bg-destructive" },
+    flagged: { label: "Flagged", color: "bg-warning" },
   };
   return config[status] || { label: status, color: "bg-gray-500" };
 }

@@ -35,21 +35,21 @@ function StatusBadge({ status }: { status: WorkflowStep["status"] }) {
   switch (status) {
     case "RUNNING":
       return (
-        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 gap-1">
+        <Badge className="bg-info/10 text-info border-info/20 gap-1">
           <Loader2 className="h-3 w-3 animate-spin" />
           Running
         </Badge>
       );
     case "COMPLETED":
       return (
-        <Badge className="bg-green-500/10 text-green-600 border-green-500/20 gap-1">
+        <Badge className="bg-success/10 text-success border-success/20 gap-1">
           <CheckCircle2 className="h-3 w-3" />
           Completed
         </Badge>
       );
     case "FAILED":
       return (
-        <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 gap-1">
+        <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
           <XCircle className="h-3 w-3" />
           Failed
         </Badge>
@@ -85,7 +85,7 @@ function JsonViewer({ data, label }: { data: string; label: string }) {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="rounded-lg border bg-muted/30">
+      <div className="border bg-muted/30">
         <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-accent/50 transition-colors">
           <div className="flex items-center gap-2">
             {isOpen ? (
@@ -133,7 +133,7 @@ function LiveOutputStream({ output }: { output?: string }) {
 
   if (!output) {
     return (
-      <div className="rounded-lg border bg-muted/30 p-4">
+      <div className="border bg-muted/30 p-4">
         <div className="flex items-center justify-center text-muted-foreground text-sm">
           <Terminal className="h-4 w-4 mr-2" />
           Waiting for output...
@@ -143,10 +143,10 @@ function LiveOutputStream({ output }: { output?: string }) {
   }
 
   return (
-    <div className="rounded-lg border bg-black/90 overflow-hidden">
+    <div className="border bg-black/90 overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 bg-black/50 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <Terminal className="h-4 w-4 text-green-400" />
+          <Terminal className="h-4 w-4 text-success" />
           <span className="text-xs text-white/70">Live Output</span>
         </div>
         <Button
@@ -164,7 +164,7 @@ function LiveOutputStream({ output }: { output?: string }) {
         onMouseEnter={() => setAutoScroll(false)}
         onMouseLeave={() => setAutoScroll(true)}
       >
-        <pre className="p-3 text-xs font-mono text-green-400 whitespace-pre-wrap break-all">
+        <pre className="p-3 text-xs font-mono text-success whitespace-pre-wrap break-all">
           {output}
         </pre>
       </ScrollArea>
@@ -216,7 +216,7 @@ export function NodeDetailPanel({
           </div>
           <StatusBadge status={step.status} />
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Remove">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -236,9 +236,9 @@ export function NodeDetailPanel({
           {/* Error message for failed steps */}
           {step.status === "FAILED" && step.error && (
             <div>
-              <h4 className="text-sm font-medium mb-2 text-red-600">Error</h4>
-              <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50 p-3">
-                <pre className="text-xs font-mono text-red-700 dark:text-red-400 whitespace-pre-wrap break-all">
+              <h4 className="text-sm font-medium mb-2 text-destructive">Error</h4>
+              <div className="border border-destructive/30 bg-destructive/10 p-3">
+                <pre className="text-xs font-mono text-destructive whitespace-pre-wrap break-all">
                   {step.error}
                 </pre>
               </div>
@@ -276,7 +276,7 @@ export function NodeDetailPanel({
           {step.startedAt && (
             <div>
               <h4 className="text-sm font-medium mb-2">Timing</h4>
-              <div className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">
+              <div className="border bg-muted/30 p-3 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Started</span>
                   <span className="font-mono text-xs">

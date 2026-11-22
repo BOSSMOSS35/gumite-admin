@@ -86,8 +86,8 @@ const tierLabels: Record<string, string> = {
 };
 
 const tierColors: Record<string, string> = {
-  luxury: "bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300",
-  premium: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
+  luxury: "bg-warning/10 text-warning ",
+  premium: "bg-info/10 text-info ",
   standard: "bg-gray-100 text-gray-800 dark:bg-gray-500/10 dark:text-gray-300",
 };
 
@@ -309,13 +309,13 @@ export default function BrandsPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-success/10 text-success rounded-none">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {(error || queryError) && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>
             {error ||
@@ -456,7 +456,7 @@ export default function BrandsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="text-destructive"
                           onClick={() => openDeleteDialog(brand)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />

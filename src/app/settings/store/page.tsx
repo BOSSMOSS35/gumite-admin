@@ -547,7 +547,7 @@ export default function StoreSettingsPage() {
             <Card key={i}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <Skeleton className="h-12 w-12 rounded-none" />
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-32" />
                     <Skeleton className="h-4 w-48" />
@@ -599,7 +599,7 @@ export default function StoreSettingsPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
+          <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
             <AlertCircle className="h-5 w-5" />
             <span>{error}</span>
             <Button
@@ -639,7 +639,7 @@ export default function StoreSettingsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-none bg-primary/10">
                         <StoreIcon className="h-6 w-6 text-primary" />
                       </div>
                       <div>
@@ -731,7 +731,7 @@ export default function StoreSettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={handleBackToStores}>
+          <Button variant="ghost" size="icon" onClick={handleBackToStores} aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -748,7 +748,7 @@ export default function StoreSettingsPage() {
 
       {/* Error Alert */}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <Button
@@ -916,31 +916,31 @@ export default function StoreSettingsPage() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.reviewsEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.reviewsEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Reviews</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.wishlistEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.wishlistEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Wishlist</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.giftCardsEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.giftCardsEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Gift Cards</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.guestCheckoutEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.guestCheckoutEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Guest Checkout</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.newsletterEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.newsletterEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Newsletter</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.productComparisonEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.productComparisonEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Comparison</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${settings?.customerTiersEnabled ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div className={`h-2 w-2 rounded-full ${settings?.customerTiersEnabled ? "bg-success" : "bg-gray-300"}`} />
                     <span>Customer Tiers</span>
                   </div>
                 </div>
@@ -2083,10 +2083,10 @@ export default function StoreSettingsPage() {
             </div>
 
             {/* Preview */}
-            <div className="border rounded-lg p-4">
+            <div className="border rounded-none p-4">
               <h4 className="font-medium mb-3">Preview</h4>
               <div
-                className="p-4 rounded-lg"
+                className="p-4 rounded-none"
                 style={{ backgroundColor: themeForm.backgroundColor, color: themeForm.foregroundColor }}
               >
                 <div

@@ -79,7 +79,7 @@ export function SettingsSidebar() {
         <div className="px-4 py-2 space-y-6">
           {settingsNav.map((section) => (
             <div key={section.title}>
-              <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <h4 className="mb-2 px-2 text-xs font-semibold text-muted-foreground">
                 {section.title}
               </h4>
               <div className="space-y-1">
@@ -89,7 +89,7 @@ export function SettingsSidebar() {
                     href={item.href}
                     prefetch={false}
                     className={cn(
-                      "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                      "block rounded-none px-2 py-1.5 text-sm transition-colors",
                       pathname === item.href
                         ? "bg-muted font-medium text-foreground"
                         : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"

@@ -174,7 +174,7 @@ export default function LocationsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link href="/inventory">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" aria-label="Back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -228,7 +228,7 @@ export default function LocationsPage() {
                   <TableRow key={location.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-blue-100 p-2 text-blue-600">
+                        <div className="rounded-full bg-info/10 p-2 text-info">
                           <Warehouse className="h-4 w-4" />
                         </div>
                         <span className="font-medium">{location.name}</span>
@@ -247,7 +247,7 @@ export default function LocationsPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       {location.fulfillmentEnabled ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 mx-auto" />
+                        <CheckCircle2 className="h-5 w-5 text-success mx-auto" />
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}

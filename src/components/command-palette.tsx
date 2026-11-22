@@ -165,7 +165,7 @@ export function CommandPalette() {
             if (query.trim() && results.length > 0) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          className="h-9 w-64 rounded-md border bg-background pl-9 pr-8 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all focus:w-80"
+          className="h-9 w-64 rounded-none border bg-background pl-9 pr-8 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all focus:w-80"
         />
         {isLoading && (
           <Loader2 className="absolute right-8 h-3.5 w-3.5 animate-spin text-muted-foreground" />
@@ -183,14 +183,14 @@ export function CommandPalette() {
             <X className="h-3.5 w-3.5" />
           </button>
         )}
-        <kbd className="pointer-events-none absolute right-2 hidden h-5 select-none items-center rounded border bg-muted px-1 font-mono text-[10px] font-medium sm:flex">
+        <kbd className="pointer-events-none absolute right-2 hidden h-5 select-none items-center rounded border bg-muted px-1 font-mono text-xs font-medium sm:flex">
           ⌘K
         </kbd>
       </div>
 
       {/* Dropdown results */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 w-96 max-h-[420px] overflow-auto rounded-md border bg-popover shadow-lg z-50">
+        <div className="absolute top-full right-0 mt-1 w-96 max-h-[420px] overflow-auto rounded-none border bg-popover z-50">
           {results.length === 0 && !isLoading ? (
             <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
               <Search className="h-8 w-8 opacity-40" />
@@ -214,7 +214,7 @@ export function CommandPalette() {
                           : "hover:bg-accent/50"
                       }`}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border bg-muted">
                         <Search className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div className="flex flex-1 flex-col min-w-0">
@@ -238,7 +238,7 @@ export function CommandPalette() {
                     }`}
                   >
                     {/* Product thumbnail */}
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted overflow-hidden">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none border bg-muted overflow-hidden">
                       {thumb ? (
                         <img
                           src={thumb}
@@ -273,7 +273,7 @@ export function CommandPalette() {
           )}
 
           {/* Footer hint */}
-          <div className="flex items-center justify-between border-t px-3 py-1.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-between border-t px-3 py-1.5 text-xs text-muted-foreground">
             <span className="flex items-center gap-2">
               <kbd className="rounded border bg-muted px-1">↑↓</kbd> navigate
               <kbd className="rounded border bg-muted px-1">↵</kbd> open
@@ -289,10 +289,10 @@ export function CommandPalette() {
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "published":
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300 text-[10px] px-1.5 py-0">Published</Badge>;
+      return <Badge className="bg-success/10 text-success text-xs px-1.5 py-0">Published</Badge>;
     case "draft":
-      return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300 text-[10px] px-1.5 py-0">Draft</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300 text-xs px-1.5 py-0">Draft</Badge>;
     default:
-      return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{status}</Badge>;
+      return <Badge variant="secondary" className="text-xs px-1.5 py-0">{status}</Badge>;
   }
 }

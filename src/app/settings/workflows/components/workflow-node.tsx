@@ -38,28 +38,28 @@ const statusConfig: Record<
   }
 > = {
   PENDING: {
-    bg: "bg-muted/50 backdrop-blur-md",
+    bg: "bg-muted/50",
     border: "border-muted-foreground/30 border-dashed",
     icon: <Clock className="h-4 w-4 text-muted-foreground" />,
   },
   RUNNING: {
-    bg: "bg-blue-500/5 backdrop-blur-md shadow-sm",
-    border: "border-blue-500/50",
-    icon: <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />,
+    bg: "bg-info/5 shadow-sm",
+    border: "border-info/50",
+    icon: <Loader2 className="h-4 w-4 text-info animate-spin" />,
     pulse: true,
   },
   COMPLETED: {
-    bg: "bg-green-500/5 backdrop-blur-md shadow-sm",
-    border: "border-green-500/50",
-    icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+    bg: "bg-success/5 shadow-sm",
+    border: "border-success/50",
+    icon: <CheckCircle2 className="h-4 w-4 text-success" />,
   },
   FAILED: {
-    bg: "bg-red-500/5 backdrop-blur-md shadow-sm",
-    border: "border-red-500/50",
-    icon: <XCircle className="h-4 w-4 text-red-500" />,
+    bg: "bg-destructive/5 shadow-sm",
+    border: "border-destructive/50",
+    icon: <XCircle className="h-4 w-4 text-destructive" />,
   },
   SKIPPED: {
-    bg: "bg-muted/50 backdrop-blur-md",
+    bg: "bg-muted/50",
     border: "border-muted-foreground/50",
     icon: <SkipForward className="h-4 w-4 text-muted-foreground" />,
   },
@@ -77,7 +77,7 @@ function WorkflowNodeComponent({ data, selected }: WorkflowNodeComponentProps) {
   return (
     <div
       className={cn(
-        "relative px-4 py-3 rounded-lg border min-w-[140px] max-w-[200px] transition-all duration-200",
+        "relative px-4 py-3 rounded-none border min-w-[140px] max-w-[200px] transition-all duration-200",
         config.bg,
         config.border,
         selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
@@ -119,8 +119,8 @@ function WorkflowNodeComponent({ data, selected }: WorkflowNodeComponentProps) {
 
       {/* Progress bar for running steps */}
       {data.status === "RUNNING" && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500/20 rounded-b-lg overflow-hidden">
-          <div className="h-full bg-blue-500 animate-progress-indeterminate" />
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-info/20 rounded-b-lg overflow-hidden">
+          <div className="h-full bg-info animate-progress-indeterminate" />
         </div>
       )}
 

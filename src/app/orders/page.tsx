@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -320,10 +321,10 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-xl font-semibold">Orders</CardTitle>
-          <div className="flex items-center gap-2">
+      <PageHeader
+        title="Orders"
+        actions={
+          <>
             <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
@@ -332,13 +333,15 @@ export default function OrdersPage() {
             </Button>
             <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
               <Plus className="h-4 w-4" />
-              Create Order
+              Create order
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+          </>
+        }
+      />
+      <Card>
+        <CardContent className="pt-6">
           {/* Filters Row */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {/* Add Filter Dropdown */}
               <Popover>
@@ -431,7 +434,7 @@ export default function OrdersPage() {
               {activeFilters.map((filter) => (
                 <div
                   key={`${filter.id}-${filter.value}`}
-                  className="flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-sm"
+                  className="flex items-center gap-1 px-2 py-1 bg-muted rounded-none text-sm"
                 >
                   <span>{filter.label}</span>
                   <button
@@ -445,7 +448,7 @@ export default function OrdersPage() {
 
               {/* Date filter chip */}
               {(dateFrom || dateTo) && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-sm">
+                <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded-none text-sm">
                   <Calendar className="h-3 w-3" />
                   <span>
                     {dateFrom && dateTo
@@ -498,7 +501,7 @@ export default function OrdersPage() {
 
           {/* Error State */}
           {isError && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-destructive/10 text-destructive rounded-none">
               <AlertCircle className="h-5 w-5" />
               <span>{error instanceof Error ? error.message : "Failed to load orders"}</span>
               <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
@@ -636,7 +639,7 @@ export default function OrdersPage() {
 
       {/* Bulk Action Floating Bar */}
         {selectedOrderIds.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
             <span className="text-sm font-medium">{selectedOrderIds.length} selected</span>
             <div className="w-px h-4 bg-muted-foreground/30" />
             <div className="flex items-center gap-2">
@@ -676,7 +679,7 @@ export default function OrdersPage() {
 
           <div className="grid gap-4 py-4">
             {createError && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-none">
                 <AlertCircle className="h-4 w-4" />
                 {createError}
               </div>
@@ -693,11 +696,11 @@ export default function OrdersPage() {
             </div>
 
             {/* Product Search */}
-            <div className="border rounded-lg p-3 space-y-3">
+            <div className="border rounded-none p-3 space-y-3">
               <p className="text-sm font-medium">Product</p>
 
               {selectedProduct ? (
-                <div className="flex items-center gap-3 p-2 bg-muted rounded-md">
+                <div className="flex items-center gap-3 p-2 bg-muted rounded-none">
                   {selectedProduct.thumbnail && (
                     <img src={selectedProduct.thumbnail} alt="" className="w-10 h-10 object-cover rounded" />
                   )}
@@ -720,7 +723,7 @@ export default function OrdersPage() {
                   />
                   {/* Search results dropdown */}
                   {(productResults.length > 0 || productSearching) && (
-                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-popover border rounded-none max-h-48 overflow-y-auto">
                       {productSearching ? (
                         <div className="flex items-center justify-center py-4">
                           <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -749,7 +752,7 @@ export default function OrdersPage() {
                 <div className="grid gap-2">
                   <Label>Variant</Label>
                   <select
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                    className="flex h-9 w-full rounded-none border border-input bg-transparent px-3 py-1 text-sm"
                     value={selectedVariantId}
                     onChange={(e) => setSelectedVariantId(e.target.value)}
                   >
@@ -779,7 +782,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label>Unit Price</Label>
-                    <div className="flex items-center h-9 px-3 rounded-md border bg-muted text-sm font-medium">
+                    <div className="flex items-center h-9 px-3 rounded-none border bg-muted text-sm font-medium">
                       {formatPrice(getVariantPrice(), "GBP")}
                     </div>
                   </div>

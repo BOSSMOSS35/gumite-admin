@@ -111,7 +111,7 @@ function ChipTagInput({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border rounded-md px-2 py-1.5 min-h-[38px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
+    <div className="flex flex-wrap items-center gap-1.5 border rounded-none px-2 py-1.5 min-h-[38px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
       {values.filter(Boolean).map((value, idx) => (
         <Badge
           key={`${value}-${idx}`}
@@ -275,7 +275,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
   if (!store.hasVariants) {
     return (
       <div className="text-center py-12">
-        <Check className="h-12 w-12 mx-auto text-green-500 mb-4" />
+        <Check className="h-12 w-12 mx-auto text-success mb-4" />
         <h3 className="text-lg font-semibold mb-2">Simple Product</h3>
         <p className="text-muted-foreground">
           This product doesn&apos;t have variants. A default variant will be created for
@@ -310,7 +310,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
               </Button>
             )}
           </div>
-          <div className="grid gap-3 rounded-md border bg-muted/30 p-3 text-sm md:grid-cols-3">
+          <div className="grid gap-3 rounded-none border bg-muted/30 p-3 text-sm md:grid-cols-3">
             <div>
               <p className="font-medium">Options</p>
               <p className="text-muted-foreground">Examples: Size, Color, Material. No SKU or inventory lives here.</p>
@@ -328,7 +328,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
 
         {/* Empty state with presets */}
         {store.options.length === 0 && (
-          <div className="py-10 border rounded-lg text-center space-y-6">
+          <div className="py-10 border rounded-none text-center space-y-6">
             <div>
               <h3 className="text-base font-medium mb-1">What varies about this product?</h3>
               <p className="text-sm text-muted-foreground">
@@ -391,7 +391,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                   : null;
 
               return (
-                <div key={optionIndex} className="border rounded-lg p-4 space-y-4">
+                <div key={optionIndex} className="border rounded-none p-4 space-y-4">
                   <div className="flex items-center gap-4">
                     <GripVertical className="h-4 w-4 text-muted-foreground cursor-move shrink-0" />
                     <div className="flex-1">
@@ -408,7 +408,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => store.removeOption(optionIndex)}
+                      aria-label="Delete" onClick={() => store.removeOption(optionIndex)}
                       className="shrink-0"
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -555,19 +555,19 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
           <div className="space-y-4">
             {/* Summary banner */}
 	            <div className={cn(
-	              "rounded-lg px-4 py-3 flex items-center justify-between",
-	              variantLimitExceeded ? "border border-red-200 bg-red-50" : "bg-muted/50"
+	              "rounded-none px-4 py-3 flex items-center justify-between",
+	              variantLimitExceeded ? "border border-destructive/30 bg-destructive/10" : "bg-muted/50"
 	            )}>
 	              <div>
-	                <p className={cn("text-sm font-medium", variantLimitExceeded && "text-red-900")}>
+	                <p className={cn("text-sm font-medium", variantLimitExceeded && "text-destructive")}>
 	                  {variantSummary.total} variant{variantSummary.total !== 1 ? "s" : ""} will be created
 	                </p>
-	                <p className={cn("text-xs", variantLimitExceeded ? "text-red-700" : "text-muted-foreground")}>
+	                <p className={cn("text-xs", variantLimitExceeded ? "text-destructive" : "text-muted-foreground")}>
 	                  {variantSummary.breakdown}
 	                  {validOptionCount > 0 && " from option values"}
 	                </p>
 	                {variantLimitExceeded && (
-	                  <p className="mt-1 text-xs text-red-700">
+	                  <p className="mt-1 text-xs text-destructive">
 	                    Reduce option values. A product can generate at most 100 variants.
 	                  </p>
 	                )}
@@ -602,7 +602,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
             </div>
 
             {/* Grouped pricing table */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-none overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
@@ -617,7 +617,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                     <React.Fragment key={group.header ?? "__all"}>
                       {group.header && groupedVariants.length > 1 && (
                         <tr className="bg-muted/30">
-                          <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-muted-foreground">
                             {group.header}
                           </td>
                         </tr>
@@ -639,7 +639,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                                 placeholder="0.00"
                                 className={cn(
                                   "h-8 pl-5 text-sm",
-                                  (!variant.price || parseFloat(variant.price) <= 0) && "border-red-400 focus-visible:ring-red-400"
+                                  (!variant.price || parseFloat(variant.price) <= 0) && "border-destructive focus-visible:ring-destructive"
                                 )}
                                 value={variant.price}
                                 onChange={(e) =>
@@ -655,7 +655,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                               placeholder="1"
                               className={cn(
                                 "h-8 text-sm",
-                                (!variant.quantity || parseInt(variant.quantity) <= 0) && "border-red-400 focus-visible:ring-red-400"
+                                (!variant.quantity || parseInt(variant.quantity) <= 0) && "border-destructive focus-visible:ring-destructive"
                               )}
                               value={variant.quantity}
                               onChange={(e) =>
@@ -667,8 +667,8 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                              onClick={() => store.removeVariantPrice(variant._idx)}
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              aria-label="Delete" onClick={() => store.removeVariantPrice(variant._idx)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -690,7 +690,7 @@ function VariantStep({ store, variantCombinations }: VariantStepProps) {
 
       {/* Hint when options exist but no values yet */}
       {variantCombinations.length === 0 && store.options.length > 0 && store.options.some((o) => o.name) && (
-        <div className="bg-muted/50 rounded-lg p-6 text-center">
+        <div className="bg-muted/50 rounded-none p-6 text-center">
           <p className="text-sm text-muted-foreground">
             Add option values above to generate variant combinations.
           </p>
@@ -1038,7 +1038,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           className={cn(
-            "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
+            "fixed inset-0 z-50 bg-black/50",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           )}
@@ -1046,7 +1046,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
         <DialogPrimitive.Content
           className={cn(
             "fixed inset-4 z-50 mx-auto my-auto",
-            "flex flex-col bg-background shadow-2xl rounded-lg",
+            "flex flex-col bg-background rounded-none",
             "max-w-6xl w-full max-h-[90vh]",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -1126,11 +1126,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="title" className={store.fieldErrors.title ? "text-red-500" : ""}>Title</Label>
+                        <Label htmlFor="title" className={store.fieldErrors.title ? "text-destructive" : ""}>Title</Label>
                         <Input
                           id="title"
                           placeholder="Winter jacket"
-                          className={store.fieldErrors.title ? "border-red-500 focus-visible:ring-red-500" : ""}
+                          className={store.fieldErrors.title ? "border-destructive focus-visible:ring-destructive" : ""}
                           value={store.title}
                           onChange={(e) => {
                             store.setTitle(e.target.value);
@@ -1138,7 +1138,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                           }}
                         />
                         {store.fieldErrors.title && (
-                          <p className="text-xs text-red-500">{store.fieldErrors.title}</p>
+                          <p className="text-xs text-destructive">{store.fieldErrors.title}</p>
                         )}
                       </div>
                       <div className="space-y-2">
@@ -1189,7 +1189,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
                     <div
                       className={cn(
-                        "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+                        "border-2 border-dashed rounded-none p-8 text-center transition-colors",
                         dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
                         "hover:border-muted-foreground/50"
                       )}
@@ -1224,7 +1224,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         {store.images.map((file, index) => (
                           <div
                             key={index}
-                            className="relative group aspect-square rounded-lg overflow-hidden bg-muted"
+                            className="relative group aspect-square rounded-none overflow-hidden bg-muted"
                           >
                             <img
                               src={URL.createObjectURL(file)}
@@ -1254,7 +1254,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                   <div className="space-y-4">
                     <h2 className="text-lg font-semibold">Variants</h2>
 
-                    <div className="flex items-start gap-4 p-4 border rounded-lg">
+                    <div className="flex items-start gap-4 p-4 border rounded-none">
                       <Switch
                         checked={store.hasVariants}
                         onCheckedChange={(checked) => store.setField("hasVariants", checked)}
@@ -1395,7 +1395,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         <h2 className="text-lg font-semibold">Pricing</h2>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label className={store.fieldErrors.price ? "text-red-500" : ""}>Price</Label>
+                            <Label className={store.fieldErrors.price ? "text-destructive" : ""}>Price</Label>
                             <div className="relative">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                                 £
@@ -1405,7 +1405,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                                 min="0"
                                 step="0.01"
                                 placeholder="0.00"
-                                className={cn("pl-7", store.fieldErrors.price ? "border-red-500 focus-visible:ring-red-500" : "")}
+                                className={cn("pl-7", store.fieldErrors.price ? "border-destructive focus-visible:ring-destructive" : "")}
                                 value={store.price}
                                 onChange={(e) => {
                                   store.setField("price", e.target.value);
@@ -1414,7 +1414,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                               />
                             </div>
                             {store.fieldErrors.price && (
-                              <p className="text-xs text-red-500">{store.fieldErrors.price}</p>
+                              <p className="text-xs text-destructive">{store.fieldErrors.price}</p>
                             )}
                           </div>
                           <div className="space-y-2">
@@ -1482,11 +1482,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label className={store.fieldErrors.quantity ? "text-red-500" : ""}>Quantity</Label>
+                            <Label className={store.fieldErrors.quantity ? "text-destructive" : ""}>Quantity</Label>
                             <Input
                               type="number"
                               placeholder="0"
-                              className={store.fieldErrors.quantity ? "border-red-500 focus-visible:ring-red-500" : ""}
+                              className={store.fieldErrors.quantity ? "border-destructive focus-visible:ring-destructive" : ""}
                               value={store.quantity}
                               onChange={(e) => {
                                 store.setField("quantity", e.target.value);
@@ -1494,7 +1494,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                               }}
                             />
                             {store.fieldErrors.quantity && (
-                              <p className="text-xs text-red-500">{store.fieldErrors.quantity}</p>
+                              <p className="text-xs text-destructive">{store.fieldErrors.quantity}</p>
                             )}
                           </div>
                         </div>
@@ -1514,11 +1514,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
           {/* Footer */}
           <div className="flex flex-col border-t">
             {store.error && (
-              <div className="flex items-center gap-2 px-6 py-2 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 text-sm">
+              <div className="flex items-center gap-2 px-6 py-2 bg-destructive/10 text-destructive text-sm">
                 <span>{store.error}</span>
                 <button
                   onClick={() => store.setError(null)}
-                  className="ml-auto text-red-500 hover:text-red-700"
+                  className="ml-auto text-destructive hover:text-destructive"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1532,7 +1532,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                   </Button>
                 )}
                 {(store.title || store.description || store.handle) && (
-                  <Button type="button" variant="destructive" onClick={() => setShowDiscardDialog(true)} disabled={store.saving} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none">
+                  <Button type="button" variant="destructive" onClick={() => setShowDiscardDialog(true)} disabled={store.saving} className="bg-destructive/10 text-destructive hover:bg-destructive/10 hover:text-destructive border-none">
                     Discard Draft
                   </Button>
                 )}

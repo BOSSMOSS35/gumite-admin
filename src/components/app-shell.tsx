@@ -121,6 +121,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Breadcrumbs follow the URL: /orders/abc/ship -> Orders / Order / Ship
+  const crumbs = (() => {
+    const parts = (pathname || "/").split("/").filter(Boolean);
+    if (parts.length === 0) return [{ label: "Today", href: "/" }];
+    const LABELS: Record<string, string> = {
+      products: "Products", orders: "Orders", drafts: "Drafts", returns: "Returns", customers: "Customers",
+      groups: "Groups", inventory: "Stock", locations: "Locations", categories: "Categories", brands: "Brands",
+      collections: "Collections", discounts: "Discounts", "gift-cards": "Gift cards", pricing: "Pricing rules",
+      support: "Support", reviews: "Reviews", settings: "Settings", help: "Help", notifications: "Notifications",
+      ship: "Ship", new: "New", store: "Store", users: "Team", regions: "Regions", "tax-regions": "Tax regions",
+      "product-types": "Product types", "product-tags": "Product tags", "email-templates": "Email templates",
+      workflows: "Workflows", security: "Security", profile: "Profile",
+    };
+    return parts.map((p, i) => ({
+      label: LABELS[p] ?? (/^[0-9a-f-]{8,}$/i.test(p) || p.length > 20 ? "Details" : p.charAt(0).toUpperCase() + p.slice(1)),
+      href: "/" + parts.slice(0, i + 1).join("/"),
+    }));
+  })();
+
   // Authenticated: render with sidebar
   return (
     <NotificationHandlerProvider>
@@ -133,9 +152,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Separator orientation="vertical" className="mr-2 h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                  </BreadcrumbItem>
+                  {crumbs.map((c, i) => (
+                    <BreadcrumbItem key={c.href}>
+                      {i > 0 && <span aria-hidden className="text-muted-foreground">/</span>}
+                      {i === crumbs.length - 1 ? (
+                        <BreadcrumbPage>{c.label}</BreadcrumbPage>
+                      ) : (
+                        <Link href={c.href} className="text-muted-foreground hover:text-foreground">{c.label}</Link>
+                      )}
+                    </BreadcrumbItem>
+                  ))}
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
@@ -147,7 +173,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
           <main className="flex-1 overflow-auto">
             {isSetupRequired && isSetupRoute && (
-              <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+              <div className="border-b border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning ">
                 Region setup is required before using the rest of admin.
                 <Link href="/settings/store" className="ml-2 underline underline-offset-2">
                   Configure store

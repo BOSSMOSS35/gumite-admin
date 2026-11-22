@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState, Suspense, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -71,13 +72,13 @@ import { useDebounce } from "@/hooks/use-debounce";
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
     case "published":
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300 hover:bg-green-100">Published</Badge>;
+      return <Badge className="bg-success/10 text-success hover:bg-success/10">Published</Badge>;
     case "draft":
       return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300 hover:bg-gray-100">Draft</Badge>;
     case "proposed":
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300 hover:bg-yellow-100">Proposed</Badge>;
+      return <Badge className="bg-warning/10 text-warning hover:bg-warning/10">Proposed</Badge>;
     case "rejected":
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300 hover:bg-red-100">Rejected</Badge>;
+      return <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/10">Rejected</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -252,23 +253,19 @@ export default function ProductsPage() {
         onSave={handleProductSave}
       />
 
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground">
-            Manage your product inventory and listings
-          </p>
-        </div>
-        <Button className="gap-2" onClick={() => setAddProductOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Add Product
-        </Button>
-      </div>
+      <PageHeader
+        title="Products"
+        actions={
+          <Button className="gap-2" onClick={() => setAddProductOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add product
+          </Button>
+        }
+      />
 
       {/* Filters and Search */}
-      <Card>
-        <CardContent className="pt-6">
+      <div>
+        <div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 gap-4">
               <div className="relative flex-1 max-w-sm">
@@ -308,16 +305,16 @@ export default function ProductsPage() {
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching}>
+              <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => refetch()} disabled={isFetching}>
                 <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               </Button>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" aria-label="Download">
                 <Download className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Products Table */}
       <Card>
@@ -364,7 +361,7 @@ export default function ProductsPage() {
         <CardContent>
           {/* Error State */}
           {isError && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-destructive/10 text-destructive rounded-none">
               <AlertCircle className="h-5 w-5" />
               <span>{error instanceof Error ? error.message : "Failed to load products"}</span>
               <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
@@ -482,7 +479,7 @@ export default function ProductsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              className="text-red-600"
+                              className="text-destructive"
                               onClick={() => handleDeleteProduct(product)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />

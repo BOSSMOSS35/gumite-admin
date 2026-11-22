@@ -59,7 +59,7 @@ export function SuspendCustomerDialog({
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <Ban className="h-5 w-5" />
               Suspend Customer Account
             </DialogTitle>
@@ -70,11 +70,11 @@ export function SuspendCustomerDialog({
 
           <div className="grid gap-4 py-4">
             {/* Warning */}
-            <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+            <div className="flex items-start gap-3 rounded-none border border-warning/30 bg-warning/10 p-4">
+              <AlertTriangle className="h-5 w-5 text-warning mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-yellow-800">Warning</p>
-                <p className="text-yellow-700">
+                <p className="font-medium text-warning">Warning</p>
+                <p className="text-warning">
                   Suspending this account will prevent the customer from placing new orders
                   and accessing certain features. They will be notified via email.
                 </p>
@@ -96,7 +96,7 @@ export function SuspendCustomerDialog({
               </p>
             </div>
             {error && (
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             )}
           </div>
 

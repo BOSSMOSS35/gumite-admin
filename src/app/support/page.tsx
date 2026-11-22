@@ -44,13 +44,13 @@ import { useSupportTickets, useSupportStats } from "@/hooks/use-support";
 // ── Badge helpers ──────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
-  open: "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+  open: "border-info/30 bg-info/10 text-info ",
   awaiting_customer:
-    "border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
+    "border-warning/30 bg-warning/10 text-warning ",
   awaiting_agent:
-    "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+    "border-warning/30 bg-warning/10 text-warning ",
   resolved:
-    "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+    "border-success/30 bg-success/10 text-success ",
   closed:
     "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
 };
@@ -65,8 +65,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const PRIORITY_STYLES: Record<string, string> = {
   urgent:
-    "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
-  high: "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+    "border-destructive/30 bg-destructive/10 text-destructive ",
+  high: "border-warning/30 bg-warning/10 text-warning ",
   normal:
     "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
   low: "border-zinc-200/70 bg-zinc-50/80 text-zinc-600 dark:border-zinc-600/40 dark:bg-zinc-600/10 dark:text-zinc-400",
@@ -229,8 +229,8 @@ export default function SupportPage() {
 
       {/* Error */}
       {isError && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="py-4 text-center text-red-600">
+        <Card className="border-destructive/30 bg-destructive/10">
+          <CardContent className="py-4 text-center text-destructive">
             {error instanceof Error ? error.message : "Failed to load tickets"}
             <Button variant="link" onClick={() => refetch()} className="ml-2">
               Retry

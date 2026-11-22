@@ -294,7 +294,7 @@ function ShortcutsHelpDialog({
           <div className="space-y-6 py-2">
             {/* Global shortcuts */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              <h4 className="text-sm font-semibold text-muted-foreground">
                 {globalShortcuts.name}
               </h4>
               <div className="space-y-2">
@@ -319,7 +319,7 @@ function ShortcutsHelpDialog({
               return (
                 <div key={scope} className="space-y-3">
                   <Separator />
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  <h4 className="text-sm font-semibold text-muted-foreground">
                     {scopeLabels[scope] || scope}
                   </h4>
                   <div className="space-y-2">
@@ -339,7 +339,7 @@ function ShortcutsHelpDialog({
             {/* Tips */}
             <div className="space-y-3">
               <Separator />
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              <h4 className="text-sm font-semibold text-muted-foreground">
                 Tips
               </h4>
               <ul className="text-sm text-muted-foreground space-y-1.5">

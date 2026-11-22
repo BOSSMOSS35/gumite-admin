@@ -97,42 +97,42 @@ const RULE_TYPES: {
     label: "Percentage Discount",
     description: "Reduce prices by a percentage (e.g., 10% off)",
     icon: Percent,
-    color: "bg-green-100 text-green-700 border-green-200",
+    color: "bg-success/10 text-success border-success/30",
   },
   {
     value: "FIXED_DISCOUNT",
     label: "Fixed Discount",
     description: "Reduce prices by a fixed amount (e.g., £5 off)",
     icon: PoundSterling,
-    color: "bg-blue-100 text-blue-700 border-blue-200",
+    color: "bg-info/10 text-info border-info/30",
   },
   {
     value: "MARKUP",
     label: "Markup",
     description: "Increase prices by a percentage",
     icon: TrendingUp,
-    color: "bg-orange-100 text-orange-700 border-orange-200",
+    color: "bg-warning/10 text-warning border-warning/30",
   },
   {
     value: "TIME_BASED",
     label: "Time-Based",
     description: "Apply discount during specific dates/times",
     icon: Clock,
-    color: "bg-purple-100 text-purple-700 border-purple-200",
+    color: "bg-info/10 text-info border-info/30",
   },
   {
     value: "QUANTITY_BASED",
     label: "Quantity-Based",
     description: "Apply discount when buying X or more items",
     icon: Package,
-    color: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    color: "bg-info/10 text-info border-info/30",
   },
   {
     value: "TIERED",
     label: "Tiered Pricing",
     description: "Different prices at different quantity levels",
     icon: Layers,
-    color: "bg-pink-100 text-pink-700 border-pink-200",
+    color: "bg-destructive/10 text-destructive border-destructive/30",
   },
 ];
 
@@ -490,14 +490,14 @@ export function PricingRuleDialog({
                                   : { percentage: 10 },
                             }))
                           }
-                          className={`flex flex-col items-start gap-2 p-4 rounded-lg border-2 text-left transition-all ${
+                          className={`flex flex-col items-start gap-2 p-4 rounded-none border-2 text-left transition-all ${
                             isSelected
                               ? "border-primary bg-primary/5"
                               : "border-muted hover:border-muted-foreground/30"
                           }`}
                         >
                           <div className="flex items-center gap-2 w-full">
-                            <div className={`p-2 rounded-md ${type.color}`}>
+                            <div className={`p-2 rounded-none ${type.color}`}>
                               <Icon className="h-4 w-4" />
                             </div>
                             <span className="font-medium text-sm">{type.label}</span>
@@ -515,10 +515,10 @@ export function PricingRuleDialog({
             {/* Step 2: Configure Rule */}
             {step === 2 && (
               <div className="space-y-6">
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3 p-4 rounded-none bg-muted/50">
                   {selectedRuleType && (
                     <>
-                      <div className={`p-2 rounded-md ${selectedRuleType.color}`}>
+                      <div className={`p-2 rounded-none ${selectedRuleType.color}`}>
                         <selectedRuleType.icon className="h-5 w-5" />
                       </div>
                       <div>
@@ -568,7 +568,7 @@ export function PricingRuleDialog({
                     </div>
 
                     {/* Preview */}
-                    <div className="p-4 rounded-lg border bg-muted/30 space-y-2">
+                    <div className="p-4 rounded-none border bg-muted/30 space-y-2">
                       <p className="text-sm font-medium">Preview</p>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="text-muted-foreground">Original: £100.00</span>
@@ -610,7 +610,7 @@ export function PricingRuleDialog({
                     </div>
 
                     {/* Preview */}
-                    <div className="p-4 rounded-lg border bg-muted/30 space-y-2">
+                    <div className="p-4 rounded-none border bg-muted/30 space-y-2">
                       <p className="text-sm font-medium">Preview</p>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="text-muted-foreground">Original: £25.00</span>
@@ -689,7 +689,7 @@ export function PricingRuleDialog({
                       {(formData.config.tiers || []).map((tier, index) => (
                         <div
                           key={index}
-                          className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
+                          className="flex items-center gap-3 p-3 rounded-none border bg-muted/30"
                         >
                           <div className="flex-1 grid grid-cols-2 gap-3">
                             <div className="space-y-1">
@@ -721,7 +721,7 @@ export function PricingRuleDialog({
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive"
-                            onClick={() => removeTier(index)}
+                            aria-label="Delete" onClick={() => removeTier(index)}
                             disabled={(formData.config.tiers?.length || 0) <= 1}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -731,7 +731,7 @@ export function PricingRuleDialog({
                     </div>
 
                     {(formData.config.tiers?.length || 0) < 2 && (
-                      <p className="text-sm text-amber-600 flex items-center gap-2">
+                      <p className="text-sm text-warning flex items-center gap-2">
                         <AlertCircle className="h-4 w-4" />
                         Add at least 2 tiers for tiered pricing
                       </p>
@@ -760,7 +760,7 @@ export function PricingRuleDialog({
                               targetIds: [],
                             }))
                           }
-                          className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 text-center transition-all ${
+                          className={`flex flex-col items-center gap-2 p-4 rounded-none border-2 text-center transition-all ${
                             isSelected
                               ? "border-primary bg-primary/5"
                               : "border-muted hover:border-muted-foreground/30"
@@ -803,7 +803,7 @@ export function PricingRuleDialog({
                         </div>
                       )}
 
-                      <div className="border rounded-lg max-h-64 overflow-y-auto">
+                      <div className="border rounded-none max-h-64 overflow-y-auto">
                         {loadingItems ? (
                           <div className="flex items-center justify-center p-8">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -876,7 +876,7 @@ export function PricingRuleDialog({
                       </div>
 
                       {formData.targetIds.length === 0 && (
-                        <p className="text-sm text-amber-600 flex items-center gap-2">
+                        <p className="text-sm text-warning flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
                           Select at least one{" "}
                           {formData.targetType === "PRODUCTS" ? "product" : "category"}
@@ -892,7 +892,7 @@ export function PricingRuleDialog({
             {step === 4 && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-3 p-4 rounded-none bg-muted/50">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Scheduling</p>
@@ -960,7 +960,7 @@ export function PricingRuleDialog({
 
                 <Separator />
 
-                <div className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="flex items-center justify-between p-4 rounded-none border">
                   <div className="space-y-0.5">
                     <Label htmlFor="activate">Activate Immediately</Label>
                     <p className="text-sm text-muted-foreground">
@@ -977,7 +977,7 @@ export function PricingRuleDialog({
                 </div>
 
                 {/* Summary */}
-                <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                <div className="p-4 rounded-none border bg-muted/30 space-y-3">
                   <p className="font-medium">Summary</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -1015,7 +1015,7 @@ export function PricingRuleDialog({
         </ScrollArea>
 
         {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="flex items-center gap-2 p-3 rounded-none bg-destructive/10 text-destructive text-sm">
             <AlertCircle className="h-4 w-4" />
             {error}
           </div>
@@ -1026,7 +1026,7 @@ export function PricingRuleDialog({
             <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back
-              <kbd className="ml-2 hidden sm:inline-flex kbd text-[10px]">Alt+←</kbd>
+              <kbd className="ml-2 hidden sm:inline-flex kbd text-xs">Alt+←</kbd>
             </Button>
           )}
           <div className="flex-1" />
@@ -1034,7 +1034,7 @@ export function PricingRuleDialog({
             <Button type="button" onClick={() => setStep(step + 1)} disabled={!canProceed()}>
               Next
               <ChevronRight className="h-4 w-4 ml-1" />
-              <kbd className="ml-2 hidden sm:inline-flex kbd text-[10px]">{formatShortcut(SHORTCUTS.SUBMIT)}</kbd>
+              <kbd className="ml-2 hidden sm:inline-flex kbd text-xs">{formatShortcut(SHORTCUTS.SUBMIT)}</kbd>
             </Button>
           ) : (
             <Button type="button" onClick={handleSubmit} disabled={saving || !canProceed()}>
@@ -1047,7 +1047,7 @@ export function PricingRuleDialog({
                 <>
                   <Check className="h-4 w-4 mr-1" />
                   {isEditing ? "Update" : "Create"}
-                  <kbd className="ml-2 hidden sm:inline-flex kbd text-[10px]">{formatShortcut(SHORTCUTS.SUBMIT)}</kbd>
+                  <kbd className="ml-2 hidden sm:inline-flex kbd text-xs">{formatShortcut(SHORTCUTS.SUBMIT)}</kbd>
                 </>
               )}
             </Button>

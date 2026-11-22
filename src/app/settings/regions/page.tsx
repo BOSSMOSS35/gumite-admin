@@ -232,7 +232,7 @@ export default function RegionsSettingsPage() {
       </Breadcrumb>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-none border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
         </div>
@@ -258,7 +258,7 @@ export default function RegionsSettingsPage() {
         </CardHeader>
         <CardContent>
           {regions.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+            <div className="border border-dashed p-8 text-center text-sm text-muted-foreground">
               No regions yet. Add your first region to enable tax-aware carts and checkout.
             </div>
           ) : (
@@ -307,7 +307,7 @@ export default function RegionsSettingsPage() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" aria-label="More actions">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -408,7 +408,7 @@ export default function RegionsSettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-3 rounded-none border p-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="automaticTaxes">Automatic Taxes</Label>
@@ -426,7 +426,7 @@ export default function RegionsSettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-3 rounded-none border p-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="setDefaultRegion">Set As Store Default Region</Label>

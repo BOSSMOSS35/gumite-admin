@@ -6,12 +6,9 @@ import {
   Package,
   ShoppingCart,
   Users,
-  Users2,
   Settings,
   Tag,
   LogOut,
-  ChevronRight,
-  Store,
   Stamp,
   Percent,
   Gift,
@@ -33,13 +30,12 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -50,12 +46,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type NavChild = {
   title: string;
@@ -69,95 +60,48 @@ type NavItem = {
   children?: NavChild[];
 };
 
-// Organized like Medusa - logical flow from orders to settings
-const navItems: NavItem[] = [
+type NavGroup = { label?: string; items: NavItem[] };
+
+// Grouped by the job staff are doing: selling, stocking, serving customers, promoting.
+const navGroups: NavGroup[] = [
+  { items: [{ title: "Today", url: "/", icon: LayoutDashboard }] },
   {
-    title: "Dashboard",
-    url: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Orders",
-    url: "/orders",
-    icon: ShoppingCart,
-    children: [
-      { title: "All Orders", url: "/orders" },
-      { title: "Drafts", url: "/orders/drafts" },
+    label: "Sell",
+    items: [
+      { title: "Orders", url: "/orders", icon: ShoppingCart },
+      { title: "Draft orders", url: "/orders/drafts", icon: ShoppingCart },
+      { title: "Returns", url: "/returns", icon: RotateCcw },
     ],
   },
   {
-    title: "Returns",
-    url: "/returns",
-    icon: RotateCcw,
-  },
-  {
-    title: "Products",
-    url: "/products",
-    icon: Package,
-    children: [
-      { title: "All Products", url: "/products" },
-      { title: "Collections", url: "/products/collections" },
+    label: "Catalogue",
+    items: [
+      { title: "Products", url: "/products", icon: Package },
+      { title: "Collections", url: "/products/collections", icon: Package },
+      { title: "Categories", url: "/categories", icon: Tag },
+      { title: "Brands", url: "/brands", icon: Stamp },
+      { title: "Stock", url: "/inventory", icon: Warehouse },
     ],
   },
   {
-    title: "Categories",
-    url: "/categories",
-    icon: Tag,
-  },
-  {
-    title: "Brands",
-    url: "/brands",
-    icon: Stamp,
-  },
-  {
-    title: "Inventory",
-    url: "/inventory",
-    icon: Warehouse,
-    children: [
-      { title: "Stock Levels", url: "/inventory" },
-      { title: "Locations", url: "/inventory/locations" },
+    label: "People",
+    items: [
+      { title: "Customers", url: "/customers", icon: Users },
+      { title: "Customer groups", url: "/customers/groups", icon: Users },
+      { title: "Support", url: "/support", icon: MessageSquare },
+      { title: "Reviews", url: "/reviews", icon: Star },
     ],
   },
   {
-    title: "Customers",
-    url: "/customers",
-    icon: Users,
-    children: [
-      { title: "All Customers", url: "/customers" },
-      { title: "Customer Groups", url: "/customers/groups" },
-    ],
-  },
-  {
-    title: "Discounts",
-    url: "/discounts",
-    icon: Percent,
-  },
-  {
-    title: "Gift Cards",
-    url: "/gift-cards",
-    icon: Gift,
-  },
-  {
-    title: "Pricing",
-    url: "/pricing",
-    icon: CreditCard,
-  },
-  {
-    title: "Support",
-    url: "/support",
-    icon: MessageSquare,
-  },
-  {
-    title: "Reviews",
-    url: "/reviews",
-    icon: Star,
-    children: [
-      { title: "All Reviews", url: "/reviews" },
-      { title: "Pending", url: "/reviews?tab=pending" },
-      { title: "Flagged", url: "/reviews?tab=flagged" },
+    label: "Marketing",
+    items: [
+      { title: "Discounts", url: "/discounts", icon: Percent },
+      { title: "Gift cards", url: "/gift-cards", icon: Gift },
+      { title: "Pricing rules", url: "/pricing", icon: CreditCard },
     ],
   },
 ];
+const navItems: NavItem[] = navGroups.flatMap((g) => g.items);
 
 function UserMenuContent() {
   const { user, isLoading } = useAuth();
@@ -165,7 +109,7 @@ function UserMenuContent() {
   if (isLoading) {
     return (
       <>
-        <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
+        <div className="h-8 w-8 rounded-none bg-muted animate-pulse" />
         <div className="grid flex-1 text-left text-sm leading-tight">
           <div className="h-4 w-24 bg-muted rounded animate-pulse" />
           <div className="h-3 w-32 bg-muted rounded animate-pulse mt-1" />
@@ -176,8 +120,8 @@ function UserMenuContent() {
 
   return (
     <>
-      <Avatar className="h-8 w-8 rounded-lg">
-        <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
+      <Avatar className="h-8 w-8 rounded-none">
+        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
           {getUserInitials(user)}
         </AvatarFallback>
       </Avatar>
@@ -202,8 +146,8 @@ function UserMenuDropdown() {
     <>
       <div className="px-2 py-1.5">
         <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8 rounded-lg">
-            <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
+          <Avatar className="h-8 w-8 rounded-none">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
               {getUserInitials(user)}
             </AvatarFallback>
           </Avatar>
@@ -242,105 +186,19 @@ function UserMenuDropdown() {
   );
 }
 
-function NavItemWithChildren({
-  item,
-  isActive,
-  isChildActive,
-  expanded,
-  onToggle,
-}: {
-  item: NavItem;
-  isActive: boolean;
-  isChildActive: (url: string) => boolean;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const hasChildren = item.children && item.children.length > 0;
-
-  if (!hasChildren) {
-    return (
-      <SidebarMenuItem>
-        <SidebarMenuButton asChild isActive={isActive}>
-          <Link href={item.url}>
-            <item.icon className="size-4" />
-            <span>{item.title}</span>
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    );
-  }
-
-  return (
-    <Collapsible open={expanded} onOpenChange={onToggle} className="group/collapsible">
-      <SidebarMenuItem>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton isActive={isActive}>
-            <item.icon className="size-4" />
-            <span>{item.title}</span>
-            <ChevronRight
-              className={`ml-auto size-4 text-muted-foreground transition-transform duration-200 ${
-                expanded ? "rotate-90" : ""
-              }`}
-            />
-          </SidebarMenuButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarMenuSub>
-            {item.children!.map((child) => (
-              <SidebarMenuSubItem key={child.url}>
-                <SidebarMenuSubButton asChild isActive={isChildActive(child.url)}>
-                  <Link href={child.url}>
-                    <span>{child.title}</span>
-                  </Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            ))}
-          </SidebarMenuSub>
-        </CollapsibleContent>
-      </SidebarMenuItem>
-    </Collapsible>
-  );
-}
-
 export function AppSidebar() {
   const pathname = usePathname();
-  const [expanded, setExpanded] = useState<Set<string>>(() => {
-    // Auto-expand the section containing the current path
-    const initial = new Set<string>();
-    for (const item of navItems) {
-      if (item.children) {
-        const isChildActive = item.children.some((child) => {
-          if (child.url === "/") return pathname === "/";
-          return pathname === child.url || pathname.startsWith(child.url + "/");
-        });
-        if (isChildActive || (item.url !== "/" && pathname.startsWith(item.url))) {
-          initial.add(item.url);
-        }
-      }
-    }
-    return initial;
-  });
+  const allUrls = navItems.map((i) => i.url);
+  const isNavActive = (url: string) => {
+    if (url === "/") return pathname === "/";
+    const matches = allUrls.filter((u) => u !== "/" && (pathname === u || pathname.startsWith(u + "/")));
+    const best = matches.sort((a, b) => b.length - a.length)[0];
+    return best === url;
+  };
 
   const isActive = (url: string) => {
     if (url === "/") return pathname === "/";
     return pathname.startsWith(url);
-  };
-
-  const isExactOrChildActive = (url: string) => {
-    if (url === "/") return pathname === "/";
-    return pathname === url || pathname.startsWith(url + "/");
-  };
-
-  const toggleExpanded = (url: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(url)) {
-        next.delete(url);
-      } else {
-        next.add(url);
-      }
-      return next;
-    });
   };
 
   return (
@@ -348,69 +206,43 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="" alt="Admin" />
-                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-                      <Store className="size-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate text-xs text-muted-foreground">Store</span>
-                    <span className="truncate font-semibold">Gumite</span>
-                  </div>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="start"
-                sideOffset={4}
-              >
-                <DropdownMenuItem>
-                  <Settings className="mr-2 size-4" />
-                  Store Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <LogOut className="mr-2 size-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/" aria-label="Gumite admin home">
+                <span className="flex size-8 items-center justify-center bg-foreground text-sm font-medium text-background">G</span>
+                <span className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-semibold uppercase tracking-[0.24em]">Gumite</span>
+                  <span className="truncate text-xs text-muted-foreground">Admin</span>
+                </span>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarMenu className="px-2 py-2">
-          {navItems.map((item) => (
-            <NavItemWithChildren
-              key={item.url}
-              item={item}
-              isActive={isActive(item.url)}
-              isChildActive={isExactOrChildActive}
-              expanded={expanded.has(item.url)}
-              onToggle={() => toggleExpanded(item.url)}
-            />
-          ))}
-        </SidebarMenu>
+        {navGroups.map((group, gi) => (
+          <SidebarGroup key={group.label ?? gi} className="py-1">
+            {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+            <SidebarMenu>
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton asChild isActive={isNavActive(item.url)} tooltip={item.title}>
+                    <Link href={item.url} aria-current={isNavActive(item.url) ? "page" : undefined}>
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter>
         <SidebarMenu className="px-2">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/settings/users")}>
-              <Link href="/settings/users">
-                <Users2 className="size-4" />
-                <span>Team</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/settings") && !isActive("/settings/users")}>
+            <SidebarMenuButton asChild isActive={isActive("/settings")}>
               <Link href="/settings">
                 <Settings className="size-4" />
                 <span>Settings</span>
@@ -421,7 +253,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild isActive={isActive("/help")}>
               <Link href="/help">
                 <HelpCircle className="size-4" />
-                <span>Help &amp; Support</span>
+                <span>Help</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -436,7 +268,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-none"
                 side="top"
                 align="start"
                 sideOffset={4}

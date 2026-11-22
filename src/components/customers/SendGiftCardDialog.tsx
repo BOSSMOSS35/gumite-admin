@@ -79,7 +79,7 @@ export function SendGiftCardDialog({
 
           <div className="grid gap-4 py-4">
             {/* Preview Card */}
-            <div className="rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
+            <div className="bg-foreground p-6 text-background">
               <p className="text-sm opacity-80">Gift Card Value</p>
               <p className="text-3xl font-bold">
                 {amountInCents > 0 ? formatPrice(amountInCents / 100, "GBP") : "£0.00"}
@@ -122,7 +122,7 @@ export function SendGiftCardDialog({
               />
             </div>
             {error && (
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             )}
           </div>
 

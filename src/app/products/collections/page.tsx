@@ -311,13 +311,13 @@ export default function CollectionsPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-success/10 text-success rounded-none">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {(error || queryError) && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error || (queryError instanceof Error ? queryError.message : "Failed to load collections")}</span>
           <button onClick={() => setError(null)} className="ml-auto">
@@ -384,10 +384,10 @@ export default function CollectionsPage() {
                         <img
                           src={getImageUrl(collection.imageUrl) || ""}
                           alt={collection.title}
-                          className="h-10 w-10 rounded-md object-cover"
+                          className="h-10 w-10 rounded-none object-cover"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-none bg-muted flex items-center justify-center">
                           <ImageIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
@@ -432,7 +432,7 @@ export default function CollectionsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="text-destructive"
                           onClick={() => openDeleteDialog(collection)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />

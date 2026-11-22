@@ -75,20 +75,20 @@ function ForgotPasswordPage() {
         titleAccent="email"
         description="We've sent reset instructions to your inbox if an admin account exists for that address."
       >
-        <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
+        <div className="w-full max-w-[430px] rounded-none border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
           <div className="flex lg:hidden items-center gap-3 justify-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900">
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-zinc-900">
               <Store className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-semibold">Gumite</span>
           </div>
 
           <div className="text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
             <h2 className="text-2xl font-semibold tracking-tight">Reset link sent</h2>
-            <p className="text-zinc-500">
+            <p className="text-zinc-400">
               If an admin account exists for <span className="font-medium text-zinc-700">{email}</span>, we&apos;ve sent a password reset link.
             </p>
           </div>
@@ -112,9 +112,9 @@ function ForgotPasswordPage() {
       titleAccent="password?"
       description="Enter your admin email address and we'll send you a link to reset your password."
     >
-      <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
+      <div className="w-full max-w-[430px] rounded-none border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
         <div className="flex lg:hidden items-center gap-3 justify-center mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-none bg-zinc-900 dark:bg-zinc-700">
             <Store className="h-6 w-6 text-white" />
           </div>
           <span className="text-xl font-semibold text-zinc-900 dark:text-white">Gumite</span>
@@ -124,7 +124,7 @@ function ForgotPasswordPage() {
           <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
             Reset your password
           </h2>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-zinc-400 dark:text-zinc-400">
             We&apos;ll email you a secure link to choose a new password.
           </p>
         </div>
@@ -151,7 +151,7 @@ function ForgotPasswordPage() {
               required
               autoComplete="email"
               autoFocus
-              className="h-11 bg-white dark:bg-zinc-800 dark:border-zinc-600 dark:text-white dark:placeholder:text-zinc-500"
+              className="h-11 bg-white dark:bg-zinc-800 dark:border-zinc-600 dark:text-white dark:placeholder:text-zinc-400"
             />
           </div>
 
@@ -189,7 +189,7 @@ function AuthShell({
 }) {
   return (
     <div className="relative flex min-h-screen">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-zinc-950 via-zinc-900 to-neutral-900 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-foreground relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div
             className="absolute top-0 left-0 h-full w-full"
@@ -202,7 +202,7 @@ function AuthShell({
 
         <div className="relative z-10 flex flex-col justify-between w-full p-12">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-white/10">
               <Store className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-semibold text-white">Gumite</span>
@@ -217,11 +217,11 @@ function AuthShell({
             <p className="text-zinc-300/90 text-lg max-w-md">{description}</p>
           </div>
 
-          <div className="text-sm text-zinc-500">Gumite Commerce Platform</div>
+          <div className="text-sm text-zinc-400">Gumite Commerce Platform</div>
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
         {children}
       </div>
     </div>

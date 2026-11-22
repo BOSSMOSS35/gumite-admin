@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
 import {
   Card,
   CardContent,
@@ -75,7 +76,7 @@ function StarDisplay({ rating }: { rating: number }) {
         <Star
           key={star}
           className={`h-3.5 w-3.5 ${
-            star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+            star <= rating ? "fill-warning text-warning" : "text-gray-300"
           }`}
         />
       ))}
@@ -83,8 +84,15 @@ function StarDisplay({ rating }: { rating: number }) {
   );
 }
 
-export default function ReviewsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("pending");
+function ReviewsPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab: Tab = searchParams.get("tab") === "flagged" ? "flagged" : "pending";
+  const setActiveTab = (tab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`/reviews?${params.toString()}`, { scroll: false });
+  };
   const [page, setPage] = useState(0);
   const size = 20;
 
@@ -96,12 +104,6 @@ export default function ReviewsPage() {
   const [adminResponseText, setAdminResponseText] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
 
-  // Read tab from URL search params on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab");
-    if (tab === "flagged") setActiveTab("flagged");
-  }, []);
 
   // Queries -- only one is enabled at a time
   const pendingQuery = usePendingReviews({ page, size });
@@ -235,9 +237,9 @@ export default function ReviewsPage() {
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <div className="flex items-center gap-4">
             <CardTitle className="text-xl font-semibold">Reviews</CardTitle>
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-none p-1">
               <button
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-none transition-colors ${
                   activeTab === "pending"
                     ? "bg-background shadow-sm font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -250,7 +252,7 @@ export default function ReviewsPage() {
                 Pending
               </button>
               <button
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-sm rounded-none transition-colors ${
                   activeTab === "flagged"
                     ? "bg-background shadow-sm font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -264,14 +266,14 @@ export default function ReviewsPage() {
               </button>
             </div>
           </div>
-          <Button variant="outline" size="icon" onClick={() => activeQuery.refetch()} disabled={loading}>
+          <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => activeQuery.refetch()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </CardHeader>
         <CardContent>
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-destructive/10 text-destructive rounded-none">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
               <Button variant="ghost" size="sm" onClick={() => activeQuery.refetch()} className="ml-auto">
@@ -281,7 +283,7 @@ export default function ReviewsPage() {
           )}
 
           {/* Table */}
-          <div className="border rounded-lg">
+          <div className="border rounded-none">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -324,7 +326,7 @@ export default function ReviewsPage() {
                         <div className="flex flex-col">
                           <span className="font-medium text-sm">{review.customerName}</span>
                           {review.verifiedPurchase && (
-                            <span className="text-xs text-green-600">Verified Purchase</span>
+                            <span className="text-xs text-success">Verified Purchase</span>
                           )}
                         </div>
                       </TableCell>
@@ -347,18 +349,18 @@ export default function ReviewsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-green-600"
+                            className="h-8 w-8 text-success"
                             onClick={() => handleModerate(review.id, true)}
                             disabled={moderateMutation.isPending}
-                            title="Approve"
+                            title="Approve" aria-label="Approve"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-600"
-                            onClick={() => handleModerate(review.id, false)}
+                            className="h-8 w-8 text-destructive"
+                            aria-label="Reject" onClick={() => handleModerate(review.id, false)}
                             disabled={moderateMutation.isPending}
                             title="Reject"
                           >
@@ -372,7 +374,7 @@ export default function ReviewsPage() {
                               setSelectedReview(review);
                               setShowResponseDialog(true);
                             }}
-                            title="Add Response"
+                            title="Add Response" aria-label="Add Response"
                           >
                             <MessageSquare className="h-4 w-4" />
                           </Button>
@@ -435,12 +437,12 @@ export default function ReviewsPage() {
                   <StarDisplay rating={selectedReview.rating} />
                   <ReviewStatusBadge status={selectedReview.status} />
                   {selectedReview.verifiedPurchase && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded">
                       Verified Purchase
                     </span>
                   )}
                   {selectedReview.isFeatured && (
-                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-warning/10 text-warning px-2 py-0.5 rounded">
                       Featured
                     </span>
                   )}
@@ -451,7 +453,7 @@ export default function ReviewsPage() {
                 </div>
                 {selectedReview.pros && selectedReview.pros.length > 0 && (
                   <div>
-                    <h5 className="text-sm font-medium text-green-700">Pros</h5>
+                    <h5 className="text-sm font-medium text-success">Pros</h5>
                     <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside">
                       {selectedReview.pros.map((pro, i) => (
                         <li key={i}>{pro}</li>
@@ -461,7 +463,7 @@ export default function ReviewsPage() {
                 )}
                 {selectedReview.cons && selectedReview.cons.length > 0 && (
                   <div>
-                    <h5 className="text-sm font-medium text-red-700">Cons</h5>
+                    <h5 className="text-sm font-medium text-destructive">Cons</h5>
                     <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside">
                       {selectedReview.cons.map((con, i) => (
                         <li key={i}>{con}</li>
@@ -478,7 +480,7 @@ export default function ReviewsPage() {
                   </span>
                 </div>
                 {selectedReview.adminResponse && (
-                  <div className="bg-muted p-3 rounded-lg">
+                  <div className="bg-muted p-3 rounded-none">
                     <p className="text-xs font-medium text-muted-foreground mb-1">Admin Response</p>
                     <p className="text-sm">{selectedReview.adminResponse}</p>
                   </div>
@@ -508,7 +510,7 @@ export default function ReviewsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => {
                     setShowDetailDialog(false);
                     setShowDeleteDialog(true);
@@ -521,7 +523,7 @@ export default function ReviewsPage() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-success hover:bg-success"
                   onClick={() => handleModerate(selectedReview.id, true)}
                   disabled={moderateMutation.isPending}
                 >
@@ -554,7 +556,7 @@ export default function ReviewsPage() {
           </DialogHeader>
           <div className="py-4">
             <textarea
-              className="w-full min-h-[120px] p-3 border rounded-md text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full min-h-[120px] p-3 border rounded-none text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Write your response..."
               value={adminResponseText}
               onChange={(e) => setAdminResponseText(e.target.value)}
@@ -605,5 +607,13 @@ export default function ReviewsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function ReviewsPage() {
+  return (
+    <Suspense>
+      <ReviewsPageInner />
+    </Suspense>
   );
 }

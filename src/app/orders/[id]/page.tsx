@@ -76,15 +76,10 @@ import {
 import { getImageUrl } from "@/lib/utils";
 
 const STATUS_BADGE_TONE_BY_DOT_COLOR: Record<string, string> = {
-  "bg-green-500": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
-  "bg-green-600": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
-  "bg-blue-400": "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
-  "bg-blue-500": "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
-  "bg-orange-500": "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
-  "bg-yellow-500": "border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
-  "bg-purple-400": "border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
-  "bg-purple-500": "border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
-  "bg-red-500": "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
+  "bg-success": "border-success/30 bg-success/10 text-success ",
+  "bg-info": "border-info/30 bg-info/10 text-info ",
+  "bg-warning": "border-warning/30 bg-warning/10 text-warning ",
+  "bg-destructive": "border-destructive/30 bg-destructive/10 text-destructive ",
   "bg-gray-400": "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
   "bg-gray-500": "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
 };
@@ -118,11 +113,11 @@ function FulfillmentStatusBadge({ status }: { status: FulfillmentStatus }) {
 
 function TimelineIcon({ type }: { type: string }) {
   const iconConfig: Record<string, { icon: React.ReactNode; bgColor: string }> = {
-    created: { icon: <ShoppingCart className="h-3 w-3 text-white" />, bgColor: "bg-blue-500" },
-    payment: { icon: <CreditCard className="h-3 w-3 text-white" />, bgColor: "bg-orange-500" },
-    fulfilled: { icon: <Package className="h-3 w-3 text-white" />, bgColor: "bg-green-500" },
-    shipped: { icon: <Truck className="h-3 w-3 text-white" />, bgColor: "bg-blue-500" },
-    completed: { icon: <CheckCircle className="h-3 w-3 text-white" />, bgColor: "bg-green-600" },
+    created: { icon: <ShoppingCart className="h-3 w-3 text-white" />, bgColor: "bg-info" },
+    payment: { icon: <CreditCard className="h-3 w-3 text-white" />, bgColor: "bg-warning" },
+    fulfilled: { icon: <Package className="h-3 w-3 text-white" />, bgColor: "bg-success" },
+    shipped: { icon: <Truck className="h-3 w-3 text-white" />, bgColor: "bg-info" },
+    completed: { icon: <CheckCircle className="h-3 w-3 text-white" />, bgColor: "bg-success" },
   };
 
   const { icon, bgColor } = iconConfig[type] || { icon: <Package className="h-3 w-3 text-white" />, bgColor: "bg-gray-400" };
@@ -257,7 +252,7 @@ export default function OrderDetailsPage() {
   if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-12">
-        <AlertCircle className="h-12 w-12 text-red-500" />
+        <AlertCircle className="h-12 w-12 text-destructive" />
         <h2 className="text-xl font-semibold">Failed to load order</h2>
         <p className="text-muted-foreground">{error || "Order not found"}</p>
         <div className="flex gap-2">
@@ -369,7 +364,7 @@ export default function OrderDetailsPage() {
                       <Copy className="h-3 w-3" />
                     </Button>
                     {copiedField === "orderId" && (
-                      <span className="text-xs text-green-700 dark:text-green-300">Copied!</span>
+                      <span className="text-xs text-success ">Copied!</span>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -451,7 +446,7 @@ export default function OrderDetailsPage() {
                       {canCancel && (
                         <DropdownMenuItem
                           onClick={() => setCancelDialogOpen(true)}
-                          className="text-red-600 dark:text-red-400"
+                          className="text-destructive "
                         >
                           Cancel Order
                         </DropdownMenuItem>
@@ -517,7 +512,7 @@ export default function OrderDetailsPage() {
                   <span>{formatPrice(order.tax, order.currencyCode)}</span>
                 </div>
                 {order.discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-success">
                     <span>Discount</span>
                     <span>-{formatPrice(order.discount, order.currencyCode)}</span>
                   </div>
@@ -565,7 +560,7 @@ export default function OrderDetailsPage() {
                           href={order.metadata.trackingUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          className="text-sm font-mono text-info hover:underline flex items-center gap-1"
                         >
                           {order.metadata.trackingNumber}
                           <ExternalLink className="h-3 w-3" />
@@ -583,7 +578,7 @@ export default function OrderDetailsPage() {
                         <Copy className="h-3 w-3" />
                       </Button>
                       {copiedField === "tracking" && (
-                        <span className="text-xs text-green-700 dark:text-green-300">Copied!</span>
+                        <span className="text-xs text-success ">Copied!</span>
                       )}
                     </div>
                   </div>
@@ -619,9 +614,9 @@ export default function OrderDetailsPage() {
                       variant="outline"
                       className={`gap-1 ${
                         order.metadata.labelStatus === "PURCHASED"
-                          ? "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300"
+                          ? "border-success/30 bg-success/10 text-success "
                           : order.metadata.labelStatus === "VOIDED"
-                            ? "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
+                            ? "border-destructive/30 bg-destructive/10 text-destructive "
                             : "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300"
                       }`}
                     >
@@ -666,7 +661,7 @@ export default function OrderDetailsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {canFulfill && (
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-none">
                     <div className="flex items-center gap-2">
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Order is ready to be fulfilled</span>
@@ -679,7 +674,7 @@ export default function OrderDetailsPage() {
                 )}
 
                 {canShip && order.fulfillmentStatus === "FULFILLED" && (
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-none">
                     <div className="flex items-center gap-2">
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Order is ready to be shipped</span>
@@ -694,7 +689,7 @@ export default function OrderDetailsPage() {
                 )}
 
                 {canComplete && (
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-none">
                     <div className="flex items-center gap-2">
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">Order is ready to be completed</span>

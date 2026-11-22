@@ -210,7 +210,7 @@ export function ContextualHelpSidebar({
 
   return (
     <div
-      className={`flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background ${className}`}
+      className={`flex h-full flex-col overflow-hidden rounded-none border border-border bg-background ${className}`}
     >
       {/* ━━━ Header ━━━ */}
       <div className="border-b border-border bg-muted/30 p-4">
@@ -273,7 +273,7 @@ export function ContextualHelpSidebar({
           <div className="space-y-4">
             <h4 className="text-sm font-semibold">{content.title}</h4>
             {content.sections.map((section, i) => (
-              <div key={i} className="rounded-lg bg-muted/30 p-3 space-y-1.5">
+              <div key={i} className="bg-muted/30 p-3 space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{section.icon}</span>
                   <h5 className="text-xs font-semibold">{section.heading}</h5>
@@ -294,7 +294,7 @@ export function ContextualHelpSidebar({
               Real-world examples of how to structure options
             </p>
             {COMMON_PATTERNS.map((pattern, i) => (
-              <div key={i} className="rounded-lg border border-border bg-background p-3">
+              <div key={i} className="border border-border bg-background p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-lg">{pattern.icon}</span>
                   <h5 className="text-xs font-semibold">{pattern.title}</h5>
@@ -380,10 +380,10 @@ export function CompactHelp({ context = "overview" }: CompactHelpProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded-lg border border-border bg-blue-50 px-3 py-2 text-xs text-blue-900 hover:bg-blue-100"
+        className="flex items-center gap-2 rounded-none border border-border bg-info/10 px-3 py-2 text-xs text-info hover:bg-info/10"
       >
         <svg
-          className="h-4 w-4 text-blue-600"
+          className="h-4 w-4 text-info"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -401,14 +401,14 @@ export function CompactHelp({ context = "overview" }: CompactHelpProps) {
   }
 
   return (
-    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+    <div className="border border-info/30 bg-info/10 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <h5 className="text-sm font-semibold text-blue-900">
+        <h5 className="text-sm font-semibold text-info">
           {content.title}
         </h5>
         <button
           onClick={() => setIsOpen(false)}
-          className="text-blue-600 hover:text-blue-800"
+          className="text-info hover:text-info"
         >
           <svg
             className="h-4 w-4"
@@ -427,11 +427,11 @@ export function CompactHelp({ context = "overview" }: CompactHelpProps) {
       </div>
       <div className="space-y-2">
         {content.sections.map((section, i) => (
-          <div key={i} className="text-xs text-blue-800">
+          <div key={i} className="text-xs text-info">
             <p className="font-medium">
               {section.icon} {section.heading}
             </p>
-            <p className="mt-0.5 text-blue-700">{section.content}</p>
+            <p className="mt-0.5 text-info">{section.content}</p>
           </div>
         ))}
       </div>

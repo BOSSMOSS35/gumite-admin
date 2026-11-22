@@ -52,13 +52,13 @@ import {
 // ── Badge helpers (same as list page) ──────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
-  open: "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
+  open: "border-info/30 bg-info/10 text-info ",
   awaiting_customer:
-    "border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
+    "border-warning/30 bg-warning/10 text-warning ",
   awaiting_agent:
-    "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+    "border-warning/30 bg-warning/10 text-warning ",
   resolved:
-    "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
+    "border-success/30 bg-success/10 text-success ",
   closed:
     "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
 };
@@ -73,8 +73,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const PRIORITY_STYLES: Record<string, string> = {
   urgent:
-    "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
-  high: "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
+    "border-destructive/30 bg-destructive/10 text-destructive ",
+  high: "border-warning/30 bg-warning/10 text-warning ",
   normal:
     "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
   low: "border-zinc-200/70 bg-zinc-50/80 text-zinc-600 dark:border-zinc-600/40 dark:bg-zinc-600/10 dark:text-zinc-400",
@@ -123,7 +123,7 @@ function MessageBubble({ message }: { message: SupportMessage }) {
           </span>
         </div>
         <div
-          className={`rounded-lg px-4 py-2.5 text-sm leading-relaxed ${
+          className={`rounded-none px-4 py-2.5 text-sm leading-relaxed ${
             isAgent
               ? "bg-primary/10 dark:bg-primary/20"
               : "bg-muted"
@@ -350,7 +350,7 @@ export default function SupportTicketDetailPage() {
                 {ticket.orderId && (
                   <Link
                     href={`/orders/${ticket.orderId}`}
-                    className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 text-sm p-2 rounded-none hover:bg-muted transition-colors"
                   >
                     <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                     <span>
@@ -362,7 +362,7 @@ export default function SupportTicketDetailPage() {
                 {ticket.returnId && (
                   <Link
                     href={`/returns/${ticket.returnId}`}
-                    className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 text-sm p-2 rounded-none hover:bg-muted transition-colors"
                   >
                     <RotateCcw className="h-4 w-4 text-muted-foreground" />
                     <span>Return {ticket.returnId.slice(0, 8)}</span>
@@ -372,7 +372,7 @@ export default function SupportTicketDetailPage() {
                 {ticket.productId && (
                   <Link
                     href={`/products/${ticket.productId}`}
-                    className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted transition-colors"
+                    className="flex items-center gap-2 text-sm p-2 rounded-none hover:bg-muted transition-colors"
                   >
                     <Package className="h-4 w-4 text-muted-foreground" />
                     <span>{ticket.productTitle ?? "Product"}</span>
@@ -422,7 +422,7 @@ export default function SupportTicketDetailPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-start gap-2">
-                  <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                  <div className="h-2 w-2 rounded-full bg-info mt-1.5 flex-shrink-0" />
                   <div>
                     <p className="text-xs font-medium">Created</p>
                     <p className="text-xs text-muted-foreground">
@@ -432,7 +432,7 @@ export default function SupportTicketDetailPage() {
                 </div>
                 {ticket.lastMessageAt && (
                   <div className="flex items-start gap-2">
-                    <div className="h-2 w-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <div className="h-2 w-2 rounded-full bg-warning mt-1.5 flex-shrink-0" />
                     <div>
                       <p className="text-xs font-medium">Last Message</p>
                       <p className="text-xs text-muted-foreground">
@@ -442,7 +442,7 @@ export default function SupportTicketDetailPage() {
                   </div>
                 )}
                 <div className="flex items-start gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
+                  <div className="h-2 w-2 rounded-full bg-success mt-1.5 flex-shrink-0" />
                   <div>
                     <p className="text-xs font-medium">Last Updated</p>
                     <p className="text-xs text-muted-foreground">

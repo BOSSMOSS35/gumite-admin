@@ -99,7 +99,7 @@ function getTierBadge(tier: string) {
   const display = getTierDisplay(tier as "BRONZE" | "SILVER" | "GOLD" | "PLATINUM");
   if (tier === "PLATINUM") {
     return (
-      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+      <Badge className="bg-foreground text-background hover:bg-foreground">
         <Crown className="mr-1 h-3 w-3" /> {display.label}
       </Badge>
     );
@@ -115,14 +115,14 @@ function getStatusBadge(status: string) {
 function getFulfillmentStatusBadge(status: FulfillmentStatus) {
   const styles: Record<string, string> = {
     NOT_FULFILLED: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300",
-    PARTIALLY_FULFILLED: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
-    FULFILLED: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300",
-    PARTIALLY_SHIPPED: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
-    SHIPPED: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
-    PARTIALLY_RETURNED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
-    RETURNED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
-    CANCELED: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300",
-    REQUIRES_ACTION: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
+    PARTIALLY_FULFILLED: "bg-warning/10 text-warning ",
+    FULFILLED: "bg-info/10 text-info ",
+    PARTIALLY_SHIPPED: "bg-info/10 text-info ",
+    SHIPPED: "bg-info/10 text-info ",
+    PARTIALLY_RETURNED: "bg-warning/10 text-warning ",
+    RETURNED: "bg-warning/10 text-warning ",
+    CANCELED: "bg-destructive/10 text-destructive ",
+    REQUIRES_ACTION: "bg-warning/10 text-warning ",
   };
   const labels: Record<string, string> = {
     NOT_FULFILLED: "Not Fulfilled",
@@ -141,14 +141,14 @@ function getFulfillmentStatusBadge(status: FulfillmentStatus) {
 function getPaymentStatusBadge(status: PaymentStatus) {
   const styles: Record<string, string> = {
     NOT_PAID: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300",
-    AWAITING: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
-    CAPTURED: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300",
-    PAID: "bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300",
-    PARTIALLY_REFUNDED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
-    REFUNDED: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
-    CANCELED: "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300",
-    REQUIRES_ACTION: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
-    PARTIALLY_PAID: "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300",
+    AWAITING: "bg-warning/10 text-warning ",
+    CAPTURED: "bg-success/10 text-success ",
+    PAID: "bg-success/10 text-success ",
+    PARTIALLY_REFUNDED: "bg-warning/10 text-warning ",
+    REFUNDED: "bg-warning/10 text-warning ",
+    CANCELED: "bg-destructive/10 text-destructive ",
+    REQUIRES_ACTION: "bg-warning/10 text-warning ",
+    PARTIALLY_PAID: "bg-info/10 text-info ",
   };
   const labels: Record<string, string> = {
     NOT_PAID: "Not Paid",
@@ -289,7 +289,7 @@ export default function CustomerDetailPage() {
   if (error || !customer) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <p className="text-red-600">{error || "Customer not found"}</p>
+        <p className="text-destructive">{error || "Customer not found"}</p>
         <Button variant="outline" asChild>
           <Link href="/customers">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -340,7 +340,7 @@ export default function CustomerDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon" asChild aria-label="Back">
             <Link href="/customers">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -374,7 +374,7 @@ export default function CustomerDetailPage() {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" aria-label="More actions">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -386,7 +386,7 @@ export default function CustomerDetailPage() {
               <DropdownMenuSeparator />
               {customer.status === "ACTIVE" ? (
                 <DropdownMenuItem
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => setSuspendDialogOpen(true)}
                 >
                   <Ban className="mr-2 h-4 w-4" />
@@ -394,7 +394,7 @@ export default function CustomerDetailPage() {
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
-                  className="text-green-600"
+                  className="text-success"
                   onClick={handleActivate}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
@@ -410,8 +410,8 @@ export default function CustomerDetailPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-blue-100 p-2">
-              <Package className="h-5 w-5 text-blue-600" />
+            <div className="rounded-full bg-info/10 p-2">
+              <Package className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
@@ -421,8 +421,8 @@ export default function CustomerDetailPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-green-100 p-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
+            <div className="rounded-full bg-success/10 p-2">
+              <TrendingUp className="h-5 w-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Spent</p>
@@ -432,8 +432,8 @@ export default function CustomerDetailPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-purple-100 p-2">
-              <ShoppingBag className="h-5 w-5 text-purple-600" />
+            <div className="rounded-full bg-info/10 p-2">
+              <ShoppingBag className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Avg. Order Value</p>
@@ -443,8 +443,8 @@ export default function CustomerDetailPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-yellow-100 p-2">
-              <Star className="h-5 w-5 text-yellow-600" />
+            <div className="rounded-full bg-warning/10 p-2">
+              <Star className="h-5 w-5 text-warning" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Tier</p>
@@ -512,7 +512,7 @@ export default function CustomerDetailPage() {
                             <TableCell>{getFulfillmentStatusBadge(order.fulfillmentStatus)}</TableCell>
                             <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" asChild aria-label="Open in new tab">
                                 <Link href={`/orders/${order.id}`}>
                                   <ExternalLink className="h-4 w-4" />
                                 </Link>
@@ -590,11 +590,11 @@ export default function CustomerDetailPage() {
                       {addresses.map((address) => (
                         <div
                           key={address.id}
-                          className="relative rounded-lg border p-4"
+                          className="relative rounded-none border p-4"
                         >
                           <div className="flex items-center gap-2 mb-3">
                             {address.isDefault && (
-                              <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Default</Badge>
+                              <Badge className="bg-success/10 text-success ">Default</Badge>
                             )}
                           </div>
                           <div className="text-sm space-y-1">
@@ -645,7 +645,7 @@ export default function CustomerDetailPage() {
                       {groups.map((group) => (
                         <div
                           key={group.id}
-                          className="flex items-center justify-between rounded-lg border p-4"
+                          className="flex items-center justify-between rounded-none border p-4"
                         >
                           <div>
                             <p className="font-medium">{group.name}</p>
@@ -747,18 +747,18 @@ export default function CustomerDetailPage() {
 
           {/* Account Status */}
           {customer.status !== "ACTIVE" && (
-            <Card className="border-yellow-200 bg-yellow-50">
+            <Card className="border-warning/30 bg-warning/10">
               <CardHeader>
-                <CardTitle className="text-yellow-800">Account Suspended</CardTitle>
+                <CardTitle className="text-warning">Account Suspended</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {customer.suspendedAt && (
-                  <p className="text-sm text-yellow-700">
+                  <p className="text-sm text-warning">
                     Suspended on {formatDateTime(customer.suspendedAt)}
                   </p>
                 )}
                 {customer.suspendedReason && (
-                  <p className="text-sm text-yellow-700">
+                  <p className="text-sm text-warning">
                     Reason: {customer.suspendedReason}
                   </p>
                 )}
@@ -782,7 +782,7 @@ export default function CustomerDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {customer.internalNotes && (
-                <div className="rounded-lg bg-muted p-3 text-sm whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                <div className="bg-muted p-3 text-sm whitespace-pre-wrap max-h-[200px] overflow-y-auto">
                   {customer.internalNotes}
                 </div>
               )}
@@ -834,7 +834,7 @@ export default function CustomerDetailPage() {
                 <Separator />
                 <div className="flex justify-between text-sm font-medium">
                   <span>Lifetime Value</span>
-                  <span className="text-green-600">
+                  <span className="text-success">
                     {formatPrice(totalSpent, "GBP")}
                   </span>
                 </div>

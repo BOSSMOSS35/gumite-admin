@@ -31,7 +31,7 @@ export function Thumbnail({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-lg bg-muted",
+        "relative overflow-hidden rounded-none bg-muted",
         {
           "aspect-[11/14]": isFeatured,
           "aspect-[9/16]": !isFeatured && size !== "square",
@@ -111,7 +111,7 @@ export function StackedThumbnails({
         <div
           key={index}
           className={cn(
-            "relative overflow-hidden rounded-md border-2 border-background",
+            "relative overflow-hidden rounded-none border-2 border-background",
             sizeClasses[size]
           )}
         >
@@ -127,7 +127,7 @@ export function StackedThumbnails({
       {remainingCount > 0 && (
         <div
           className={cn(
-            "flex items-center justify-center rounded-md border-2 border-background bg-muted text-xs font-medium",
+            "flex items-center justify-center rounded-none border-2 border-background bg-muted text-xs font-medium",
             sizeClasses[size]
           )}
         >

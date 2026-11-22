@@ -362,7 +362,7 @@ export default function CollectionDetailPage() {
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4">
-                    <Skeleton className="h-20 w-20 rounded-lg" />
+                    <Skeleton className="h-20 w-20 rounded-none" />
                     <div className="space-y-2">
                       <Skeleton className="h-8 w-48" />
                       <Skeleton className="h-4 w-32" />
@@ -379,7 +379,7 @@ export default function CollectionDetailPage() {
                 <Skeleton className="h-6 w-24" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-40 w-full rounded-lg" />
+                <Skeleton className="h-40 w-full rounded-none" />
               </CardContent>
             </Card>
             <Card>
@@ -404,7 +404,7 @@ export default function CollectionDetailPage() {
   if ((queryError || error) && !collection) {
     return (
       <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error || (queryError instanceof Error ? queryError.message : "Failed to load collection")}</span>
         </div>
@@ -571,7 +571,7 @@ export default function CollectionDetailPage() {
             )}
 
             {!searchingProducts && displayedProducts.length > 0 && (
-              <div className="border rounded-lg max-h-[300px] overflow-y-auto">
+              <div className="border rounded-none max-h-[300px] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -611,7 +611,7 @@ export default function CollectionDetailPage() {
                           <div className="font-medium flex items-center gap-2">
                             {product.title}
                             {isNewProduct(product) && (
-                              <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                              <Badge variant="outline" className="text-xs">
                                 New
                               </Badge>
                             )}
@@ -649,8 +649,8 @@ export default function CollectionDetailPage() {
             )}
 
             {selectedProducts.length > 0 && (
-              <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                <Check className="h-4 w-4 text-green-600" />
+              <div className="flex items-center gap-2 p-2 bg-muted rounded-none">
+                <Check className="h-4 w-4 text-success" />
                 <span className="text-sm">{selectedProducts.length} product(s) selected</span>
               </div>
             )}
@@ -686,13 +686,13 @@ export default function CollectionDetailPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-success/10 text-success rounded-none">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-auto">
@@ -727,7 +727,7 @@ export default function CollectionDetailPage() {
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div className="flex gap-4">
-                  <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center">
+                  <div className="h-20 w-20 rounded-none bg-muted flex items-center justify-center">
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <div>
@@ -740,7 +740,7 @@ export default function CollectionDetailPage() {
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={() => handleCopy(collection.handle)}
+                        aria-label="Copy" onClick={() => handleCopy(collection.handle)}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -749,7 +749,7 @@ export default function CollectionDetailPage() {
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" aria-label="More actions">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -764,7 +764,7 @@ export default function CollectionDetailPage() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      className="text-red-600"
+                      className="text-destructive"
                       onClick={() => setDeleteDialogOpen(true)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -896,7 +896,7 @@ export default function CollectionDetailPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             onClick={() => handleRemoveProduct(product)}
                             disabled={removingProduct === product.id}
                           >
@@ -929,9 +929,9 @@ export default function CollectionDetailPage() {
                   <img
                     src={getImageUrl(collection.imageUrl) || ""}
                     alt={collection.title}
-                    className="w-full aspect-square rounded-lg object-cover"
+                    className="w-full aspect-square rounded-none object-cover"
                   />
-                  <label className="flex items-center justify-center gap-2 w-full py-2 border rounded-lg cursor-pointer hover:bg-muted transition-colors">
+                  <label className="flex items-center justify-center gap-2 w-full py-2 border rounded-none cursor-pointer hover:bg-muted transition-colors">
                     {uploadImageMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
@@ -948,7 +948,7 @@ export default function CollectionDetailPage() {
                   </label>
                 </div>
               ) : (
-                <label className={`flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:border-muted-foreground/50 transition-colors ${uploadImageMutation.isPending ? "opacity-50 pointer-events-none" : ""}`}>
+                <label className={`flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed rounded-none cursor-pointer hover:border-muted-foreground/50 transition-colors ${uploadImageMutation.isPending ? "opacity-50 pointer-events-none" : ""}`}>
                   {uploadImageMutation.isPending ? (
                     <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
                   ) : (
@@ -993,9 +993,9 @@ export default function CollectionDetailPage() {
           </Card>
 
           {/* Danger Zone */}
-          <Card className="border-red-200">
+          <Card className="border-destructive/30">
             <CardHeader>
-              <CardTitle className="text-red-600">Danger Zone</CardTitle>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">

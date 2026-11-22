@@ -80,7 +80,7 @@ function getTierBadge(tier: CustomerTier) {
   const display = getTierDisplay(tier);
   if (tier === "PLATINUM") {
     return (
-      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+      <Badge className="bg-foreground text-background hover:bg-foreground">
         <Crown className="mr-1 h-3 w-3" /> {display.label}
       </Badge>
     );
@@ -326,8 +326,8 @@ export default function CustomersPage() {
 
       {/* Error State */}
       {isError && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="py-4 text-center text-red-600">
+        <Card className="border-destructive/30 bg-destructive/10">
+          <CardContent className="py-4 text-center text-destructive">
             {error instanceof Error ? error.message : "Failed to load customers"}
             <Button variant="link" onClick={() => refetch()} className="ml-2">
               Retry
@@ -453,7 +453,7 @@ export default function CustomersPage() {
                           <DropdownMenuSeparator />
                           {customer.status === "ACTIVE" ? (
                             <DropdownMenuItem
-                              className="text-red-600"
+                              className="text-destructive"
                               onClick={() => openDialogFor(customer, "suspend")}
                             >
                               <Ban className="mr-2 h-4 w-4" />
@@ -461,7 +461,7 @@ export default function CustomersPage() {
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem
-                              className="text-green-600"
+                              className="text-success"
                               onClick={() => {
                                 activateMutation.mutate(customer.id, {
                                   onSuccess: () => {
@@ -494,7 +494,7 @@ export default function CustomersPage() {
 
       {/* Bulk Action Floating Bar */}
       {selectedCustomerIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-lg flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full flex items-center gap-4 z-50 animate-in slide-in-from-bottom-5">
           <span className="text-sm font-medium">{selectedCustomerIds.length} selected</span>
           <div className="w-px h-4 bg-muted-foreground/30" />
           <div className="flex items-center gap-2">

@@ -91,15 +91,10 @@ const PACKAGE_PRESETS = [
 ];
 
 const STATUS_BADGE_TONE_BY_DOT_COLOR: Record<string, string> = {
-  "bg-green-500": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
-  "bg-green-600": "border-green-300/70 bg-green-100/80 text-green-800 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300",
-  "bg-blue-400": "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
-  "bg-blue-500": "border-blue-300/70 bg-blue-100/80 text-blue-800 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-300",
-  "bg-orange-500": "border-orange-300/70 bg-orange-100/80 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300",
-  "bg-yellow-500": "border-amber-300/70 bg-amber-100/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300",
-  "bg-purple-400": "border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
-  "bg-purple-500": "border-purple-300/70 bg-purple-100/80 text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-300",
-  "bg-red-500": "border-red-300/70 bg-red-100/80 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300",
+  "bg-success": "border-success/30 bg-success/10 text-success ",
+  "bg-info": "border-info/30 bg-info/10 text-info ",
+  "bg-warning": "border-warning/30 bg-warning/10 text-warning ",
+  "bg-destructive": "border-destructive/30 bg-destructive/10 text-destructive ",
   "bg-gray-400": "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
   "bg-gray-500": "border-zinc-300/70 bg-zinc-100/80 text-zinc-800 dark:border-zinc-500/40 dark:bg-zinc-500/10 dark:text-zinc-300",
 };
@@ -424,7 +419,7 @@ export default function ShipOrderPage() {
   if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-12">
-        <AlertCircle className="h-12 w-12 text-red-500" />
+        <AlertCircle className="h-12 w-12 text-destructive" />
         <h2 className="text-xl font-semibold">Failed to load order</h2>
         <p className="text-muted-foreground">{error || "Order not found"}</p>
         <div className="flex gap-2">
@@ -533,9 +528,9 @@ export default function ShipOrderPage() {
                 <CardContent className="space-y-5 pt-0">
                   {/* ShipEngine Toggle */}
                   {shippingConfig?.shipEngineConfigured && (
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-none border">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-none bg-primary/10 flex items-center justify-center">
                           <Package className="h-5 w-5 text-primary" />
                         </div>
                         <div>
@@ -545,7 +540,7 @@ export default function ShipOrderPage() {
                           </p>
                         </div>
                         {shippingConfig.sandboxMode && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 dark:bg-orange-950/20">
+                          <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10 ">
                             Sandbox
                           </Badge>
                         )}
@@ -814,7 +809,7 @@ export default function ShipOrderPage() {
                     {ratesLoading && rates.length === 0 && (
                       <div className="space-y-3">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="p-4 rounded-lg border">
+                          <div key={i} className="p-4 rounded-none border">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <Skeleton className="h-4 w-4 rounded-full" />
@@ -847,7 +842,7 @@ export default function ShipOrderPage() {
                             return (
                               <button
                                 key={rate.rateId}
-                                className={`w-full text-left p-4 rounded-lg border transition-all ${
+                                className={`w-full text-left p-4 rounded-none border transition-all ${
                                   isSelected
                                     ? "border-primary bg-primary/5 ring-1 ring-primary"
                                     : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"
@@ -877,7 +872,7 @@ export default function ShipOrderPage() {
                                     {isCheapest && (
                                       <Badge
                                         variant="outline"
-                                        className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800"
+                                        className="text-xs font-semibold text-success border-success/30 bg-success/10 "
                                       >
                                         Best price
                                       </Badge>
@@ -933,8 +928,8 @@ export default function ShipOrderPage() {
                 {order.items?.map((item) => {
                   const imgUrl = getImageUrl(item.thumbnail);
                   return (
-                    <div key={item.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
-                      <div className="h-12 w-12 bg-muted rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div key={item.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-none">
+                      <div className="h-12 w-12 bg-muted rounded-none flex items-center justify-center overflow-hidden flex-shrink-0">
                         {imgUrl ? (
                           <img src={imgUrl} alt={item.title} className="h-full w-full object-cover" />
                         ) : (
@@ -1020,7 +1015,7 @@ export default function ShipOrderPage() {
                 <span>{formatPrice(order.tax, order.currencyCode)}</span>
               </div>
               {order.discount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-sm text-success">
                   <span>Discount</span>
                   <span>-{formatPrice(order.discount, order.currencyCode)}</span>
                 </div>
@@ -1077,7 +1072,7 @@ export default function ShipOrderPage() {
           <DialogHeader>
             <DialogTitle>Preview Shipping Label</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 bg-muted/20 rounded-md overflow-hidden border flex flex-col">
+          <div className="flex-1 bg-muted/20 rounded-none overflow-hidden border flex flex-col">
             {previewUrl ? (
               <iframe src={previewUrl} className="w-full h-full" />
             ) : !previewUrl && previewDialogOpen ? (
@@ -1167,8 +1162,8 @@ export default function ShipOrderPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-6">
-            <div className="p-4 bg-green-100 dark:bg-green-950/30 rounded-full">
-              <CheckCircle className="h-12 w-12 text-green-600" />
+            <div className="p-4 bg-success/10 rounded-full">
+              <CheckCircle className="h-12 w-12 text-success" />
             </div>
             <p className="text-sm text-muted-foreground text-center">
               The tracking number has been added to the order automatically.

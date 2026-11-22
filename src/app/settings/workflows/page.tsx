@@ -58,21 +58,21 @@ function StatusBadge({ status }: { status: WorkflowExecution["status"] | string 
   switch (normalizedStatus) {
     case "RUNNING":
       return (
-        <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 gap-1">
+        <Badge className="bg-info/10 text-info border-info/20 gap-1">
           <Loader2 className="h-3 w-3 animate-spin" />
           Running
         </Badge>
       );
     case "COMPLETED":
       return (
-        <Badge className="bg-green-500/10 text-green-600 border-green-500/20 gap-1">
+        <Badge className="bg-success/10 text-success border-success/20 gap-1">
           <CheckCircle2 className="h-3 w-3" />
           Completed
         </Badge>
       );
     case "FAILED":
       return (
-        <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 gap-1">
+        <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
           <XCircle className="h-3 w-3" />
           Failed
         </Badge>
@@ -110,7 +110,7 @@ function ExecutionListView({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Workflow Executions</CardTitle>
           {activeCount > 0 && (
-            <Badge className="bg-blue-500/10 text-blue-600 gap-1">
+            <Badge className="bg-info/10 text-info gap-1">
               <Activity className="h-3 w-3" />
               {activeCount} running
             </Badge>
@@ -147,7 +147,7 @@ function ExecutionListView({
             <p className="text-sm">Executions will appear here when workflows run</p>
           </div>
         ) : (
-          <div className="rounded-md border">
+          <div className="border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -188,18 +188,18 @@ function ExecutionListView({
                                 <div
                                   className={`w-2 h-2 rounded-full ${
                                     step.status === "COMPLETED"
-                                      ? "bg-green-500"
+                                      ? "bg-success"
                                       : step.status === "RUNNING"
-                                      ? "bg-blue-500 animate-pulse"
+                                      ? "bg-info animate-pulse"
                                       : step.status === "FAILED"
-                                      ? "bg-red-500"
+                                      ? "bg-destructive"
                                       : "bg-muted-foreground/30"
                                   }`}
                                 />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="font-medium text-xs">{step.name}</p>
-                                <p className="text-[10px] text-muted-foreground capitalize">{step.status.toLowerCase()}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{step.status.toLowerCase()}</p>
                               </TooltipContent>
                             </Tooltip>
                           ))}
@@ -417,17 +417,17 @@ export default function WorkflowsSettingsPage() {
         <div className="flex items-center gap-3">
           {/* Connection Status */}
           {connectionStatus === "live" ? (
-            <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 gap-1">
+            <Badge variant="default" className="bg-success/10 text-success border-success/20 gap-1">
               <Wifi className="h-3 w-3" />
               Live
             </Badge>
           ) : connectionStatus === "polling" ? (
-            <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 gap-1">
+            <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20 gap-1">
               <Activity className="h-3 w-3" />
               Polling
             </Badge>
           ) : (
-            <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 gap-1">
+            <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
               <WifiOff className="h-3 w-3" />
               Disconnected
             </Badge>

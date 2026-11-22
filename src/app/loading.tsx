@@ -13,7 +13,7 @@ export default function Loading() {
       </div>
 
       {/* Toolbar / Filters Skeleton */}
-      <div className="rounded-xl border bg-card text-card-foreground shadow">
+      <div className="border bg-card text-card-foreground shadow">
         <div className="p-6 flex flex-col gap-4 sm:flex-row sm:items-center">
           <Skeleton className="h-10 w-full sm:max-w-sm" />
           <Skeleton className="h-10 w-32" />
@@ -22,7 +22,7 @@ export default function Loading() {
       </div>
 
       {/* Main Content Area Skeleton */}
-      <div className="rounded-xl border bg-card text-card-foreground shadow">
+      <div className="border bg-card text-card-foreground shadow">
         <div className="p-6 space-y-4">
           <Skeleton className="h-6 w-1/4 mb-4" />
           {[...Array(5)].map((_, i) => (
@@ -34,7 +34,7 @@ export default function Loading() {
                   <Skeleton className="h-4 w-full max-w-[200px]" />
                 </div>
               </div>
-              <Skeleton className="h-8 w-8 rounded-md" />
+              <Skeleton className="h-8 w-8 rounded-none" />
             </div>
           ))}
         </div>

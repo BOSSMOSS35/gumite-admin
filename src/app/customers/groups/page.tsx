@@ -274,7 +274,7 @@ export default function CustomerGroupsPage() {
 
       {/* Error */}
       {queryError && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{queryError instanceof Error ? queryError.message : "Failed to load customer groups"}</span>
         </div>
@@ -374,7 +374,7 @@ export default function CustomerGroupsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="text-destructive"
                           onClick={(e) => { e.stopPropagation(); openDeleteDialog(group); }}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -451,7 +451,7 @@ function GroupDetailView({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -535,7 +535,7 @@ function GroupDetailView({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleRemove(customer)}
                         disabled={removeMutation.isPending}
                       >
@@ -633,7 +633,7 @@ function AddMembersDialog({
               availableCustomers.map((customer) => (
                 <div
                   key={customer.id}
-                  className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+                  className="flex items-center justify-between p-2 rounded-none hover:bg-muted"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">

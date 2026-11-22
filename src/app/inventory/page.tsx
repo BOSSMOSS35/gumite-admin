@@ -105,11 +105,11 @@ function getStockStatus(available: number, stocked: number) {
 function getStatusBadge(status: string) {
   switch (status) {
     case "in_stock":
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">In Stock</Badge>;
+      return <Badge className="bg-success/10 text-success ">In Stock</Badge>;
     case "low_stock":
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300">Low Stock</Badge>;
+      return <Badge className="bg-warning/10 text-warning ">Low Stock</Badge>;
     case "out_of_stock":
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300">Out of Stock</Badge>;
+      return <Badge className="bg-destructive/10 text-destructive ">Out of Stock</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -321,7 +321,7 @@ export default function InventoryPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-blue-100 p-2 text-blue-600">
+            <div className="rounded-full bg-info/10 p-2 text-info">
               <Box className="h-5 w-5" />
             </div>
             <div>
@@ -332,7 +332,7 @@ export default function InventoryPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-green-100 p-2 text-green-600">
+            <div className="rounded-full bg-success/10 p-2 text-success">
               <Package className="h-5 w-5" />
             </div>
             <div>
@@ -343,7 +343,7 @@ export default function InventoryPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-purple-100 p-2 text-purple-600">
+            <div className="rounded-full bg-info/10 p-2 text-info">
               <Warehouse className="h-5 w-5" />
             </div>
             <div>
@@ -354,7 +354,7 @@ export default function InventoryPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-yellow-100 p-2 text-yellow-600">
+            <div className="rounded-full bg-warning/10 p-2 text-warning">
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
@@ -367,14 +367,14 @@ export default function InventoryPage() {
 
       {/* Low Stock Alert */}
       {(stats.lowStock > 0 || stats.outOfStock > 0) && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-warning/30 bg-warning/10">
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-yellow-100 p-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            <div className="rounded-full bg-warning/10 p-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-yellow-800">Low Stock Alert</p>
-              <p className="text-sm text-yellow-700">
+              <p className="font-medium text-warning">Low Stock Alert</p>
+              <p className="text-sm text-warning">
                 {stats.lowStock + stats.outOfStock} items need attention
                 {stats.outOfStock > 0 && ` (${stats.outOfStock} out of stock)`}
               </p>
@@ -382,7 +382,7 @@ export default function InventoryPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+              className="border-warning/30 text-warning hover:bg-warning/10"
               onClick={() => {
                 setStatusFilter("low_stock");
                 setActiveTab("levels");
@@ -522,7 +522,7 @@ export default function InventoryPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <Link href={`/inventory/${level.id}`}>
-                          <span className={level.availableQuantity <= 2 ? "text-yellow-600 font-medium" : ""}>
+                          <span className={level.availableQuantity <= 2 ? "text-warning font-medium" : ""}>
                             {level.availableQuantity}
                           </span>
                         </Link>
@@ -677,7 +677,7 @@ export default function InventoryPage() {
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`font-medium flex items-center justify-center gap-1 ${
-                              isPositive ? "text-green-600" : "text-red-600"
+                              isPositive ? "text-success" : "text-destructive"
                             }`}>
                               {isPositive ? (
                                 <ArrowUpRight className="h-4 w-4" />

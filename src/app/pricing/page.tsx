@@ -370,7 +370,7 @@ export default function PricingPage() {
             {isConnected ? (
               <Badge
                 variant="outline"
-                className="gap-1 border-green-300/80 bg-green-500/10 text-green-700 dark:border-green-500/40 dark:text-green-300"
+                className="gap-1 border-success/30 bg-success/10 text-success "
               >
                 <Wifi className="h-3 w-3" />
                 Live
@@ -390,7 +390,7 @@ export default function PricingPage() {
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="border-amber-300/80 bg-amber-100 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-300"
+              className="border-warning/30 bg-warning/10 text-warning "
             >
               {pendingChanges.size} unsaved changes
             </Badge>
@@ -492,7 +492,7 @@ export default function PricingPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => queryClient.invalidateQueries({ queryKey: ["pricing", "workbench"] })}
+                        aria-label="Refresh" onClick={() => queryClient.invalidateQueries({ queryKey: ["pricing", "workbench"] })}
                         disabled={loading}
                       >
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -502,7 +502,7 @@ export default function PricingPage() {
                 </CardHeader>
                 <CardContent>
                   {error && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-300/60 bg-red-100/70 p-4 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+                    <div className="mb-4 flex items-center gap-2 rounded-none border border-destructive/30 bg-destructive/10 p-4 text-destructive ">
                       <AlertCircle className="h-5 w-5" />
                       <span>{error}</span>
                       <Button
@@ -558,7 +558,7 @@ export default function PricingPage() {
                               key={item.variantId}
                               className={
                                 hasPriceChanged(item.variantId)
-                                  ? "bg-amber-100/70 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+                                  ? "bg-warning/10 hover:bg-warning/10 "
                                   : ""
                               }
                             >
@@ -600,7 +600,7 @@ export default function PricingPage() {
                                     type="text"
                                     className={`w-24 text-right ${
                                       pendingChanges.get(item.variantId)?.compareAtPrice
-                                        ? "border-amber-400 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/20"
+                                        ? "border-warning bg-warning/10 "
                                         : ""
                                     }`}
                                     placeholder="-"
@@ -624,7 +624,7 @@ export default function PricingPage() {
                                     type="text"
                                     className={`w-24 text-right ${
                                       hasPriceChanged(item.variantId)
-                                        ? "border-amber-400 bg-amber-50 text-amber-950 placeholder:text-amber-800/60 dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-100 dark:placeholder:text-amber-200/60"
+                                        ? "border-warning bg-warning/10 text-warning placeholder:text-warning/60 dark:placeholder:text-warning/60"
                                         : ""
                                     }`}
                                     value={getPriceDisplay(item).toFixed(2)}
@@ -637,8 +637,8 @@ export default function PricingPage() {
                                       variant="outline"
                                       className={
                                         pendingChanges.get(item.variantId)!.newPrice > item.currentPrice
-                                          ? "border-green-300/80 bg-green-100/70 text-green-700 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-300"
-                                          : "border-red-300/80 bg-red-100/70 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
+                                          ? "border-success/30 bg-success/10 text-success "
+                                          : "border-destructive/30 bg-destructive/10 text-destructive "
                                       }
                                     >
                                       {pendingChanges.get(item.variantId)!.newPrice > item.currentPrice ? (
@@ -764,7 +764,7 @@ export default function PricingPage() {
                               <TableCell>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="More actions">
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -857,9 +857,9 @@ export default function PricingPage() {
                                 <span
                                   className={
                                     change.priceDifference > 0
-                                      ? "text-green-700 dark:text-green-300"
+                                      ? "text-success "
                                       : change.priceDifference < 0
-                                      ? "text-red-700 dark:text-red-300"
+                                      ? "text-destructive "
                                       : ""
                                   }
                                 >
@@ -892,7 +892,7 @@ export default function PricingPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Live Activity</CardTitle>
                 {isConnected ? (
-                  <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
                 ) : (
                   <span className="flex h-2 w-2 rounded-full bg-gray-400" />
                 )}
@@ -908,13 +908,13 @@ export default function PricingPage() {
                   <div key={index} className="flex items-start gap-3 text-sm">
                     <div className="flex-shrink-0 mt-0.5">
                       {event.type === "PRICE_CHANGED" && (
-                        <Tag className="h-4 w-4 text-blue-500" />
+                        <Tag className="h-4 w-4 text-info" />
                       )}
                       {event.type === "BULK_UPDATE" && (
-                        <Zap className="h-4 w-4 text-purple-500" />
+                        <Zap className="h-4 w-4 text-info" />
                       )}
                       {event.type.startsWith("RULE_") && (
-                        <Percent className="h-4 w-4 text-orange-500" />
+                        <Percent className="h-4 w-4 text-warning" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

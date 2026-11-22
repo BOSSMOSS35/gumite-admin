@@ -28,23 +28,23 @@ const statusConfig = {
     label: "Pending",
   },
   RUNNING: {
-    color: "bg-blue-500",
-    borderColor: "border-blue-500",
-    textColor: "text-blue-500",
+    color: "bg-info",
+    borderColor: "border-info",
+    textColor: "text-info",
     icon: Loader2,
     label: "Running",
   },
   COMPLETED: {
-    color: "bg-emerald-500",
-    borderColor: "border-emerald-500",
-    textColor: "text-emerald-500",
+    color: "bg-success",
+    borderColor: "border-success",
+    textColor: "text-success",
     icon: CheckCircle2,
     label: "Completed",
   },
   FAILED: {
-    color: "bg-red-500",
-    borderColor: "border-red-500",
-    textColor: "text-red-500",
+    color: "bg-destructive",
+    borderColor: "border-destructive",
+    textColor: "text-destructive",
     icon: XCircle,
     label: "Failed",
   },
@@ -179,7 +179,7 @@ export function ExecutionTimeline({
         <div className="relative h-6 border-b border-border/50">
           <div className="absolute left-28 right-0 h-full flex justify-between items-end pb-1 px-1">
             {[0, 0.25, 0.5, 0.75, 1].map((fraction) => (
-              <span key={fraction} className="text-[10px] text-muted-foreground font-mono">
+              <span key={fraction} className="text-xs text-muted-foreground font-mono">
                 {formatDuration(timelineData.totalDuration * fraction)}
               </span>
             ))}
@@ -217,7 +217,7 @@ export function ExecutionTimeline({
                   </div>
 
                   {/* Timeline bar container */}
-                  <div className="flex-1 h-8 bg-muted/30 rounded-md relative overflow-hidden">
+                  <div className="flex-1 h-8 bg-muted/30 rounded-none relative overflow-hidden">
                     {/* Grid lines */}
                     <div className="absolute inset-0 flex">
                       {[0.25, 0.5, 0.75].map((fraction) => (
@@ -250,7 +250,7 @@ export function ExecutionTimeline({
                             onClick={() => onStepClick?.(step.name)}
                           >
                             {width > 10 && (
-                              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white truncate px-1">
+                              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white truncate px-1">
                                 {formatDuration(duration)}
                               </span>
                             )}
@@ -274,14 +274,14 @@ export function ExecutionTimeline({
                               {step.startedAt && (
                                 <>
                                   <span className="text-muted-foreground">Started:</span>
-                                  <span className="font-mono text-[10px]">
+                                  <span className="font-mono text-xs">
                                     {new Date(step.startedAt).toLocaleTimeString()}
                                   </span>
                                 </>
                               )}
                             </div>
                             {step.error && (
-                              <div className="pt-2 border-t text-xs text-red-400">
+                              <div className="pt-2 border-t text-xs text-destructive">
                                 {step.error.substring(0, 100)}
                                 {step.error.length > 100 && "..."}
                               </div>
@@ -308,7 +308,7 @@ export function ExecutionTimeline({
         <div className="flex items-center justify-center gap-6 pt-4 border-t">
           {Object.entries(statusConfig).map(([status, config]) => (
             <div key={status} className="flex items-center gap-1.5">
-              <div className={cn("w-3 h-3 rounded-sm", config.color)} />
+              <div className={cn("w-3 h-3 rounded-none", config.color)} />
               <span className="text-xs text-muted-foreground">{config.label}</span>
             </div>
           ))}

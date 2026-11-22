@@ -133,13 +133,13 @@ type VariantTableDraft = {
 function getStatusBadge(status: ProductStatus) {
   switch (status) {
     case "published":
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Published</Badge>;
+      return <Badge className="bg-success/10 text-success ">Published</Badge>;
     case "draft":
       return <Badge className="bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300">Draft</Badge>;
     case "proposed":
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300">Proposed</Badge>;
+      return <Badge className="bg-warning/10 text-warning ">Proposed</Badge>;
     case "rejected":
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300">Rejected</Badge>;
+      return <Badge className="bg-destructive/10 text-destructive ">Rejected</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -1307,10 +1307,10 @@ export default function ProductDetailPage() {
 
     const tone =
       variantOptionValidation.status === "valid"
-        ? "border-green-200 bg-green-50 text-green-700"
+        ? "border-success/30 bg-success/10 text-success"
         : variantOptionValidation.status === "checking"
-          ? "border-blue-200 bg-blue-50 text-blue-700"
-          : "border-red-200 bg-red-50 text-red-700";
+          ? "border-info/30 bg-info/10 text-info"
+          : "border-destructive/30 bg-destructive/10 text-destructive";
 
     const icon =
       variantOptionValidation.status === "valid" ? (
@@ -1322,7 +1322,7 @@ export default function ProductDetailPage() {
       );
 
     return (
-      <div className={`flex gap-2 rounded-md border px-3 py-2 text-xs ${tone}`}>
+      <div className={`flex gap-2 rounded-none border px-3 py-2 text-xs ${tone}`}>
         {icon}
         <div>
           <p>{variantOptionValidation.message}</p>
@@ -1386,7 +1386,7 @@ export default function ProductDetailPage() {
   if ((queryError || error) && !product) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-12">
-        <AlertCircle className="h-12 w-12 text-red-500" />
+        <AlertCircle className="h-12 w-12 text-destructive" />
         <h2 className="text-xl font-semibold">Failed to load product</h2>
         <p className="text-muted-foreground">{queryError || error}</p>
         {isNotFoundError && (
@@ -1454,7 +1454,7 @@ export default function ProductDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon" asChild aria-label="Back">
             <Link href="/products">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -1464,7 +1464,7 @@ export default function ProductDetailPage() {
               <h1 className="text-2xl font-bold">{product.title}</h1>
               {getStatusBadge(product.status)}
               {hasChanges && (
-                <Badge variant="outline" className="text-orange-600 border-orange-300">
+                <Badge variant="outline" className="text-warning border-warning/30">
                   Unsaved changes
                 </Badge>
               )}
@@ -1501,7 +1501,7 @@ export default function ProductDetailPage() {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" aria-label="More actions">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -1521,7 +1521,7 @@ export default function ProductDetailPage() {
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Product
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+              <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Product
               </DropdownMenuItem>
@@ -1536,7 +1536,7 @@ export default function ProductDetailPage() {
 
       {/* Success message */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-success/10 text-success rounded-none">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
@@ -1544,7 +1544,7 @@ export default function ProductDetailPage() {
 
       {/* Error message */}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-auto">
@@ -1686,7 +1686,7 @@ export default function ProductDetailPage() {
               <div className="grid gap-4">
                 {/* Main Image */}
                 {thumbnailUrl ? (
-                  <div className="relative aspect-square max-w-md overflow-hidden rounded-lg border bg-muted">
+                  <div className="relative aspect-square max-w-md overflow-hidden rounded-none border bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
@@ -1711,7 +1711,7 @@ export default function ProductDetailPage() {
                     />
                   </div>
                 ) : (
-                  <div className="flex aspect-square max-w-md items-center justify-center rounded-lg border bg-muted">
+                  <div className="flex aspect-square max-w-md items-center justify-center rounded-none border bg-muted">
                     <div className="text-center">
                       <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
                       <p className="mt-2 text-sm text-muted-foreground">No images</p>
@@ -1741,7 +1741,7 @@ export default function ProductDetailPage() {
                         onDragOver={(e) => handleDragOver(e, index)}
                         onDrop={(e) => handleDrop(e, index)}
                         onDragEnd={handleDragEnd}
-                        className={`group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border-2 cursor-grab active:cursor-grabbing transition-all ${
+                        className={`group relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-none border-2 cursor-grab active:cursor-grabbing transition-all ${
                           selectedImage === index ? "border-primary" : "border-transparent"
                         } ${isDragging ? "opacity-50 scale-95" : ""} ${reordering ? "pointer-events-none" : ""}`}
                       >
@@ -1752,7 +1752,7 @@ export default function ProductDetailPage() {
                         {/* Thumbnail badge */}
                         {isThumbnail && (
                           <div className="absolute top-1 left-1 z-10">
-                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                            <Star className="h-4 w-4 text-warning fill-warning" />
                           </div>
                         )}
                         <button
@@ -1782,7 +1782,7 @@ export default function ProductDetailPage() {
                                 handleSetThumbnail(image.id);
                               }}
                               disabled={reordering}
-                              className="h-5 w-5 rounded-full bg-yellow-500 text-white flex items-center justify-center hover:bg-yellow-600 disabled:opacity-50"
+                              className="h-5 w-5 rounded-full bg-warning text-white flex items-center justify-center hover:bg-warning disabled:opacity-50"
                               title="Set as thumbnail"
                             >
                               <Star className="h-3 w-3" />
@@ -1796,7 +1796,7 @@ export default function ProductDetailPage() {
                               handleDeleteImage(image.id);
                             }}
                             disabled={reordering}
-                            className="h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 disabled:opacity-50"
+                            className="h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive disabled:opacity-50"
                             title="Delete image"
                           >
                             <X className="h-3 w-3" />
@@ -1810,7 +1810,7 @@ export default function ProductDetailPage() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingImage || reordering}
                     aria-label="Upload product image"
-                    className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-md border-2 border-dashed hover:border-primary hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-none border-2 border-dashed hover:border-primary hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {uploadingImage || reordering ? (
                       <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
@@ -1872,10 +1872,10 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               {mainPrice && mainPrice.compareAtPrice && mainPrice.compareAtPrice > mainPrice.amount && (
-                <div className="mt-4 rounded-lg bg-green-50 p-4">
+                <div className="mt-4 rounded-none bg-success/10 p-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Discount</span>
-                    <span className="font-medium text-green-600">
+                    <span className="font-medium text-success">
                       £{(mainPrice.compareAtPrice - mainPrice.amount).toFixed(2)} ({Math.round(((mainPrice.compareAtPrice - mainPrice.amount) / mainPrice.compareAtPrice) * 100)}% off)
                     </span>
                   </div>
@@ -1911,7 +1911,7 @@ export default function ProductDetailPage() {
                 {product.options.length > 0 && (
                   <div className="space-y-3">
                     {product.options.map((option) => (
-                      <div key={option.id} className="rounded-lg border p-4">
+                      <div key={option.id} className="border p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -1931,7 +1931,7 @@ export default function ProductDetailPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:text-destructive"
                               onClick={() => handleDeleteOption(option.id)}
                             >
                               <Trash2 className="h-4 w-4 mr-1" />
@@ -1971,7 +1971,7 @@ export default function ProductDetailPage() {
                     <div className="flex items-center gap-2">
                       <Label className="text-base font-semibold">Preview</Label>
                       {hasOptionVariantMismatch && (
-                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                        <Badge variant="outline" className="text-warning border-warning/30">
                           {createdVariantCombinationCount} of {possibleVariantCount} variants created
                         </Badge>
                       )}
@@ -1994,7 +1994,7 @@ export default function ProductDetailPage() {
                   </div>
 
                   {product.variants.length > 0 && (
-                    <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 md:grid-cols-2">
+                    <div className="grid gap-3 rounded-none border bg-muted/20 p-3 md:grid-cols-2">
                       <div className="flex flex-col gap-2">
                         <div className="text-xs text-muted-foreground">
                           {selectedVariantCount > 0
@@ -2053,7 +2053,7 @@ export default function ProductDetailPage() {
                     </div>
                   )}
 
-                  <div className="rounded-lg border">
+                  <div className="border">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/30">
@@ -2170,7 +2170,7 @@ export default function ProductDetailPage() {
                                   )}
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="More actions">
                                         <MoreHorizontal className="h-4 w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
@@ -2180,7 +2180,7 @@ export default function ProductDetailPage() {
                                         Edit full details
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
-                                        className="text-red-600"
+                                        className="text-destructive"
                                         onClick={() => handleDeleteVariant(variant.id)}
                                       >
                                         <Trash2 className="mr-2 h-4 w-4" />
@@ -2266,7 +2266,7 @@ export default function ProductDetailPage() {
                       {tag}
                       <button
                         onClick={() => removeTag(tag)}
-                        className="ml-1 hover:text-red-500"
+                        className="ml-1 hover:text-destructive"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -2322,7 +2322,7 @@ export default function ProductDetailPage() {
                   />
                 </div>
               </div>
-              <div className="rounded-lg bg-muted p-4">
+              <div className="bg-muted p-4">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Total Variants</span>
                   <span className="font-medium">
@@ -2375,7 +2375,7 @@ export default function ProductDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {variantError && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-none">
                 {variantError}
               </div>
             )}
@@ -2389,7 +2389,7 @@ export default function ProductDetailPage() {
               />
             </div>
             {product.options.length > 0 && (
-              <div className="space-y-3 rounded-md border p-3">
+              <div className="space-y-3 rounded-none border p-3">
                 <div>
                   <Label>Option values *</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -2577,7 +2577,7 @@ export default function ProductDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {variantError && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-none">
                 {variantError}
               </div>
             )}
@@ -2591,7 +2591,7 @@ export default function ProductDetailPage() {
               />
             </div>
             {product.options.length > 0 && (
-              <div className="space-y-3 rounded-md border p-3">
+              <div className="space-y-3 rounded-none border p-3">
                 <div>
                   <Label>Option values *</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -2798,16 +2798,16 @@ export default function ProductDetailPage() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 {/* Guidance Card */}
-                <div className="rounded-lg border bg-blue-50 p-3 space-y-2">
+                <div className="border bg-info/10 p-3 space-y-2">
                   <div className="flex items-start gap-2">
-                    <div className="text-blue-600 mt-0.5">
+                    <div className="text-info mt-0.5">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <div className="flex-1 text-xs text-blue-900 space-y-1">
+                    <div className="flex-1 text-xs text-info space-y-1">
                       <p className="font-medium">How options work:</p>
-                      <ul className="list-disc list-inside space-y-0.5 text-blue-800">
+                      <ul className="list-disc list-inside space-y-0.5 text-info">
                         <li><strong>Option Name</strong> is the category (e.g., "Size", "Color")</li>
                         <li><strong>Values</strong> are ALL the choices for that category</li>
                         <li>Example: Option "Size" with values "S, M, L, XL"</li>
@@ -2817,7 +2817,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 {optionError && (
-                  <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                  <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-none">
                     {optionError}
                   </div>
                 )}
@@ -2873,7 +2873,7 @@ export default function ProductDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {optionError && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-none">
                 {optionError}
               </div>
             )}
@@ -2915,9 +2915,9 @@ export default function ProductDetailPage() {
 
       {/* Sticky Save Bar */}
       {hasChanges && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t bg-background/80 p-4 backdrop-blur-sm lg:left-64 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t bg-background/80 p-4 lg:left-64 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertCircle className="h-4 w-4 text-warning" />
             <span className="text-sm font-medium">You have unsaved changes</span>
           </div>
           <div className="flex items-center gap-2">

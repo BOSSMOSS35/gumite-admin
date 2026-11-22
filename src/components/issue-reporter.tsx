@@ -218,7 +218,7 @@ export function IssueReporter() {
             <Button
               size="icon"
               variant="outline"
-              className="fixed bottom-4 left-4 z-40 h-10 w-10 rounded-full shadow-lg border-muted-foreground/20 bg-background hover:bg-muted"
+              className="fixed bottom-4 left-4 z-40 h-10 w-10 rounded-full border-muted-foreground/20 bg-background hover:bg-muted"
               aria-label="Report an issue"
             >
               <Bug className="size-4" />
@@ -328,7 +328,7 @@ export function IssueReporter() {
           <div className="space-y-2">
             <Label>Screenshot (optional)</Label>
             {formData.screenshot ? (
-              <div className="flex items-center gap-2 rounded-md border p-3">
+              <div className="flex items-center gap-2 rounded-none border p-3">
                 <Upload className="size-4 text-muted-foreground" />
                 <span className="flex-1 text-sm truncate">
                   {formData.screenshot.name}
@@ -338,7 +338,7 @@ export function IssueReporter() {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6"
-                  onClick={() =>
+                  aria-label="Remove" onClick={() =>
                     setFormData((prev) => ({ ...prev, screenshot: null }))
                   }
                 >
@@ -353,7 +353,7 @@ export function IssueReporter() {
                   onChange={handleFileChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <div className="flex items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-center gap-2 rounded-none border border-dashed p-4 text-sm text-muted-foreground hover:bg-muted/50 transition-colors">
                   <Upload className="size-4" />
                   Click to upload a screenshot
                 </div>

@@ -46,7 +46,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className={
               variant === "destructive"
-                ? "bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                ? "bg-destructive hover:bg-destructive focus:ring-destructive"
                 : undefined
             }
           >

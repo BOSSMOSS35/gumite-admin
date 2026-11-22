@@ -45,10 +45,10 @@ const tierOptions: { value: CustomerTier; label: string; description: string }[]
 
 function getTierBadgeColor(tier: CustomerTier): string {
   const colors: Record<CustomerTier, string> = {
-    BRONZE: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-300",
+    BRONZE: "bg-warning/10 text-warning ",
     SILVER: "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300",
-    GOLD: "bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300",
-    PLATINUM: "bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-300",
+    GOLD: "bg-warning/10 text-warning ",
+    PLATINUM: "bg-info/10 text-info ",
   };
   return colors[tier];
 }
@@ -105,7 +105,7 @@ export function ChangeTierDialog({
 
           <div className="grid gap-4 py-4">
             {/* Current to New Tier Visual */}
-            <div className="flex items-center justify-center gap-4 rounded-lg bg-muted/50 p-4">
+            <div className="flex items-center justify-center gap-4 rounded-none bg-muted/50 p-4">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">Current Tier</p>
                 <Badge className={getTierBadgeColor(customer.tier)}>
@@ -162,18 +162,18 @@ export function ChangeTierDialog({
             </div>
 
             {isUpgrade && (
-              <p className="text-sm text-green-600">
+              <p className="text-sm text-success">
                 This is an upgrade. The customer will receive better benefits.
               </p>
             )}
             {isDowngrade && (
-              <p className="text-sm text-orange-600">
+              <p className="text-sm text-warning">
                 This is a downgrade. The customer will have reduced benefits.
               </p>
             )}
 
             {error && (
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             )}
           </div>
 

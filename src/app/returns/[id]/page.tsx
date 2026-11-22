@@ -193,7 +193,7 @@ export default function ReturnDetailPage() {
   if (error || !returnData) {
     return (
       <div className="p-6">
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error || "Return not found"}</span>
           <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">
@@ -209,7 +209,7 @@ export default function ReturnDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/returns")}>
+          <Button variant="ghost" size="icon" aria-label="Back" onClick={() => router.push("/returns")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -254,7 +254,7 @@ export default function ReturnDetailPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3 rounded-md border p-3">
+                  <div className="flex items-start gap-3 rounded-none border p-3">
                     <Checkbox
                       id="restock-return-items"
                       checked={restockOnReceive}
@@ -354,7 +354,7 @@ export default function ReturnDetailPage() {
 
       {/* Action Error Display */}
       {actionError && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{actionError}</span>
           <Button variant="ghost" size="sm" onClick={() => setActionError(null)} className="ml-auto">
@@ -377,7 +377,7 @@ export default function ReturnDetailPage() {
             <CardContent>
               <div className="space-y-4">
                 {returnData.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-none">
                     {item.thumbnail && (
                       <div className="relative w-16 h-20 bg-muted rounded overflow-hidden shrink-0">
                         <Image
@@ -435,14 +435,14 @@ export default function ReturnDetailPage() {
 
           {/* Rejection Reason (if rejected) */}
           {returnData.status === "rejected" && returnData.rejectionReason && (
-            <Card className="border-red-200 bg-red-50">
+            <Card className="border-destructive/30 bg-destructive/10">
               <CardHeader>
-                <CardTitle className="text-red-700">Rejection Reason</CardTitle>
+                <CardTitle className="text-destructive">Rejection Reason</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-red-700">{returnData.rejectionReason}</p>
+                <p className="text-destructive">{returnData.rejectionReason}</p>
                 {returnData.rejectedAt && (
-                  <p className="text-sm text-red-600 mt-2">
+                  <p className="text-sm text-destructive mt-2">
                     Rejected on {formatDateTime(returnData.rejectedAt)}
                   </p>
                 )}
@@ -493,8 +493,8 @@ export default function ReturnDetailPage() {
               <div className="space-y-4">
                 {/* Requested */}
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
+                  <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                    <Check className="h-4 w-4 text-success" />
                   </div>
                   <div>
                     <p className="font-medium">Requested</p>
@@ -508,11 +508,11 @@ export default function ReturnDetailPage() {
                 <div className="flex items-start gap-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      returnData.approvedAt ? "bg-green-100" : "bg-muted"
+                      returnData.approvedAt ? "bg-success/10" : "bg-muted"
                     }`}
                   >
                     {returnData.approvedAt ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-success" />
                     ) : (
                       <Clock className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -533,11 +533,11 @@ export default function ReturnDetailPage() {
                 <div className="flex items-start gap-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      returnData.receivedAt ? "bg-green-100" : "bg-muted"
+                      returnData.receivedAt ? "bg-success/10" : "bg-muted"
                     }`}
                   >
                     {returnData.receivedAt ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-success" />
                     ) : (
                       <Clock className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -558,11 +558,11 @@ export default function ReturnDetailPage() {
                 <div className="flex items-start gap-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      returnData.refundedAt ? "bg-green-100" : "bg-muted"
+                      returnData.refundedAt ? "bg-success/10" : "bg-muted"
                     }`}
                   >
                     {returnData.refundedAt ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-success" />
                     ) : (
                       <Clock className="h-4 w-4 text-muted-foreground" />
                     )}

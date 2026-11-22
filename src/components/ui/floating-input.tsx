@@ -44,7 +44,7 @@ const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
             placeholder=" "
             required={required}
             className={cn(
-              "peer pt-4 pb-1 block w-full h-11 px-4 mt-0 bg-muted border rounded-md appearance-none",
+              "peer pt-4 pb-1 block w-full h-11 px-4 mt-0 bg-muted border rounded-none appearance-none",
               "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
               "border-input hover:bg-muted/80 transition-colors",
               error && "border-destructive focus:ring-destructive",
@@ -59,8 +59,8 @@ const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
             className={cn(
               "flex items-center justify-center mx-3 px-1 transition-all absolute duration-300 top-3 -z-1 origin-0",
               "text-muted-foreground pointer-events-none",
-              "peer-focus:-translate-y-2 peer-focus:text-[10px]",
-              "peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:text-[10px]"
+              "peer-focus:-translate-y-2 peer-focus:text-xs",
+              "peer-[:not(:placeholder-shown)]:-translate-y-2 peer-[:not(:placeholder-shown)]:text-xs"
             )}
           >
             {label}

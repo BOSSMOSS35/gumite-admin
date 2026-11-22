@@ -228,7 +228,7 @@ export default function EmailTemplatesPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="More actions">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -259,7 +259,7 @@ export default function EmailTemplatesPage() {
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                className="text-red-600"
+                                className="text-destructive"
                                 onClick={() =>
                                   deleteMutation.mutate(template.id)
                                 }
@@ -338,7 +338,7 @@ function PreviewDialog({
             Preview of the rendered email template
           </DialogDescription>
         </DialogHeader>
-        <div className="border rounded-lg overflow-hidden bg-white">
+        <div className="border rounded-none overflow-hidden bg-white">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin" />

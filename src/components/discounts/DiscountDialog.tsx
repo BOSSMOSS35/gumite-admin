@@ -299,7 +299,7 @@ export function DiscountDialog({
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+          <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-none text-sm">
             <AlertCircle className="h-4 w-4" />
             {error}
           </div>
@@ -368,14 +368,14 @@ export function DiscountDialog({
                             key={type}
                             type="button"
                             onClick={() => setFormData({ ...formData, type })}
-                            className={`flex items-center gap-3 p-3 border rounded-lg text-left transition-colors ${
+                            className={`flex items-center gap-3 p-3 border rounded-none text-left transition-colors ${
                               isSelected
                                 ? "border-primary bg-primary/5"
                                 : "border-border hover:border-primary/50"
                             }`}
                           >
                             <div
-                              className={`p-2 rounded-lg ${
+                              className={`p-2 rounded-none ${
                                 isSelected ? "bg-primary/10" : "bg-muted"
                               }`}
                             >
@@ -680,7 +680,7 @@ export function DiscountDialog({
                 <div className="grid grid-cols-1 gap-3">
                   <button
                     type="button"
-                    className="flex items-center gap-3 p-4 border rounded-lg text-left hover:border-primary/50"
+                    className="flex items-center gap-3 p-4 border rounded-none text-left hover:border-primary/50"
                     onClick={() =>
                       setFormData({
                         ...formData,
@@ -702,7 +702,7 @@ export function DiscountDialog({
 
                   <button
                     type="button"
-                    className="flex items-center gap-3 p-4 border rounded-lg text-left hover:border-primary/50"
+                    className="flex items-center gap-3 p-4 border rounded-none text-left hover:border-primary/50"
                     onClick={() =>
                       setFormData({
                         ...formData,
@@ -724,7 +724,7 @@ export function DiscountDialog({
 
                   <button
                     type="button"
-                    className="flex items-center gap-3 p-4 border rounded-lg text-left hover:border-primary/50"
+                    className="flex items-center gap-3 p-4 border rounded-none text-left hover:border-primary/50"
                     onClick={() =>
                       setFormData({
                         ...formData,
@@ -752,7 +752,7 @@ export function DiscountDialog({
                       {formData.rules.map((rule, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                          className="flex items-center justify-between p-3 bg-muted rounded-none"
                         >
                           <span className="text-sm">{rule.description || rule.type}</span>
                           <Button
@@ -779,7 +779,7 @@ export function DiscountDialog({
             {/* Step 5: Review */}
             {step === 5 && (
               <div className="space-y-4">
-                <div className="p-4 border rounded-lg space-y-3">
+                <div className="p-4 border rounded-none space-y-3">
                   <div className="flex items-center gap-3">
                     {getTypeIcon(formData.type)}
                     <div>
@@ -858,7 +858,7 @@ export function DiscountDialog({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-none">
                   <div>
                     <div className="font-medium text-sm">Activate Immediately</div>
                     <p className="text-xs text-muted-foreground">

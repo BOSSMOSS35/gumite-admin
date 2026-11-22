@@ -327,7 +327,7 @@ export default function DiscountsPage() {
 
       {/* Error Alert */}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <Button
@@ -390,7 +390,7 @@ export default function DiscountsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => {
+                  aria-label="Refresh" onClick={() => {
                     refetchDiscounts();
                     refetchStats();
                     refetchActivity();
@@ -575,7 +575,7 @@ export default function DiscountsPage() {
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" aria-label="More actions">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -685,15 +685,15 @@ export default function DiscountsPage() {
                     <div key={item.id} className="flex gap-3 text-sm">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                         {item.activityType.includes("CREATED") ? (
-                          <Plus className="h-4 w-4 text-green-600" />
+                          <Plus className="h-4 w-4 text-success" />
                         ) : item.activityType.includes("ACTIVATED") ? (
-                          <Power className="h-4 w-4 text-green-600" />
+                          <Power className="h-4 w-4 text-success" />
                         ) : item.activityType.includes("DEACTIVATED") ? (
-                          <PowerOff className="h-4 w-4 text-yellow-600" />
+                          <PowerOff className="h-4 w-4 text-warning" />
                         ) : item.activityType.includes("DELETED") ? (
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         ) : item.activityType.includes("REDEEMED") ? (
-                          <Tag className="h-4 w-4 text-blue-600" />
+                          <Tag className="h-4 w-4 text-info" />
                         ) : (
                           <Activity className="h-4 w-4" />
                         )}

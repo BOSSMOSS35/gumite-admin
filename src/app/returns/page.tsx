@@ -186,7 +186,7 @@ export default function ReturnsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Returns</CardTitle>
-          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={loading}>
+          <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => refetch()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </CardHeader>
@@ -244,7 +244,7 @@ export default function ReturnsPage() {
               {activeFilters.map((filter) => (
                 <div
                   key={`${filter.id}-${filter.value}`}
-                  className="flex items-center gap-1 px-2 py-1 bg-muted rounded-md text-sm"
+                  className="flex items-center gap-1 px-2 py-1 bg-muted rounded-none text-sm"
                 >
                   <span>{filter.label}</span>
                   <button
@@ -294,7 +294,7 @@ export default function ReturnsPage() {
 
           {/* Error State */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-destructive/10 text-destructive rounded-none">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
               <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">

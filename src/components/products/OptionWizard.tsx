@@ -142,7 +142,7 @@ export function OptionWizard({
                 <div
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
                     index < currentStepIndex
-                      ? "bg-green-600 text-white"
+                      ? "bg-success text-white"
                       : index === currentStepIndex
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
@@ -173,7 +173,7 @@ export function OptionWizard({
               {index < steps.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 transition-colors ${
-                    index < currentStepIndex ? "bg-green-600" : "bg-muted"
+                    index < currentStepIndex ? "bg-success" : "bg-muted"
                   }`}
                 />
               )}
@@ -201,7 +201,7 @@ export function OptionWizard({
             <CompactHelp context="custom" />
 
             {selectedTemplate && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <div className="border border-primary/30 bg-primary/5 p-3">
                 <p className="text-xs text-primary">
                   <span className="font-semibold">Template Applied:</span> {selectedTemplate.name}
                   <br />
@@ -212,7 +212,7 @@ export function OptionWizard({
 
             <div className="space-y-3">
               {options.map((option, index) => (
-                <div key={index} className="rounded-lg border border-border bg-background p-4">
+                <div key={index} className="border border-border bg-background p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <label className="text-sm font-semibold">
                       Option {index + 1}
@@ -239,7 +239,7 @@ export function OptionWizard({
                         value={option.title}
                         onChange={(e) => handleOptionChange(index, "title", e.target.value)}
                         placeholder="e.g., Size, Color, Material"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        className="w-full rounded-none border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
 
@@ -253,7 +253,7 @@ export function OptionWizard({
                         onChange={(e) => handleOptionChange(index, "values", e.target.value)}
                         placeholder="e.g., UK 8.5 / EU 43, UK 9 / EU 43.5, UK 9.5 / EU 44, UK 10 / EU 44.5"
                         rows={3}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+                        className="w-full rounded-none border border-input bg-background px-3 py-2 text-sm font-mono"
                       />
                       <p className="mt-1 text-xs text-muted-foreground">
                         {option.values.length} value{option.values.length !== 1 ? "s" : ""}
@@ -267,7 +267,7 @@ export function OptionWizard({
             {options.length < 3 && (
               <button
                 onClick={handleAddOption}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/50"
+                className="flex w-full items-center justify-center gap-2 rounded-none border border-dashed border-border bg-muted/30 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/50"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -284,14 +284,14 @@ export function OptionWizard({
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep("choose-template")}
-                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                className="border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
               >
                 Back
               </button>
               <button
                 onClick={() => setCurrentStep("preview-variants")}
                 disabled={!canProceedToPreview}
-                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-none bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue to Preview
               </button>
@@ -308,8 +308,8 @@ export function OptionWizard({
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">Your Options</h4>
               {options.map((option, index) => (
-                <div key={index} className="rounded-lg border border-border bg-muted/30 p-3">
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div key={index} className="border border-border bg-muted/30 p-3">
+                  <div className="mb-1 text-xs font-semibold text-muted-foreground">
                     {option.title}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -333,13 +333,13 @@ export function OptionWizard({
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep("configure-options")}
-                className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+                className="border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
               >
                 Back to Edit
               </button>
               <button
                 onClick={handleConfirm}
-                className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                className="flex-1 rounded-none bg-success px-4 py-2 text-sm font-medium text-white hover:bg-success"
               >
                 Create Options & Variants
               </button>

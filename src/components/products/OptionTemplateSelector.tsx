@@ -45,7 +45,7 @@ export function OptionTemplateSelector({
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
             className={`
-              flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+              flex items-center gap-1.5 rounded-none px-3 py-2 text-sm font-medium transition-colors
               ${
                 selectedCategory === cat.id
                   ? "bg-primary text-primary-foreground"
@@ -73,7 +73,7 @@ export function OptionTemplateSelector({
           {/* Custom Option at Bottom */}
           <button
             onClick={onCustom}
-            className="w-full rounded-lg border border-dashed border-border bg-muted/30 p-4 text-left transition-colors hover:bg-muted/50"
+            className="w-full rounded-none border border-dashed border-border bg-muted/30 p-4 text-left transition-colors hover:bg-muted/50"
           >
             <div className="flex items-start gap-3">
               <div className="text-2xl">✏️</div>
@@ -87,7 +87,7 @@ export function OptionTemplateSelector({
           </button>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
+        <div className="border border-border bg-muted/30 p-6 text-center">
           <div className="text-4xl mb-3">✏️</div>
           <h3 className="font-semibold mb-2">Custom Options</h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -95,7 +95,7 @@ export function OptionTemplateSelector({
           </p>
           <button
             onClick={onCustom}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Create Custom Options
           </button>
@@ -119,7 +119,7 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
   const variantCount = calculateVariantCount(template.options);
 
   return (
-    <div className="rounded-lg border border-border bg-background transition-shadow hover:shadow-md">
+    <div className="border border-border bg-background transition-shadow hover:shadow-md">
       {/* ━━━ Header (Always Visible) ━━━ */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -186,13 +186,13 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
           {/* Options Preview */}
           <div className="space-y-2">
             {template.options.map((option, i) => (
-              <div key={i} className="rounded-lg bg-muted/50 p-3">
+              <div key={i} className="bg-muted/50 p-3">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className="text-xs font-semibold text-muted-foreground">
                     {option.title}
                   </span>
                   {option.recommended && (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
                       Recommended
                     </span>
                   )}
@@ -212,9 +212,9 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
           </div>
 
           {/* Help Text */}
-          <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">
+          <div className="bg-info/10 p-3 text-xs text-info">
             <div className="flex gap-2">
-              <div className="shrink-0 text-blue-600">
+              <div className="shrink-0 text-info">
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -255,7 +255,7 @@ function TemplateCard({ template, onSelect }: TemplateCardProps) {
           {/* Apply Button */}
           <button
             onClick={onSelect}
-            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="w-full rounded-none bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Use This Template
           </button>

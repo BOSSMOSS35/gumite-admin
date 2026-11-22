@@ -65,9 +65,9 @@ export function getUserInitials(user: InternalUserInfo | null): string {
 export function getRoleBadgeColor(role: string): string {
   switch (role) {
     case "ADMIN":
-      return "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300";
+      return "bg-destructive/10 text-destructive ";
     case "CUSTOMER":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300";
+      return "bg-info/10 text-info ";
     case "GUEST":
       return "bg-gray-100 text-gray-800 dark:bg-zinc-500/10 dark:text-zinc-300";
     default:

@@ -239,7 +239,7 @@ export default function TaxRegionsSettingsPage() {
       </Breadcrumb>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-none border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
         </div>
@@ -265,7 +265,7 @@ export default function TaxRegionsSettingsPage() {
         </CardHeader>
         <CardContent>
           {taxRegions.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+            <div className="border border-dashed p-8 text-center text-sm text-muted-foreground">
               No tax regions found. Create a region in <span className="font-medium">Settings &gt; Regions</span> first.
             </div>
           ) : (
@@ -304,7 +304,7 @@ export default function TaxRegionsSettingsPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="More actions">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -350,7 +350,7 @@ export default function TaxRegionsSettingsPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" aria-label="More actions">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

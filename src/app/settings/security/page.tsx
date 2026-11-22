@@ -115,13 +115,13 @@ function formatRelativeTime(dateString: string | null | undefined): string {
 function getSeverityColor(severity: string): string {
   switch (severity) {
     case "CRITICAL":
-      return "bg-red-600 text-white";
+      return "bg-destructive text-white";
     case "HIGH":
-      return "bg-orange-500 text-white";
+      return "bg-warning text-white";
     case "MEDIUM":
-      return "bg-yellow-500 text-black";
+      return "bg-warning text-black";
     case "LOW":
-      return "bg-blue-500 text-white";
+      return "bg-info text-white";
     default:
       return "bg-gray-500 text-white";
   }
@@ -256,7 +256,7 @@ export default function SecuritySettingsPage() {
 
       {/* Error Alert */}
       {displayError && (
-        <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 rounded-lg">
+        <div className="flex items-center gap-2 p-4 text-destructive bg-destructive/10 rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{displayError}</span>
           <Button variant="ghost" size="sm" onClick={() => setDisplayError(null)} className="ml-auto">
@@ -283,7 +283,7 @@ export default function SecuritySettingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Blocked (24h)</CardTitle>
-            <ShieldX className="h-4 w-4 text-red-500" />
+            <ShieldX className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -296,7 +296,7 @@ export default function SecuritySettingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Unresolved Events</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -309,7 +309,7 @@ export default function SecuritySettingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">VPN Flagged (24h)</CardTitle>
-            <WifiOff className="h-4 w-4 text-orange-500" />
+            <WifiOff className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -322,7 +322,7 @@ export default function SecuritySettingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Proxy Flagged (24h)</CardTitle>
-            <Globe className="h-4 w-4 text-blue-500" />
+            <Globe className="h-4 w-4 text-info" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -337,12 +337,12 @@ export default function SecuritySettingsPage() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         {isConnected ? (
           <>
-            <Wifi className="h-4 w-4 text-green-500" />
+            <Wifi className="h-4 w-4 text-success" />
             <span>Real-time updates connected</span>
           </>
         ) : (
           <>
-            <WifiOff className="h-4 w-4 text-red-500" />
+            <WifiOff className="h-4 w-4 text-destructive" />
             <span>Real-time updates disconnected</span>
           </>
         )}
@@ -424,7 +424,7 @@ export default function SecuritySettingsPage() {
                           </Badge>
                         )}
                         {!session.flaggedVpn && !session.flaggedProxy && (session.fraudScore == null || session.fraudScore < 75) && (
-                          <Badge variant="outline" className="text-xs text-green-600">Clean</Badge>
+                          <Badge variant="outline" className="text-xs text-success">Clean</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -435,7 +435,7 @@ export default function SecuritySettingsPage() {
                         onClick={() => dashboard.openRevokeDialog(session)}
                         disabled={dashboard.isRevoking}
                       >
-                        <XCircle className="h-4 w-4 text-red-500" />
+                        <XCircle className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -465,11 +465,11 @@ export default function SecuritySettingsPage() {
           <Tabs value={dashboard.ipListTab} onValueChange={(v) => dashboard.setIpListTab(v as "ALLOWLIST" | "BLOCKLIST")}>
             <TabsList className="mb-4">
               <TabsTrigger value="ALLOWLIST" className="gap-2">
-                <ShieldCheck className="h-4 w-4 text-green-500" />
+                <ShieldCheck className="h-4 w-4 text-success" />
                 Allowlist
               </TabsTrigger>
               <TabsTrigger value="BLOCKLIST" className="gap-2">
-                <ShieldX className="h-4 w-4 text-red-500" />
+                <ShieldX className="h-4 w-4 text-destructive" />
                 Blocklist
               </TabsTrigger>
             </TabsList>
@@ -511,7 +511,7 @@ export default function SecuritySettingsPage() {
                             size="sm"
                             onClick={() => dashboard.removeIp(entry.id)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -550,7 +550,7 @@ export default function SecuritySettingsPage() {
                 <Button
                   size="sm"
                   onClick={dashboard.openBulkResolveDialog}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-success hover:bg-success"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Resolve Selected
@@ -635,12 +635,12 @@ export default function SecuritySettingsPage() {
                     </TableCell>
                     <TableCell>
                       {event.resolved ? (
-                        <Badge variant="outline" className="text-green-600">
+                        <Badge variant="outline" className="text-success">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Resolved
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-yellow-600">
+                        <Badge variant="outline" className="text-warning">
                           <AlertTriangle className="h-3 w-3 mr-1" />
                           Open
                         </Badge>
@@ -653,7 +653,7 @@ export default function SecuritySettingsPage() {
                           size="sm"
                           onClick={() => dashboard.openResolveDialog(event)}
                         >
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                         </Button>
                       )}
                     </TableCell>
@@ -836,7 +836,7 @@ export default function SecuritySettingsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRevokeSession}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive"
               disabled={dashboard.isRevoking}
             >
               {dashboard.isRevoking ? (
@@ -914,7 +914,7 @@ export default function SecuritySettingsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {dashboard.eventToResolve && (
-              <div className="p-3 bg-muted rounded-lg">
+              <div className="p-3 bg-muted rounded-none">
                 <p className="font-medium">{dashboard.eventToResolve.eventType}</p>
                 <p className="text-sm text-muted-foreground">{dashboard.eventToResolve.description}</p>
               </div>
@@ -933,7 +933,7 @@ export default function SecuritySettingsPage() {
             <Button variant="outline" onClick={dashboard.closeResolveDialog}>
               Cancel
             </Button>
-            <Button onClick={handleResolveEvent} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleResolveEvent} className="bg-success hover:bg-success">
               <CheckCircle className="h-4 w-4 mr-2" />
               Mark Resolved
             </Button>
@@ -968,7 +968,7 @@ export default function SecuritySettingsPage() {
             <Button
               onClick={handleBulkResolve}
               disabled={dashboard.isBulkResolving || dashboard.selectedEventIds.size === 0}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success"
             >
               {dashboard.isBulkResolving ? (
                 <>

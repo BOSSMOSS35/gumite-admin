@@ -164,8 +164,8 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Activity className="h-6 w-6 text-blue-500" />
+              <div className="p-3 bg-info/10 rounded-none">
+                <Activity className="h-6 w-6 text-info" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Total Executions</p>
@@ -178,8 +178,8 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-500/10 rounded-xl">
-                <TrendingUp className="h-6 w-6 text-green-500" />
+              <div className="p-3 bg-success/10 rounded-none">
+                <TrendingUp className="h-6 w-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Success Rate</p>
@@ -192,8 +192,8 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-500/10 rounded-xl">
-                <XCircle className="h-6 w-6 text-red-500" />
+              <div className="p-3 bg-destructive/10 rounded-none">
+                <XCircle className="h-6 w-6 text-destructive" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Failed</p>
@@ -206,8 +206,8 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-500/10 rounded-xl">
-                <Clock className="h-6 w-6 text-amber-500" />
+              <div className="p-3 bg-warning/10 rounded-none">
+                <Clock className="h-6 w-6 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-medium">Avg Duration</p>
@@ -337,7 +337,7 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
         <Card className="flex flex-col">
           <CardHeader className="pb-0">
             <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-500" />
+              <Zap className="h-4 w-4 text-warning" />
               <CardTitle className="text-base">Slowest Steps</CardTitle>
             </div>
             <CardDescription>Average duration by step</CardDescription>
@@ -393,7 +393,7 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               <CardTitle className="text-base">Error Hotspots</CardTitle>
             </div>
             <CardDescription>Steps with the most failures</CardDescription>
@@ -405,7 +405,7 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
                   key={step.fullName}
                   className="flex items-center gap-4"
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/10 text-red-500 font-semibold text-sm">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-destructive/10 text-destructive font-semibold text-sm">
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -415,7 +415,7 @@ export function WorkflowStats({ executions }: WorkflowStatsProps) {
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-red-500 rounded-full transition-all"
+                          className="h-full bg-destructive rounded-full transition-all"
                           style={{
                             width: `${Math.min((step.failures / stats.errorHotspots[0].failures) * 100, 100)}%`,
                           }}

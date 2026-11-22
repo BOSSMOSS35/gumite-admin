@@ -111,10 +111,10 @@ function checkPasswordStrength(password: string): {
   if (/\d/.test(password)) score++;
   if (/[^a-zA-Z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score, label: "Weak", color: "bg-red-500" };
-  if (score <= 2) return { score, label: "Fair", color: "bg-yellow-500" };
-  if (score <= 3) return { score, label: "Good", color: "bg-blue-500" };
-  return { score, label: "Strong", color: "bg-green-500" };
+  if (score <= 1) return { score, label: "Weak", color: "bg-destructive" };
+  if (score <= 2) return { score, label: "Fair", color: "bg-warning" };
+  if (score <= 3) return { score, label: "Good", color: "bg-info" };
+  return { score, label: "Strong", color: "bg-success" };
 }
 
 function PasswordTokenPageInner({ variant }: { variant: PasswordTokenVariant }) {
@@ -184,7 +184,7 @@ function PasswordTokenPageInner({ variant }: { variant: PasswordTokenVariant }) 
         heroTitleAccent={content.leftTitleAccent}
         heroDescription={content.leftDescription}
       >
-        <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-6">
+        <div className="w-full max-w-[430px] rounded-none border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-6">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{content.missingTokenMessage}</AlertDescription>
@@ -208,20 +208,20 @@ function PasswordTokenPageInner({ variant }: { variant: PasswordTokenVariant }) 
         heroTitleAccent={content.successHeroTitleAccent}
         heroDescription={content.successMessage}
       >
-        <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
+        <div className="w-full max-w-[430px] rounded-none border border-zinc-200 bg-white p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
           <div className="flex lg:hidden items-center gap-3 justify-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900">
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-zinc-900">
               <Store className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-semibold">Gumite</span>
           </div>
 
           <div className="text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
             <h2 className="text-2xl font-semibold tracking-tight">{content.successTitle}</h2>
-            <p className="text-zinc-500">{content.successMessage}</p>
+            <p className="text-zinc-400">{content.successMessage}</p>
           </div>
 
           <Button className="w-full h-11 font-medium" onClick={() => router.push("/login")}>
@@ -238,9 +238,9 @@ function PasswordTokenPageInner({ variant }: { variant: PasswordTokenVariant }) 
       heroTitleAccent={content.leftTitleAccent}
       heroDescription={content.leftDescription}
     >
-      <div className="w-full max-w-[430px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
+      <div className="w-full max-w-[430px] rounded-none border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.45)] sm:p-8 space-y-8">
         <div className="flex lg:hidden items-center gap-3 justify-center mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-none bg-zinc-900 dark:bg-zinc-700">
             <Store className="h-6 w-6 text-white" />
           </div>
           <span className="text-xl font-semibold text-zinc-900 dark:text-white">Gumite</span>
@@ -250,7 +250,7 @@ function PasswordTokenPageInner({ variant }: { variant: PasswordTokenVariant }) 
           <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
             {content.headerTitle}
           </h2>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-zinc-400 dark:text-zinc-400">
             {email ? (
               <>
                 {content.headerDescription}{" "}
@@ -305,7 +305,7 @@ function PasswordTokenPageInner({ variant }: { variant: PasswordTokenVariant }) 
                       style={{ width: `${Math.max(strength.score, 1) * 20}%` }}
                     />
                   </div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs text-zinc-400 dark:text-zinc-400">
                     Password strength: <span className="font-medium">{strength.label}</span>
                   </p>
                 </div>
@@ -359,7 +359,7 @@ function AuthPageShell({
 }) {
   return (
     <div className="relative flex min-h-screen">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-zinc-950 via-zinc-900 to-neutral-900 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-foreground relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div
             className="absolute top-0 left-0 h-full w-full"
@@ -371,7 +371,7 @@ function AuthPageShell({
         </div>
         <div className="relative z-10 flex flex-col justify-between w-full p-12">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-white/10">
               <Store className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-semibold text-white">Gumite</span>
@@ -384,21 +384,21 @@ function AuthPageShell({
             </h1>
             <p className="text-zinc-300/90 text-lg max-w-md">{heroDescription}</p>
             <div className="grid grid-cols-2 gap-3 max-w-md pt-2">
-              <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300 flex items-center gap-2">
+              <div className="border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300 flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
                 Encrypted storage
               </div>
-              <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300 flex items-center gap-2">
+              <div className="border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-300 flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
                 Role-based access
               </div>
             </div>
           </div>
-          <div className="text-sm text-zinc-500">Gumite Commerce Platform</div>
+          <div className="text-sm text-zinc-400">Gumite Commerce Platform</div>
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+      <div className="flex flex-1 items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
         {children}
       </div>
     </div>

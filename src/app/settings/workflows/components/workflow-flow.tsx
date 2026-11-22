@@ -206,9 +206,9 @@ export function WorkflowFlow({ execution, onNodeSelect, selectedNode }: Workflow
       proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={20} size={1} className="bg-muted/30" />
-      <Controls className="bg-background border rounded-lg shadow-sm" />
+      <Controls className="bg-background border rounded-none shadow-sm" />
       <MiniMap 
-        className="bg-card border rounded-lg shadow-sm !m-4"
+        className="bg-card border rounded-none shadow-sm !m-4"
         nodeColor={(node) => {
           const data = node.data as unknown as WorkflowNodeData | undefined;
           const status = data?.status;

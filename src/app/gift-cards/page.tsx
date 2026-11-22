@@ -360,7 +360,7 @@ export default function GiftCardsPage() {
 
       {/* Error Alert */}
       {error && (
-        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
           <Button
@@ -530,10 +530,10 @@ export default function GiftCardsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
-                            onClick={() => copyCode(card.code)}
+                            aria-label="Confirm" onClick={() => copyCode(card.code)}
                           >
                             {copiedCode === card.code ? (
-                              <Check className="h-3 w-3 text-green-600" />
+                              <Check className="h-3 w-3 text-success" />
                             ) : (
                               <Copy className="h-3 w-3" />
                             )}
@@ -570,13 +570,13 @@ export default function GiftCardsPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className={card.remainingAmount === 0 ? "text-muted-foreground" : "font-medium text-green-600"}>
+                        <span className={card.remainingAmount === 0 ? "text-muted-foreground" : "font-medium text-success"}>
                           {card.formattedBalance}
                         </span>
                       </TableCell>
                       <TableCell>
                         {card.expiresAt ? (
-                          <div className={`text-sm ${card.isExpired ? "text-red-600" : ""}`}>
+                          <div className={`text-sm ${card.isExpired ? "text-destructive" : ""}`}>
                             {new Date(card.expiresAt).toLocaleDateString()}
                           </div>
                         ) : (
@@ -593,7 +593,7 @@ export default function GiftCardsPage() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" aria-label="More actions">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

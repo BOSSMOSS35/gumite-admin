@@ -39,18 +39,18 @@ function getNotificationIcon(eventType: string) {
     case "ORDER_CANCELLED":
     case "ORDER_FULFILLED":
     case "REFUND_CREATED":
-      return <Package className="h-4 w-4 text-blue-500" />;
+      return <Package className="h-4 w-4 text-info" />;
     case "CUSTOMER_REGISTERED":
-      return <User className="h-4 w-4 text-green-500" />;
+      return <User className="h-4 w-4 text-success" />;
     case "LOW_STOCK_ALERT":
     case "PRODUCT_OUT_OF_STOCK":
-      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      return <AlertTriangle className="h-4 w-4 text-warning" />;
     case "FULFILLMENT_CREATED":
     case "FULFILLMENT_SHIPPED":
     case "FULFILLMENT_DELIVERED":
-      return <CreditCard className="h-4 w-4 text-purple-500" />;
+      return <CreditCard className="h-4 w-4 text-info" />;
     case "SECURITY_ALERT":
-      return <ShieldAlert className="h-4 w-4 text-red-500" />;
+      return <ShieldAlert className="h-4 w-4 text-destructive" />;
     default:
       return <Bell className="h-4 w-4 text-gray-500" />;
   }
@@ -97,7 +97,7 @@ function NotificationItem({
       onClick={handleClick}
       className={cn(
         "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50",
-        !notification.isRead && "bg-blue-50/50 dark:bg-blue-950/20"
+        !notification.isRead && "bg-info/10 "
       )}
     >
       <div className="mt-0.5">{getNotificationIcon(notification.eventType)}</div>
@@ -112,7 +112,7 @@ function NotificationItem({
             {notification.title}
           </p>
           {!notification.isRead && (
-            <span className="flex-shrink-0 h-2 w-2 rounded-full bg-blue-500" />
+            <span className="flex-shrink-0 h-2 w-2 rounded-full bg-info" />
           )}
         </div>
         {notification.message && (
@@ -173,7 +173,7 @@ export function NotificationBell() {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-medium text-white">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -209,7 +209,7 @@ export function NotificationBell() {
               size="icon"
               className="h-8 w-8"
               onClick={handleGoToSettings}
-            >
+             aria-label="Settings">
               <Settings className="h-4 w-4" />
             </Button>
           </div>

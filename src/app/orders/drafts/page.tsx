@@ -123,7 +123,7 @@ export default function DraftOrdersPage() {
 
           {/* Error State */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 bg-destructive/10 text-destructive rounded-none">
               <AlertCircle className="h-5 w-5" />
               <span>{error instanceof Error ? error.message : "Failed to load draft orders"}</span>
               <Button variant="ghost" size="sm" onClick={() => refetch()} className="ml-auto">

@@ -30,7 +30,7 @@ function Modal({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           className={cn(
-            "fixed inset-0 z-[75] bg-black/50 backdrop-blur-sm",
+            "fixed inset-0 z-[75] bg-black/50",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           )}
@@ -40,7 +40,7 @@ function Modal({
           className={cn(
             "fixed left-[50%] top-[50%] z-[75] translate-x-[-50%] translate-y-[-50%]",
             "flex flex-col justify-start w-full transform p-5 text-left",
-            "bg-background shadow-xl border rounded-lg max-h-[85vh]",
+            "bg-background border rounded-none max-h-[85vh]",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -71,7 +71,7 @@ function Title({ children, className }: { children: React.ReactNode; className?:
       <div className="text-large-semi font-semibold">{children}</div>
       <button
         onClick={close}
-        className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        className="opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         data-testid="close-modal-button"
       >
         <X className="h-4 w-4" />

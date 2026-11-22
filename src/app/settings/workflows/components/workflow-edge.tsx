@@ -29,9 +29,9 @@ interface WorkflowEdgeComponentProps {
 
 const edgeColors: Record<StepStatus, string> = {
   PENDING: "stroke-muted-foreground/40",
-  RUNNING: "stroke-blue-500",
-  COMPLETED: "stroke-green-500",
-  FAILED: "stroke-red-500",
+  RUNNING: "stroke-info",
+  COMPLETED: "stroke-success",
+  FAILED: "stroke-destructive",
   SKIPPED: "stroke-muted-foreground/50",
 };
 
@@ -91,7 +91,7 @@ function WorkflowEdgeComponent({
 
       {/* Animated flow dots for running edges */}
       {isActive && (
-        <circle r="4" className="fill-blue-500">
+        <circle r="4" className="fill-info">
           <animateMotion dur="1s" repeatCount="indefinite" path={edgePath} />
         </circle>
       )}
@@ -107,7 +107,7 @@ function WorkflowEdgeComponent({
             }}
             className="nodrag nopan"
           >
-            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-success flex items-center justify-center">
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"
@@ -137,7 +137,7 @@ function WorkflowEdgeComponent({
             }}
             className="nodrag nopan"
           >
-            <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-destructive flex items-center justify-center">
               <svg
                 className="w-3 h-3 text-white"
                 fill="none"

@@ -202,7 +202,7 @@ function DraggableCategoryRow({
         }}
         className={`group transition-colors ${
           isDragging ? "opacity-50" : ""
-        } ${isOver || isDragOver ? "bg-blue-50 border-blue-300" : ""}`}
+        } ${isOver || isDragOver ? "bg-info/10 border-info/30" : ""}`}
         style={style}
       >
         <TableCell>
@@ -232,7 +232,7 @@ function DraggableCategoryRow({
               <span className="w-6" />
             )}
             {category.image && level === 0 ? (
-              <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
+              <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-none border bg-muted">
                 <img
                   src={getImageUrl(category.image) || ""}
                   alt={category.name}
@@ -240,7 +240,7 @@ function DraggableCategoryRow({
                 />
               </div>
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-md border bg-muted">
+              <div className="flex h-8 w-8 items-center justify-center rounded-none border bg-muted">
                 {hasChildren ? (
                   <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 ) : (
@@ -266,7 +266,7 @@ function DraggableCategoryRow({
         <TableCell className="text-center">{category.productCount}</TableCell>
         <TableCell>
           {category.isActive ? (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">Active</Badge>
+            <Badge className="bg-success/10 text-success ">Active</Badge>
           ) : (
             <Badge variant="secondary">Inactive</Badge>
           )}
@@ -303,7 +303,7 @@ function DraggableCategoryRow({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-red-600"
+                className="text-destructive"
                 onClick={() => onDelete(category)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -347,7 +347,7 @@ function DraggableCategoryRow({
 // Drag overlay component
 function CategoryDragOverlay({ category }: { category: CategoryWithChildren }) {
   return (
-    <div className="flex items-center gap-2 p-3 bg-white border rounded-lg shadow-lg">
+    <div className="flex items-center gap-2 p-3 bg-white border rounded-none">
       <Move className="h-4 w-4 text-muted-foreground" />
       <Folder className="h-4 w-4 text-muted-foreground" />
       <span className="font-medium">{category.name}</span>
@@ -434,7 +434,7 @@ function DraggableProduct({
 // Product drag overlay
 function ProductDragOverlay({ product }: { product: CategoryProductItem }) {
   return (
-    <div className="flex items-center gap-2 p-3 bg-white border rounded-lg shadow-lg">
+    <div className="flex items-center gap-2 p-3 bg-white border rounded-none">
       <Move className="h-4 w-4 text-muted-foreground" />
       <Package className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm">{product.title}</span>
@@ -452,9 +452,9 @@ function RootDropZone({ isOver }: { isOver: boolean }) {
   return (
     <div
       ref={setNodeRef}
-      className={`p-4 border-2 border-dashed rounded-lg text-center transition-colors ${
+      className={`p-4 border-2 border-dashed rounded-none text-center transition-colors ${
         isOver
-          ? "border-blue-400 bg-blue-50 text-blue-600"
+          ? "border-info bg-info/10 text-info"
           : "border-muted text-muted-foreground"
       }`}
     >
@@ -906,7 +906,7 @@ export default function CategoriesPage() {
             <DialogDescription>
               Are you sure you want to delete &quot;{categoryToDelete?.name}&quot;?
               {categoryToDelete && categoryToDelete.subcategoryCount > 0 && (
-                <span className="block mt-2 text-red-600">
+                <span className="block mt-2 text-destructive">
                   This category has {categoryToDelete.subcategoryCount} subcategories
                   that will also be affected.
                 </span>
@@ -1046,13 +1046,13 @@ export default function CategoriesPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-success/10 text-success rounded-none">
           <Check className="h-5 w-5" />
           <span>{success}</span>
         </div>
       )}
       {(error || queryError) && (
-        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300 rounded-lg">
+        <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-none">
           <AlertCircle className="h-5 w-5" />
           <span>{error || (queryError instanceof Error ? queryError.message : "Failed to load categories")}</span>
           <button onClick={() => setError(null)} className="ml-auto">
@@ -1079,8 +1079,8 @@ export default function CategoriesPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-blue-100 p-2">
-              <Layers className="h-5 w-5 text-blue-600" />
+            <div className="rounded-full bg-info/10 p-2">
+              <Layers className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Categories</p>
@@ -1090,8 +1090,8 @@ export default function CategoriesPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-green-100 p-2">
-              <Folder className="h-5 w-5 text-green-600" />
+            <div className="rounded-full bg-success/10 p-2">
+              <Folder className="h-5 w-5 text-success" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Active Categories</p>
@@ -1101,8 +1101,8 @@ export default function CategoriesPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-purple-100 p-2">
-              <Package className="h-5 w-5 text-purple-600" />
+            <div className="rounded-full bg-info/10 p-2">
+              <Package className="h-5 w-5 text-info" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Products</p>

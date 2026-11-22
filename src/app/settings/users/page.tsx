@@ -416,7 +416,7 @@ export default function UsersSettingsPage() {
 
           {/* Error state */}
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 text-red-600 bg-red-50 rounded-lg">
+            <div className="flex items-center gap-2 p-4 mb-4 text-destructive bg-destructive/10 rounded-none">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
             </div>
@@ -476,15 +476,15 @@ export default function UsersSettingsPage() {
                         </TableCell>
                         <TableCell>
                           {user.inviteStatus === "PENDING" ? (
-                            <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                            <Badge variant="outline" className="border-warning text-warning">
                               Pending Invite
                             </Badge>
                           ) : user.inviteStatus === "ACCEPTED" ? (
-                            <Badge variant="default" className="bg-green-600">
+                            <Badge variant="default" className="bg-success">
                               Active
                             </Badge>
                           ) : user.inviteStatus === "EXPIRED" ? (
-                            <Badge variant="secondary" className="text-red-500">
+                            <Badge variant="secondary" className="text-destructive">
                               Expired
                             </Badge>
                           ) : user.isActive ? (
@@ -501,7 +501,7 @@ export default function UsersSettingsPage() {
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" aria-label="More actions">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -518,7 +518,7 @@ export default function UsersSettingsPage() {
                               {!user.isActive && (
                                 <DropdownMenuItem
                                   onClick={() => handleRestore(user)}
-                                  className="text-green-600"
+                                  className="text-success"
                                 >
                                   <ArchiveRestore className="h-4 w-4 mr-2" />
                                   Restore User
@@ -526,14 +526,14 @@ export default function UsersSettingsPage() {
                               )}
                               <DropdownMenuItem
                                 onClick={() => openArchiveConfirm(user)}
-                                className="text-amber-600"
+                                className="text-warning"
                               >
                                 <Archive className="h-4 w-4 mr-2" />
                                 Archive User
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => openHardDeleteConfirm(user)}
-                                className="text-red-600"
+                                className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete Permanently
@@ -575,15 +575,15 @@ export default function UsersSettingsPage() {
 
           <div className="grid gap-4 py-4">
             {/* Mode toggle */}
-            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+            <div className="flex gap-1 p-1 bg-muted rounded-none">
               <button
-                className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${inviteMode === "create" ? "bg-background shadow font-medium" : "text-muted-foreground"}`}
+                className={`flex-1 text-sm py-1.5 rounded-none transition-colors ${inviteMode === "create" ? "bg-background shadow font-medium" : "text-muted-foreground"}`}
                 onClick={() => setInviteMode("create")}
               >
                 Create with Password
               </button>
               <button
-                className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${inviteMode === "invite" ? "bg-background shadow font-medium" : "text-muted-foreground"}`}
+                className={`flex-1 text-sm py-1.5 rounded-none transition-colors ${inviteMode === "invite" ? "bg-background shadow font-medium" : "text-muted-foreground"}`}
                 onClick={() => setInviteMode("invite")}
               >
                 Send Invite Email
@@ -591,7 +591,7 @@ export default function UsersSettingsPage() {
             </div>
 
             {inviteError && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-none">
                 <AlertCircle className="h-4 w-4" />
                 {inviteError}
               </div>
@@ -657,7 +657,7 @@ export default function UsersSettingsPage() {
                 <Shield className="h-4 w-4" />
                 Roles *
               </Label>
-              <div className="grid gap-2 p-3 border rounded-lg">
+              <div className="grid gap-2 p-3 border rounded-none">
                 {AVAILABLE_ROLES.map((role) => (
                   <div key={role.value} className="flex items-start gap-3">
                     <Checkbox
@@ -721,13 +721,13 @@ export default function UsersSettingsPage() {
 
           <div className="grid gap-4 py-4">
             {editError && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-none">
                 <AlertCircle className="h-4 w-4" />
                 {editError}
               </div>
             )}
 
-            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-muted rounded-none">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={editingUser?.avatarUrl || undefined} />
                 <AvatarFallback>{editingUser ? getUserInitials(editingUser) : "?"}</AvatarFallback>
@@ -762,7 +762,7 @@ export default function UsersSettingsPage() {
                 <Shield className="h-4 w-4" />
                 Roles *
               </Label>
-              <div className="grid gap-2 p-3 border rounded-lg">
+              <div className="grid gap-2 p-3 border rounded-none">
                 {AVAILABLE_ROLES.map((role) => (
                   <div key={role.value} className="flex items-start gap-3">
                     <Checkbox
@@ -784,7 +784,7 @@ export default function UsersSettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
+            <div className="flex items-center gap-3 p-3 border rounded-none">
               <Checkbox
                 id="edit-active"
                 checked={editIsActive}
@@ -824,7 +824,7 @@ export default function UsersSettingsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Archive className="h-5 w-5 text-amber-600" />
+              <Archive className="h-5 w-5 text-warning" />
               Archive User
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -836,7 +836,7 @@ export default function UsersSettingsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleArchive}
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-warning hover:bg-warning"
               disabled={archiveMutation.isPending}
             >
               {archiveMutation.isPending ? (
@@ -866,7 +866,7 @@ export default function UsersSettingsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {resetPasswordError && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-none">
                 <AlertCircle className="h-4 w-4" />
                 {resetPasswordError}
               </div>
@@ -917,16 +917,16 @@ export default function UsersSettingsPage() {
       }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
               Permanently Delete User
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
-                You are about to <strong className="text-red-600">permanently delete</strong>{" "}
+                You are about to <strong className="text-destructive">permanently delete</strong>{" "}
                 <strong>{hardDeletingUser?.email}</strong>.
               </p>
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-none text-destructive text-sm">
                 <p className="font-semibold mb-1">This action cannot be undone!</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>All user data will be permanently removed</li>
@@ -952,7 +952,7 @@ export default function UsersSettingsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleHardDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive"
               disabled={hardDeleteMutation.isPending || hardDeleteConfirmText !== "DELETE"}
             >
               {hardDeleteMutation.isPending ? (

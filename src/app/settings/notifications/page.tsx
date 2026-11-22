@@ -304,12 +304,12 @@ export default function NotificationSettingsPage() {
               <span>Browser notifications are not supported in this browser</span>
             </div>
           ) : browserPermission === "granted" ? (
-            <div className="flex items-center gap-2 text-green-600">
+            <div className="flex items-center gap-2 text-success">
               <CheckCircle className="h-4 w-4" />
               <span>Browser notifications are enabled</span>
             </div>
           ) : browserPermission === "denied" ? (
-            <div className="flex items-center gap-2 text-red-600">
+            <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-4 w-4" />
               <span>
                 Browser notifications are blocked. Please update your browser settings to enable them.
@@ -332,8 +332,8 @@ export default function NotificationSettingsPage() {
 
       {/* Error Display */}
       {preferencesError && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="flex items-center gap-2 py-4 text-red-600">
+        <Card className="border-destructive/30 bg-destructive/10">
+          <CardContent className="flex items-center gap-2 py-4 text-destructive">
             <AlertCircle className="h-4 w-4" />
             <span>{getErrorMessage(preferencesError)}</span>
           </CardContent>

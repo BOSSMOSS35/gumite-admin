@@ -49,11 +49,11 @@ function getStockStatus(available: number, stocked: number) {
 function getStatusBadge(status: string) {
   switch (status) {
     case "in_stock":
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-300">In Stock</Badge>;
+      return <Badge className="bg-success/10 text-success ">In Stock</Badge>;
     case "low_stock":
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-300">Low Stock</Badge>;
+      return <Badge className="bg-warning/10 text-warning ">Low Stock</Badge>;
     case "out_of_stock":
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300">Out of Stock</Badge>;
+      return <Badge className="bg-destructive/10 text-destructive ">Out of Stock</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -118,7 +118,7 @@ export default function InventoryItemPage({
       {/* Page Header */}
       <div className="flex items-center gap-4">
         <Link href="/inventory">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -139,25 +139,25 @@ export default function InventoryItemPage({
       {status !== "in_stock" && (
         <Card className={
           status === "out_of_stock"
-            ? "border-red-200 bg-red-50"
-            : "border-yellow-200 bg-yellow-50"
+            ? "border-destructive/30 bg-destructive/10"
+            : "border-warning/30 bg-warning/10"
         }>
           <CardContent className="flex items-center gap-4 p-4">
             <div className={`rounded-full p-2 ${
-              status === "out_of_stock" ? "bg-red-100" : "bg-yellow-100"
+              status === "out_of_stock" ? "bg-destructive/10" : "bg-warning/10"
             }`}>
               <AlertTriangle className={`h-5 w-5 ${
-                status === "out_of_stock" ? "text-red-600" : "text-yellow-600"
+                status === "out_of_stock" ? "text-destructive" : "text-warning"
               }`} />
             </div>
             <div className="flex-1">
               <p className={`font-medium ${
-                status === "out_of_stock" ? "text-red-800" : "text-yellow-800"
+                status === "out_of_stock" ? "text-destructive" : "text-warning"
               }`}>
                 {status === "out_of_stock" ? "Out of Stock" : "Low Stock Alert"}
               </p>
               <p className={`text-sm ${
-                status === "out_of_stock" ? "text-red-700" : "text-yellow-700"
+                status === "out_of_stock" ? "text-destructive" : "text-warning"
               }`}>
                 {status === "out_of_stock"
                   ? "This item is currently unavailable. Restock immediately to avoid lost sales."
@@ -194,7 +194,7 @@ export default function InventoryItemPage({
           </CardHeader>
           <CardContent>
             <p className={`text-3xl font-bold ${
-              level.availableQuantity <= 2 ? "text-yellow-600" : ""
+              level.availableQuantity <= 2 ? "text-warning" : ""
             }`}>
               {level.availableQuantity}
             </p>
@@ -212,7 +212,7 @@ export default function InventoryItemPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-purple-600">
+            <p className="text-3xl font-bold text-info">
               {level.reservedQuantity}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -229,7 +229,7 @@ export default function InventoryItemPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-blue-600">
+            <p className="text-3xl font-bold text-info">
               {level.incomingQuantity}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -335,7 +335,7 @@ export default function InventoryItemPage({
                       </TableCell>
                       <TableCell className="text-center">
                         <span className={`font-medium flex items-center justify-center gap-1 ${
-                          isPositive ? "text-green-600" : "text-red-600"
+                          isPositive ? "text-success" : "text-destructive"
                         }`}>
                           {isPositive ? (
                             <ArrowUpRight className="h-4 w-4" />

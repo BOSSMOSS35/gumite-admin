@@ -59,16 +59,16 @@ export function VariantPreviewCalculator({
 
   // Color mapping for status
   const statusColors = {
-    safe: "text-green-700 bg-green-50 border-green-200",
-    warning: "text-yellow-700 bg-yellow-50 border-yellow-200",
-    danger: "text-red-700 bg-red-50 border-red-200",
+    safe: "text-success bg-success/10 border-success/30",
+    warning: "text-warning bg-warning/10 border-warning/30",
+    danger: "text-destructive bg-destructive/10 border-destructive/30",
   };
 
   return (
     <div className={`space-y-3 ${className}`}>
       {/* ━━━ Main Calculation Display ━━━ */}
       <div
-        className={`rounded-lg border p-3 ${statusColors[status.status]}`}
+        className={`rounded-none border p-3 ${statusColors[status.status]}`}
       >
         <div className="flex items-start gap-3">
           {/* Icon */}
@@ -154,8 +154,8 @@ export function VariantPreviewCalculator({
 
       {/* ━━━ Breakdown Table ━━━ */}
       {showBreakdown && combinations.length > 0 && combinations.length <= 20 && (
-        <div className="rounded-lg border border-border bg-muted/30 p-3">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="border border-border bg-muted/30 p-3">
+          <h4 className="mb-2 text-xs font-semibold text-muted-foreground">
             Variants That Will Be Created ({combinations.length})
           </h4>
           <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -173,7 +173,7 @@ export function VariantPreviewCalculator({
 
       {/* ━━━ Too Many Variants Warning ━━━ */}
       {showBreakdown && combinations.length > 20 && (
-        <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="border border-border bg-muted/30 p-3">
           <p className="text-xs text-muted-foreground">
             <span className="font-semibold">{combinations.length} variants</span> will be created.
             Preview hidden to avoid performance issues. Consider reducing options
@@ -184,7 +184,7 @@ export function VariantPreviewCalculator({
 
       {/* ━━━ No Options State ━━━ */}
       {validOptions.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border p-3 text-center">
+        <div className="border border-dashed border-border p-3 text-center">
           <p className="text-xs text-muted-foreground">
             Add options to see variant preview
           </p>
@@ -210,9 +210,9 @@ export function CompactVariantCounter({ options }: CompactVariantCounterProps) {
   const status = getVariantCountStatus(count);
 
   const textColors = {
-    safe: "text-green-600",
-    warning: "text-yellow-600",
-    danger: "text-red-600",
+    safe: "text-success",
+    warning: "text-warning",
+    danger: "text-destructive",
   };
 
   return (
