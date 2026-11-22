@@ -5,10 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useOrderStore, type OrderFilter } from "@/stores/order-store";
 
 // Only the filters the orders screen itself offers are accepted from a link.
-const ALLOWED: Record<string, string[]> = {
-  payment: ["NOT_PAID", "AWAITING", "CAPTURED", "PAID", "REFUNDED"],
-  fulfillment: ["NOT_FULFILLED", "FULFILLED", "SHIPPED", "RETURNED"],
-};
+const ALLOWED = new Map<string, readonly string[]>([
+  ["payment", ["NOT_PAID", "AWAITING", "CAPTURED", "PAID", "REFUNDED"]],
+  ["fulfillment", ["NOT_FULFILLED", "FULFILLED", "SHIPPED", "RETURNED"]],
+]);
 
 /** A yyyy-mm-dd string that is a real calendar date, otherwise null. */
 export function safeDate(v: string | null): string | null {
@@ -39,7 +39,7 @@ export function OrdersUrlSync() {
       if (i <= 0) return [];
       const id = raw.slice(0, i);
       const value = raw.slice(i + 1).toUpperCase();
-      if (!ALLOWED[id]?.includes(value)) return [];
+      if (!ALLOWED.get(id)?.includes(value)) return [];
       const prefix = id === "payment" ? "Payment" : id === "fulfillment" ? "Fulfillment" : humanise(id);
       return [{ id, value, label: `${prefix}: ${humanise(value)}` }];
     });
