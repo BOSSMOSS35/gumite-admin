@@ -1,7 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { OrdersUrlSync } from "@/components/orders/orders-url-sync";
+import { OrdersUrlSync, safeDate } from "@/components/orders/orders-url-sync";
 import { useState, useEffect, Suspense } from "react";
 import {
   Card,
@@ -146,8 +146,8 @@ export default function OrdersPage() {
     q: debouncedSearch || undefined,
     payment_status: paymentFilter,
     fulfillment_status: fulfillmentFilter,
-    created_after: dateFrom ? new Date(dateFrom).toISOString() : undefined,
-    created_before: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
+    created_after: safeDate(dateFrom) ? new Date(dateFrom!).toISOString() : undefined,
+    created_before: safeDate(dateTo) ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
   });
 
   const fulfillMutation = useFulfillOrder();
