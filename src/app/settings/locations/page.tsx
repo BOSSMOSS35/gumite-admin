@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import {
@@ -208,6 +209,7 @@ export default function LocationsSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Locations & shipping" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

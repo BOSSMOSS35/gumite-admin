@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -93,6 +94,7 @@ export default function DraftOrdersPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Draft orders" />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-xl font-semibold">Draft Orders</CardTitle>

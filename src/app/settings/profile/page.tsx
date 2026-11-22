@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -79,6 +80,7 @@ export default function ProfileSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Profile" />
       {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>

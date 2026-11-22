@@ -2324,7 +2324,7 @@ export default function ProductDetailPage() {
               </div>
               <div className="bg-muted p-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Variants</span>
+                  <span className="text-sm text-muted-foreground">Total sizes</span>
                   <span className="font-medium">
                     {product.variants.length} variant{product.variants.length !== 1 ? "s" : ""}
                   </span>

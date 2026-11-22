@@ -966,7 +966,7 @@ export default function CategoriesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="handle">Handle</Label>
+              <Label htmlFor="handle">URL slug</Label>
               <div className="flex">
                 <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">
                   /categories/
@@ -1154,7 +1154,7 @@ export default function CategoriesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[400px]">Category</TableHead>
-                  <TableHead>Handle</TableHead>
+                  <TableHead>URL slug</TableHead>
                   <TableHead className="text-center">Products</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[50px]"></TableHead>

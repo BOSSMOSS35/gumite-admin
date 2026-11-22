@@ -87,13 +87,11 @@ function getStatusBadge(status: ProductStatus) {
 // Component to handle search params (needs Suspense)
 function ProductsPageContent({ onOpenModal }: { onOpenModal: () => void }) {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
-  // Check on mount only — no useEffect needed for this one-shot redirect
-  if (searchParams.get("action") === "add") {
-    onOpenModal();
-    router.replace("/products", { scroll: false });
-  }
+  const wantsAdd = searchParams.get("action") === "add";
+  useEffect(() => {
+    if (wantsAdd) onOpenModal();
+  }, [wantsAdd, onOpenModal]);
 
   return null;
 }
@@ -101,6 +99,7 @@ function ProductsPageContent({ onOpenModal }: { onOpenModal: () => void }) {
 export default function ProductsPage() {
   const router = useRouter();
   const [addProductOpen, setAddProductOpen] = useState(false);
+  const openAddProduct = useCallback(() => setAddProductOpen(true), []);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -243,13 +242,18 @@ export default function ProductsPage() {
     <div className="flex flex-col gap-6 p-6">
       {/* Handle search params */}
       <Suspense fallback={null}>
-        <ProductsPageContent onOpenModal={() => setAddProductOpen(true)} />
+        <ProductsPageContent onOpenModal={openAddProduct} />
       </Suspense>
 
       {/* Add Product Modal */}
       <AddProductModal
         isOpen={addProductOpen}
-        onClose={() => setAddProductOpen(false)}
+        onClose={() => {
+          setAddProductOpen(false);
+          if (typeof window !== "undefined" && window.location.search.includes("action=add")) {
+            router.replace("/products", { scroll: false });
+          }
+        }}
         onSave={handleProductSave}
       />
 
@@ -404,8 +408,8 @@ export default function ProductsPage() {
                   </TableHead>
                   <TableHead className="w-[100px]">Image</TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead className="hidden md:table-cell">Handle</TableHead>
-                  <TableHead className="text-center hidden sm:table-cell">Variants</TableHead>
+                  <TableHead className="hidden md:table-cell">Designer</TableHead>
+                  <TableHead className="text-center hidden sm:table-cell">Sizes</TableHead>
                   <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -449,7 +453,7 @@ export default function ProductsPage() {
                           )}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">/{product.handle}</TableCell>
+                      <TableCell className="hidden md:table-cell">{product.brandName || <span className="text-muted-foreground">Not set</span>}</TableCell>
                       <TableCell className="text-center hidden sm:table-cell">
                         {product.variantCount ?? 0}
                       </TableCell>

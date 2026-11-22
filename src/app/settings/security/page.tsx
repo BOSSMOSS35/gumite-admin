@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState } from "react";
 import {
   Card,
@@ -241,6 +242,7 @@ export default function SecuritySettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Security" />
       {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>

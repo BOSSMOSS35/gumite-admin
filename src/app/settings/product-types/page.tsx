@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -96,6 +97,7 @@ export default function ProductTypesSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Product types" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

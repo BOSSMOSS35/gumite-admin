@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import {
@@ -193,6 +194,7 @@ function ReviewsPageInner() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Reviews" />
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>

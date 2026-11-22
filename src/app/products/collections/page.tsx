@@ -369,7 +369,7 @@ export default function CollectionsPage() {
               <TableRow>
                 <TableHead className="w-[60px]"></TableHead>
                 <TableHead>Collection</TableHead>
-                <TableHead>Handle</TableHead>
+                <TableHead>URL slug</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Updated</TableHead>
                 <TableHead className="w-[50px]"></TableHead>

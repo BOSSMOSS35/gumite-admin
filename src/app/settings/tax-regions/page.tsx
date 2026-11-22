@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useMemo, useState } from "react";
 import {
   Card,
@@ -226,6 +227,7 @@ export default function TaxRegionsSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Tax regions" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

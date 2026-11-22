@@ -1,7 +1,8 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { useState, useEffect } from "react";
+import { OrdersUrlSync } from "@/components/orders/orders-url-sync";
+import { useState, useEffect, Suspense } from "react";
 import {
   Card,
   CardContent,
@@ -321,6 +322,9 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <Suspense fallback={null}>
+        <OrdersUrlSync />
+      </Suspense>
       <PageHeader
         title="Orders"
         actions={

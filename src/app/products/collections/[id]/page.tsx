@@ -492,7 +492,7 @@ export default function CollectionDetailPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-handle">Handle</Label>
+              <Label htmlFor="edit-handle">URL slug</Label>
               <div className="flex">
                 <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">
                   /collections/
@@ -794,7 +794,7 @@ export default function CollectionDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Handle</Label>
+                  <Label>URL slug</Label>
                   <div className="flex">
                     <span className="inline-flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm">
                       /

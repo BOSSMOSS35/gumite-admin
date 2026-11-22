@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { useState, useEffect, useMemo } from "react";
 import {
   Card,
@@ -137,6 +138,7 @@ export default function ReturnsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      <PageHeader title="Returns" />
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
